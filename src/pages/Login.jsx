@@ -1,7 +1,6 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
-
 import {
   Container,
   Box,
@@ -16,13 +15,11 @@ import { Snackbar, Alert as MuiAlert } from '@mui/material';
 const Login = () => {
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
-
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [snackOpen, setSnackOpen] = useState(false);
   const [snackMsg, setSnackMsg] = useState('');
   const [snackType, setSnackType] = useState('success'); // or 'error'
-
 
   const handleChange = (e) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -33,14 +30,20 @@ const Login = () => {
     setError('');
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
+      const res = await fetch('http://localhost:5000/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
 
-      const data = await res.json();
-
+      let data = {};
+      
+      try {
+        data = await res.json();
+      } catch (parseError) {
+        console.error('❌ Login JSON Parse Error:', parseError);
+      }
+      
       if (!res.ok) {
         setSnackMsg(data.message || 'Login failed');
         setSnackType('error');
@@ -51,7 +54,6 @@ const Login = () => {
       setSnackMsg('Login successful! Redirecting...');
       setSnackType('success');
       setSnackOpen(true);
-      
 
       login(data.token, data.role);
 
@@ -60,10 +62,10 @@ const Login = () => {
           navigate('/driver/dashboard');
           break;
         case 'Sales':
-          navigate('/sales/dashboard');
+          navigate('/driver/dashboard');
           break;
         case 'Owner':
-          navigate('/owner/dashboard');
+          navigate('/driver/dashboard');
           break;
         default:
           navigate('/');
@@ -129,36 +131,34 @@ const Login = () => {
             </Button>
           </form>
           <Button
-  fullWidth
-  variant="text"
-  onClick={() => navigate('/register')}
-  sx={{ mt: 2 }}
->
-  Don’t have an account? Register
-</Button>
-
-        </Paper>
+        fullWidth
+        variant="text"
+        onClick={() => navigate('/register')}
+        sx={{ mt: 2 }}
+      >
+        Don’t have an account? Register
+      </Button>
+      </Paper>
       </Container>
+      
       <Snackbar
-  open={snackOpen}
-  autoHideDuration={3000}
-  onClose={() => setSnackOpen(false)}
-  anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
->
-  <MuiAlert
-    onClose={() => setSnackOpen(false)}
-    severity={snackType}
-    sx={{ width: '100%' }}
-    elevation={6}
-    variant="filled"
-  >
-    {snackMsg}
+      open={snackOpen}
+      autoHideDuration={3000}
+      onClose={() => setSnackOpen(false)}
+      anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+    >
+  
+      <MuiAlert
+        onClose={() => setSnackOpen(false)}
+        severity={snackType}
+        sx={{ width: '100%' }}
+        elevation={6}
+        variant="filled"
+      >
+  
+  {snackMsg}
   </MuiAlert>
-</Snackbar>
-
-    </Box>
-    
-  );
-};
-
+  </Snackbar>
+  </Box>    
+)};
 export default Login;

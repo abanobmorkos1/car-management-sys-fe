@@ -10,8 +10,11 @@ import {
   CardContent,
   Divider,
 } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 
 const DriverDashboard = () => {
+  const navigate = useNavigate();
+
   return (
     <Box sx={{ backgroundColor: '#f5f5f5', minHeight: '100vh', py: 3 }}>
       <Container maxWidth="md">
@@ -69,8 +72,12 @@ const DriverDashboard = () => {
           <Button fullWidth variant="outlined" sx={{ mb: 1 }}>
             Upload Car Pictures
           </Button>
-          <Button fullWidth variant="outlined" sx={{ mb: 1 }}>
+          <Button fullWidth variant="outlined" sx={{ mb: 1 }} onClick={() => navigate('/driver/cod/new')}>
             Upload Contract
+          </Button>
+          {/* 🚀 New Button for View All CODs */}
+          <Button fullWidth variant="outlined" sx={{ mb: 1 }} onClick={() => navigate('/allcods')}>
+            View All CODs
           </Button>
           <Button fullWidth variant="outlined" sx={{ mb: 1 }}>
             Upload Customer Photo
