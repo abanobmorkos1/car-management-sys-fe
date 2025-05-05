@@ -4,6 +4,8 @@ import {
   Box, Button, Typography, MenuItem, Select, InputLabel, FormControl, Snackbar, Alert
 } from '@mui/material';
 
+const api = process.env.REACT_APP_API_URL;
+
 const BonusUpload = () => {
   const { token } = useContext(AuthContext);
   const [type, setType] = useState('review');
@@ -25,7 +27,7 @@ const BonusUpload = () => {
     formData.append('type', type);
 
     try {
-      const res = await fetch(`${process.env.REACT_APP_API}/driver/upload-bonus`, {
+      const res = await fetch(`${api}/driver/upload-bonus`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
