@@ -34,12 +34,13 @@ const Login = () => {
     setError('');
 
     try {
-      const res = await fetch(`https://car-management-sys.onrender.com/api/auth/login`, {
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
-        credentials: 'include',
+        credentials: 'include' // if cookies are used
       });
+      
 
       let data = {};
       try {
