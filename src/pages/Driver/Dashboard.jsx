@@ -11,7 +11,7 @@ import {
   Divider,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import BonusUpload from '../components/Driver/BonusUpload';
+import BonusUpload from '../Driver/BonusUpload';
 
 const DriverDashboard = () => {
   const navigate = useNavigate();
