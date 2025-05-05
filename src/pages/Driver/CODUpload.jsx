@@ -31,10 +31,10 @@ const NewCOD = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const salesRes = await fetch('http://localhost:5000/api/users/salespeople', {
+        const salesRes = await fetch(`${process.env.REACT_APP_API_URL}/api/users/salespeople`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        const driverRes = await fetch('http://localhost:5000/api/users/drivers', {
+        const driverRes = await fetch(`${process.env.REACT_APP_API_URL}/api/users/drivers`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         const salesData = await salesRes.json();
@@ -82,7 +82,7 @@ const NewCOD = () => {
       if (contractPicture) formData.append('contractPicture', contractPicture);
       if (form.method === 'Check' && checkPicture) formData.append('checkPicture', checkPicture);
 
-      const res = await fetch('http://localhost:5000/cod/newcod', {
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/cod/newcod`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData
@@ -91,7 +91,7 @@ const NewCOD = () => {
       const data = await res.json();
       if (res.ok) {
         setSuccess('COD created successfully!');
-        setTimeout(() => navigate('/driver/dashboard'), 2000);
+        setTimeout(() => navigate('/allcods'), 2000);
       } else {
         setError(data.message || 'Failed to create COD');
       }

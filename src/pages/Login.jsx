@@ -9,17 +9,21 @@ import {
   TextField,
   Button,
   Alert,
+  Snackbar
 } from '@mui/material';
-import { Snackbar, Alert as MuiAlert } from '@mui/material';
+import MuiAlert from '@mui/material/Alert';
+
+const api = process.env.REACT_APP_API_URL;
 
 const Login = () => {
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
+
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [snackOpen, setSnackOpen] = useState(false);
   const [snackMsg, setSnackMsg] = useState('');
-  const [snackType, setSnackType] = useState('success'); // or 'error'
+  const [snackType, setSnackType] = useState('success');
 
   const handleChange = (e) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -30,31 +34,29 @@ const Login = () => {
     setError('');
 
     try {
-      const res = await fetch('http://localhost:5000/api/auth/login', {
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
 
       let data = {};
-      
       try {
         data = await res.json();
       } catch (parseError) {
         console.error('❌ Login JSON Parse Error:', parseError);
       }
-      
+
       if (!res.ok) {
         setSnackMsg(data.message || 'Login failed');
         setSnackType('error');
         setSnackOpen(true);
         return;
       }
-      
+
       setSnackMsg('Login successful! Redirecting...');
       setSnackType('success');
       setSnackOpen(true);
-
       login(data.token, data.role);
 
       switch (data.role) {
@@ -62,7 +64,7 @@ const Login = () => {
           navigate('/driver/dashboard');
           break;
         case 'Sales':
-          navigate('/driver/dashboard');
+          navigate('/sales/dashboard');
           break;
         case 'Owner':
           navigate('/driver/dashboard');
@@ -92,11 +94,7 @@ const Login = () => {
             Login
           </Typography>
 
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
+          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
           <form onSubmit={handleSubmit} noValidate>
             <TextField
@@ -121,44 +119,40 @@ const Login = () => {
               margin="normal"
               required
             />
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              sx={{ mt: 3, py: 1.5 }}
-            >
+            <Button type="submit" fullWidth variant="contained" sx={{ mt: 3, py: 1.5 }}>
               Sign In
             </Button>
           </form>
+
           <Button
-        fullWidth
-        variant="text"
-        onClick={() => navigate('/register')}
-        sx={{ mt: 2 }}
-      >
-        Don’t have an account? Register
-      </Button>
-      </Paper>
+            fullWidth
+            variant="text"
+            onClick={() => navigate('/register')}
+            sx={{ mt: 2 }}
+          >
+            Don’t have an account? Register
+          </Button>
+        </Paper>
       </Container>
-      
+
       <Snackbar
-      open={snackOpen}
-      autoHideDuration={3000}
-      onClose={() => setSnackOpen(false)}
-      anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-    >
-  
-      <MuiAlert
+        open={snackOpen}
+        autoHideDuration={3000}
         onClose={() => setSnackOpen(false)}
-        severity={snackType}
-        sx={{ width: '100%' }}
-        elevation={6}
-        variant="filled"
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
-  
-  {snackMsg}
-  </MuiAlert>
-  </Snackbar>
-  </Box>    
-)};
+        <MuiAlert
+          onClose={() => setSnackOpen(false)}
+          severity={snackType}
+          sx={{ width: '100%' }}
+          elevation={6}
+          variant="filled"
+        >
+          {snackMsg}
+        </MuiAlert>
+      </Snackbar>
+    </Box>
+  );
+};
+
 export default Login;

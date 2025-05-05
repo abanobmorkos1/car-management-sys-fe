@@ -5,11 +5,13 @@ import {
 import { useNavigate } from 'react-router-dom';
 import MuiAlert from '@mui/material/Alert';
 
+const api = process.env.REACT_APP_API_URL;
+
 const Register = () => {
   const [form, setForm] = useState({
     name: '',
     email: '',
-    phoneNumber: '', // ⭐️ Added here
+    phoneNumber: '',
     password: '',
     confirmPassword: '',
     inviteCode: '',
@@ -38,7 +40,7 @@ const Register = () => {
     }
 
     try {
-      const res = await fetch('http://localhost:5000/api/auth/register', {
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
@@ -73,7 +75,7 @@ const Register = () => {
           <form onSubmit={handleSubmit}>
             <TextField fullWidth label="Name" name="name" value={form.name} onChange={handleChange} margin="normal" required />
             <TextField fullWidth label="Email" name="email" type="email" value={form.email} onChange={handleChange} margin="normal" required />
-            <TextField fullWidth label="Phone Number" name="phoneNumber" value={form.phoneNumber} onChange={handleChange} margin="normal" required /> {/* ⭐️ */}
+            <TextField fullWidth label="Phone Number" name="phoneNumber" value={form.phoneNumber} onChange={handleChange} margin="normal" required />
             <TextField fullWidth label="Password" name="password" type="password" value={form.password} onChange={handleChange} margin="normal" required />
             <TextField fullWidth label="Confirm Password" name="confirmPassword" type="password" value={form.confirmPassword} onChange={handleChange} margin="normal" required />
             <TextField fullWidth label="Invite Code" name="inviteCode" value={form.inviteCode} onChange={handleChange} margin="normal" required />
