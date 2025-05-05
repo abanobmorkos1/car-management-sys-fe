@@ -11,6 +11,7 @@ import {
   Divider,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import BonusUpload from '../components/Driver/BonusUpload';
 
 const DriverDashboard = () => {
   const navigate = useNavigate();
@@ -69,19 +70,22 @@ const DriverDashboard = () => {
             Uploads & Bonuses
           </Typography>
           <Divider sx={{ mb: 2 }} />
+
           <Button fullWidth variant="outlined" sx={{ mb: 1 }}>
             Upload Car Pictures
           </Button>
+
           <Button fullWidth variant="outlined" sx={{ mb: 1 }} onClick={() => navigate('/driver/cod/new')}>
             Upload Contract
           </Button>
-          {/* 🚀 New Button for View All CODs */}
+
           <Button fullWidth variant="outlined" sx={{ mb: 1 }} onClick={() => navigate('/allcods')}>
             View All CODs
           </Button>
-          <Button fullWidth variant="outlined" sx={{ mb: 1 }}>
-            Upload Customer Photo
-          </Button>
+
+          {/* Integrated Bonus Upload Component */}
+          <BonusUpload />
+
           <Typography mt={2} variant="body2" color="text.secondary">
             💰 $25 per review picture · $5 per customer picture
           </Typography>
