@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import BonusUpload from '../Driver/BonusUpload';
+import BonusGallery from '../../components/BonusGallery';
 
 const DriverDashboard = () => {
   const navigate = useNavigate();
@@ -90,6 +91,9 @@ const DriverDashboard = () => {
             💰 $25 per review picture · $5 per customer picture
           </Typography>
         </Paper>
+        <Box mt={4}>
+          <BonusGallery />
+        </Box>
       </Container>
     </Box>
   );
