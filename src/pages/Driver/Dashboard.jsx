@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Container,
@@ -9,6 +9,7 @@ import {
   Card,
   CardContent,
   Divider,
+  Collapse
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import BonusUpload from '../Driver/BonusUpload';
@@ -16,84 +17,109 @@ import BonusGallery from '../../components/BonusGallery';
 
 const DriverDashboard = () => {
   const navigate = useNavigate();
+  const [showGallery, setShowGallery] = useState(false);
+  const [counts, setCounts] = useState({ review: 0, customer: 0 });
+
+  const handleBonusCount = (data) => {
+    setCounts(data);
+  };
 
   return (
-    <Box sx={{ backgroundColor: '#f5f5f5', minHeight: '100vh', py: 3 }}>
+    <Box sx={{ backgroundColor: '#e9eff6', minHeight: '100vh', py: 4 }}>
       <Container maxWidth="md">
         {/* Welcome */}
-        <Typography variant="h5" mb={2}>
+        <Typography variant="h4" fontWeight="bold" color="primary.main" mb={3}>
           Welcome, Driver 👋
         </Typography>
 
-        {/* Clock In / Out */}
-        <Paper sx={{ p: 2, mb: 3 }}>
-          <Typography variant="body1" mb={1}>
-            Work Status:
+        {/* Clock */}
+        <Paper elevation={2} sx={{ p: 3, borderRadius: 3, mb: 4 }}>
+          <Typography variant="h6" gutterBottom>
+            Work Status
           </Typography>
-          <Button variant="contained" color="primary" fullWidth>
+          <Button variant="contained" color="primary" fullWidth sx={{ py: 1.5 }}>
             Clock In
           </Button>
         </Paper>
 
-        {/* Today's Deliveries */}
-        <Paper sx={{ p: 2, mb: 3 }}>
-          <Typography variant="h6" mb={1}>
+        {/* Deliveries */}
+        <Paper elevation={2} sx={{ p: 3, borderRadius: 3, mb: 4 }}>
+          <Typography variant="h6" gutterBottom>
             Today's Deliveries
           </Typography>
-          <Typography variant="body2">• 2 New Cars</Typography>
-          <Typography variant="body2">• 1 COD Pickup</Typography>
-          <Typography variant="body2">• 1 Lease Return</Typography>
+          <Typography color="text.secondary" mb={0.5}>• 2 New Cars</Typography>
+          <Typography color="text.secondary" mb={0.5}>• 1 COD Pickup</Typography>
+          <Typography color="text.secondary">• 1 Lease Return</Typography>
         </Paper>
 
-        {/* Quick Stats */}
-        <Grid container spacing={2} mb={3}>
-          <Grid item xs={6}>
-            <Card>
+        {/* Stats */}
+        <Grid container spacing={3} mb={4}>
+          <Grid item xs={12} sm={6}>
+            <Card elevation={1} sx={{ borderRadius: 3 }}>
               <CardContent>
-                <Typography variant="subtitle1">Hours Worked</Typography>
-                <Typography variant="h6">6.5 hrs</Typography>
+                <Typography variant="subtitle2" color="text.secondary">Hours Worked</Typography>
+                <Typography variant="h5" color="primary.dark">6.5 hrs</Typography>
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={6}>
-            <Card>
+          <Grid item xs={12} sm={6}>
+            <Card elevation={1} sx={{ borderRadius: 3 }}>
               <CardContent>
-                <Typography variant="subtitle1">COD Collected</Typography>
-                <Typography variant="h6">$1,200</Typography>
+                <Typography variant="subtitle2" color="text.secondary">COD Collected</Typography>
+                <Typography variant="h5" color="primary.dark">$1,200</Typography>
               </CardContent>
             </Card>
           </Grid>
         </Grid>
 
-        {/* Upload Section */}
-        <Paper sx={{ p: 2 }}>
-          <Typography variant="h6" mb={2}>
-            Uploads & Bonuses
-          </Typography>
+        {/* Uploads */}
+        <Paper elevation={2} sx={{ p: 3, borderRadius: 3 }}>
+          <Typography variant="h6" gutterBottom>Uploads & Bonuses</Typography>
           <Divider sx={{ mb: 2 }} />
 
-          <Button fullWidth variant="outlined" sx={{ mb: 1 }}>
-            Upload Car Pictures
-          </Button>
+          <Grid container spacing={2} mb={2}>
+            <Grid item xs={12} sm={4}>
+              <Button fullWidth variant="outlined" onClick={() => navigate('/driver/cod/new')}>
+                Upload Contract
+              </Button>
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <Button fullWidth variant="outlined">
+                Upload Car Pictures
+              </Button>
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <Button fullWidth variant="outlined" onClick={() => navigate('/allcods')}>
+                View All CODs
+              </Button>
+            </Grid>
+          </Grid>
 
-          <Button fullWidth variant="outlined" sx={{ mb: 1 }} onClick={() => navigate('/driver/cod/new')}>
-            Upload Contract
-          </Button>
+          <BonusUpload onCountUpdate={handleBonusCount} />
 
-          <Button fullWidth variant="outlined" sx={{ mb: 1 }} onClick={() => navigate('/allcods')}>
-            View All CODs
-          </Button>
-
-          {/* Integrated Bonus Upload Component */}
-          <BonusUpload />
+          <Grid container spacing={2} mt={2}>
+            <Grid item xs={6}>
+              <Button variant="contained" color="success" fullWidth onClick={() => setShowGallery(!showGallery)}>
+                Reviews: {counts.review}
+              </Button>
+            </Grid>
+            <Grid item xs={6}>
+              <Button variant="contained" color="primary" fullWidth onClick={() => setShowGallery(!showGallery)}>
+                Customers: {counts.customer}
+              </Button>
+            </Grid>
+          </Grid>
 
           <Typography mt={2} variant="body2" color="text.secondary">
             💰 $25 per review picture · $5 per customer picture
           </Typography>
         </Paper>
-        <Box mt={4}>
-          <BonusGallery />
-        </Box>
+
+        <Collapse in={showGallery}>
+          <Box mt={5}>
+            <BonusGallery />
+          </Box>
+        </Collapse>
       </Container>
     </Box>
   );
