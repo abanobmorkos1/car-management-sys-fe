@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import {
   Box,
   Container,
@@ -14,8 +14,12 @@ import {
 import { useNavigate } from 'react-router-dom';
 import BonusUpload from '../Driver/BonusUpload';
 import BonusGallery from '../../components/BonusGallery';
+import { AuthContext } from '../../contexts/AuthContext';
+
+const api = process.env.REACT_APP_API_URL;
 
 const DriverDashboard = () => {
+  const { userName, token } = useContext(AuthContext);
   const navigate = useNavigate();
   const [showGallery, setShowGallery] = useState(false);
   const [counts, setCounts] = useState({ review: 0, customer: 0 });
@@ -24,35 +28,49 @@ const DriverDashboard = () => {
     setCounts(data);
   };
 
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        const res = await fetch(`${api}/api/driver/my-uploads`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (!res.ok) return;
+
+        const uploads = await res.json();
+        const review = uploads.filter(u => u.type === 'review').length;
+        const customer = uploads.filter(u => u.type === 'customer').length;
+
+        setCounts({ review, customer });
+      } catch (err) {
+        console.error('Error fetching uploads:', err);
+      }
+    };
+
+    fetchCounts();
+  }, [token]);
+
   return (
     <Box sx={{ backgroundColor: '#e9eff6', minHeight: '100vh', py: 4 }}>
       <Container maxWidth="md">
-        {/* Welcome */}
         <Typography variant="h4" fontWeight="bold" color="primary.main" mb={3}>
-          Welcome, Driver 👋
+          Welcome, {userName || 'Driver'} 👋
         </Typography>
 
-        {/* Clock */}
         <Paper elevation={2} sx={{ p: 3, borderRadius: 3, mb: 4 }}>
-          <Typography variant="h6" gutterBottom>
-            Work Status
-          </Typography>
+          <Typography variant="h6" gutterBottom>Work Status</Typography>
           <Button variant="contained" color="primary" fullWidth sx={{ py: 1.5 }}>
             Clock In
           </Button>
         </Paper>
 
-        {/* Deliveries */}
         <Paper elevation={2} sx={{ p: 3, borderRadius: 3, mb: 4 }}>
-          <Typography variant="h6" gutterBottom>
-            Today's Deliveries
-          </Typography>
+          <Typography variant="h6" gutterBottom>Today's Deliveries</Typography>
           <Typography color="text.secondary" mb={0.5}>• 2 New Cars</Typography>
           <Typography color="text.secondary" mb={0.5}>• 1 COD Pickup</Typography>
           <Typography color="text.secondary">• 1 Lease Return</Typography>
         </Paper>
 
-        {/* Stats */}
         <Grid container spacing={3} mb={4}>
           <Grid item xs={12} sm={6}>
             <Card elevation={1} sx={{ borderRadius: 3 }}>
@@ -72,7 +90,6 @@ const DriverDashboard = () => {
           </Grid>
         </Grid>
 
-        {/* Uploads */}
         <Paper elevation={2} sx={{ p: 3, borderRadius: 3 }}>
           <Typography variant="h6" gutterBottom>Uploads & Bonuses</Typography>
           <Divider sx={{ mb: 2 }} />
@@ -84,13 +101,21 @@ const DriverDashboard = () => {
               </Button>
             </Grid>
             <Grid item xs={12} sm={4}>
-              <Button fullWidth variant="outlined">
-                Upload Car Pictures
-              </Button>
+              <Button fullWidth variant="outlined">Upload Car Pictures</Button>
             </Grid>
             <Grid item xs={12} sm={4}>
               <Button fullWidth variant="outlined" onClick={() => navigate('/allcods')}>
                 View All CODs
+              </Button>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Button fullWidth variant="outlined" onClick={() => navigate('/driver/lease-returns')}>
+                View Lease Returns
+              </Button>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Button fullWidth variant="outlined" onClick={() => navigate('/lease/create')}>
+                Post Lease Return
               </Button>
             </Grid>
           </Grid>

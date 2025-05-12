@@ -59,7 +59,7 @@ const Login = () => {
       setSnackMsg('Login successful! Redirecting...');
       setSnackType('success');
       setSnackOpen(true);
-      login(data.token, data.role);
+      login(data.token, data.role,  data.name);
 
       switch (data.role) {
         case 'Driver':
