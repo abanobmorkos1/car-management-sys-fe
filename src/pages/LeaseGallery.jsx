@@ -63,11 +63,16 @@ const LeaseReturnsList = () => {
 
 
   const handleViewLease = async (lease) => {
+    console.log('🔎 Lease object:', lease); // Log full lease
+    console.log('📼 damageVideoKeys:', lease.damageVideoKeys); // Check if video keys exist
     const odometerUrl = await fetchSignedUrl(lease.odometerKey);;
     const odometerPdfUrl = await fetchDownloadUrl(lease.odometerStatementKey);
     const titleUrl = lease.hasTitle ? await fetchSignedUrl(lease.titleKey) : null;
     const damageUrls = await Promise.all((lease.damageKeys || []).map(fetchSignedUrl));
-    const damageVideoUrls = await Promise.all((lease.damageVideoKeys || []).map(fetchSignedUrl));
+    const damageVideoUrls = await Promise.all((lease.damageVideoKeys || []).map(key => {
+    console.log('➡️ Fetching video signed URL for key:', key);
+    return fetchSignedUrl(key);
+}));
 
     const docFiles = await Promise.all(
       (lease.documents || []).map(async (doc) => ({
@@ -90,7 +95,7 @@ const LeaseReturnsList = () => {
 
   const handleDelete = async () => {
     try {
-      const res = await fetch(`${api}/api/lease/deleteLr/${confirmDelete}`, {
+      const res = await fetch(`${api}/lease/deleteLr/${confirmDelete}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });

@@ -18,7 +18,8 @@ const NewLeaseForm = () => {
     vin: '', miles: '', bank: '', customerName: '',
     address: '', city: '', state: '', zip: '', date: '',
     salesPerson: '', driver: '', damageReport: '',
-    hasTitle: false, title: null, odometer: null, damagePictures: []
+    hasTitle: false, title: null, odometer: null,
+    leaseReturnMedia: []
   });
 
   const [carInfo, setCarInfo] = useState(null);
@@ -57,9 +58,10 @@ const NewLeaseForm = () => {
 
   const handleFile = (e) => {
     const { name, files } = e.target;
+    const multiFields = ['leaseReturnMedia'];
     setForm(prev => ({
       ...prev,
-      [name]: name === 'damagePictures' ? Array.from(files) : files[0]
+      [name]: multiFields.includes(name) ? Array.from(files) : files[0]
     }));
   };
 
@@ -88,8 +90,8 @@ const NewLeaseForm = () => {
     try {
       const formData = new FormData();
       Object.entries(form).forEach(([key, value]) => {
-        if (key === 'damagePictures') {
-          value.forEach(file => formData.append('damagePictures', file));
+        if (key === 'leaseReturnMedia') {
+          value.forEach(file => formData.append(key, file));
         } else if (value instanceof File) {
           formData.append(key, value);
         } else {
@@ -160,7 +162,7 @@ const NewLeaseForm = () => {
 
           <Box mt={2}><Typography>Upload Odometer Picture *</Typography><input type="file" name="odometer" onChange={handleFile} required /></Box>
           <Box mt={2}><Typography>Upload Title Picture (if any)</Typography><input type="file" name="title" onChange={handleFile} /></Box>
-          <Box mt={2}><Typography>Upload Damage Pictures</Typography><input type="file" name="damagePictures" multiple onChange={handleFile} /></Box>
+          <Box mt={2}><Typography>Upload Lease Return Pictures/Videos</Typography><input type="file" name="leaseReturnMedia" accept="image/*,video/*" multiple onChange={handleFile} /></Box>
 
           <Box mt={3}>
             <Typography variant="body1" mb={1}>Customer Signature</Typography>

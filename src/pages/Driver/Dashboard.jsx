@@ -136,7 +136,7 @@ const DriverDashboard = () => {
           </Grid>
 
           <Typography mt={2} variant="body2" color="text.secondary">
-            💰 $25 per review picture · $5 per customer picture
+            💰 $20 per review picture · $5 per customer picture
           </Typography>
         </Paper>
 
