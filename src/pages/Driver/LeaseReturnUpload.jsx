@@ -1,85 +1,98 @@
-import React, { useState, useContext, useEffect, useRef } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import {
   Box, Button, Container, Typography, TextField,
   Paper, MenuItem, CircularProgress, Snackbar, Alert
 } from '@mui/material';
-import SignatureCanvas from 'react-signature-canvas';
 import { AuthContext } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import trimCanvas from 'trim-canvas';
 
 const api = process.env.REACT_APP_API_URL;
+
+const uploadToS3 = async (file, category, token, customerName) => {
+  const res = await fetch(`${api}/api/s3/generate-url`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      fileName: file.name,
+      fileType: file.type,
+      uploadCategory: category,
+      meta: { customerName }
+    })
+  });
+  const { uploadUrl, key } = await res.json();
+  await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': file.type },
+    body: file
+  });
+  return key;
+};
 
 const NewLeaseForm = () => {
   const { token } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
-    vin: '', miles: '', bank: '', customerName: '',
-    address: '', city: '', state: '', zip: '', date: '',
-    salesPerson: '', driver: '', damageReport: '',
-    hasTitle: false, title: null, odometer: null,
-    leaseReturnMedia: []
+    vin: '', miles: '', bank: '', customerName: '', address: '',
+    city: '', state: '', zip: '', date: '', salesPerson: '', driver: '',
+    damageReport: '', hasTitle: false, odometer: null, title: null,
+    leaseReturnMedia: [],
+    year: '', make: '', model: '', trim: '', engine: '', driveType: '', fuelType: '', bodyStyle: ''
   });
 
-  const [carInfo, setCarInfo] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [snack, setSnack] = useState({ open: false, msg: '', severity: 'success' });
   const [salespeople, setSalespeople] = useState([]);
   const [drivers, setDrivers] = useState([]);
-  const [signatureDataUrl, setSignatureDataUrl] = useState('');
-  const signatureRef = useRef();
+  const [loading, setLoading] = useState(false);
+  const [snack, setSnack] = useState({ open: false, msg: '', severity: 'success' });
 
   useEffect(() => {
     const fetchUsers = async () => {
-      try {
-        const salesRes = await fetch(`${api}/api/users/salespeople`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const driverRes = await fetch(`${api}/api/users/drivers`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setSalespeople(await salesRes.json());
-        setDrivers(await driverRes.json());
-      } catch (err) {
-        console.error('❌ Failed to fetch user lists:', err);
-      }
+      const [salesRes, driverRes] = await Promise.all([
+        fetch(`${api}/api/users/salespeople`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${api}/api/users/drivers`, { headers: { Authorization: `Bearer ${token}` } })
+      ]);
+      setSalespeople(await salesRes.json());
+      setDrivers(await driverRes.json());
     };
     fetchUsers();
   }, [token]);
 
-  const handleChange = (e) => {
+  const handleChange = async (e) => {
     const { name, value, type, checked } = e.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+    const updatedValue = type === 'checkbox' ? checked : value;
+    setForm(prev => ({ ...prev, [name]: updatedValue }));
+
+    if (name === 'vin' && value.length >= 17) {
+      try {
+        const res = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/${value}?format=json`);
+        const data = await res.json();
+        const results = data.Results;
+        const get = (label) => results.find(r => r.Variable === label)?.Value?.trim() || '';
+        setForm(prev => ({
+          ...prev,
+          year: get('Model Year'),
+          make: get('Make'),
+          model: get('Model') || get('Series'),
+          trim: get('Trim'),
+          engine: get('Engine Model') || get('Engine Configuration'),
+          driveType: get('Drive Type'),
+          fuelType: get('Fuel Type - Primary'),
+          bodyStyle: get('Body Class')
+        }));
+        setSnack({ open: true, msg: 'VIN decoded successfully', severity: 'success' });
+      } catch (err) {
+        console.error('VIN decode failed:', err);
+        setSnack({ open: true, msg: 'Failed to decode VIN', severity: 'error' });
+      }
+    }
   };
 
   const handleFile = (e) => {
     const { name, files } = e.target;
-    const multiFields = ['leaseReturnMedia'];
-    setForm(prev => ({
-      ...prev,
-      [name]: multiFields.includes(name) ? Array.from(files) : files[0]
-    }));
-  };
-
-  const decodeVIN = async () => {
-    try {
-      const res = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/${form.vin}?format=json`);
-      const data = await res.json();
-      const get = (label) => data.Results.find(r => r.Variable === label)?.Value || '';
-      setCarInfo({
-        year: get('Model Year'),
-        make: get('Make'),
-        model: get('Model'),
-        trim: get('Trim'),
-        fuelType: get('Fuel Type - Primary')
-      });
-    } catch (err) {
-      console.error('VIN decode error:', err);
-    }
+    setForm(prev => ({ ...prev, [name]: name === 'leaseReturnMedia' ? Array.from(files) : files[0] }));
   };
 
   const handleSubmit = async (e) => {
@@ -88,23 +101,24 @@ const NewLeaseForm = () => {
     setLoading(true);
 
     try {
-      const formData = new FormData();
-      Object.entries(form).forEach(([key, value]) => {
-        if (key === 'leaseReturnMedia') {
-          value.forEach(file => formData.append(key, file));
-        } else if (value instanceof File) {
-          formData.append(key, value);
-        } else {
-          formData.append(key, value);
-        }
-      });
+      const odometerKey = await uploadToS3(form.odometer, 'lease-return', token, form.customerName);
+      const titleKey = form.title ? await uploadToS3(form.title, 'lease-return', token, form.customerName) : null;
 
-      formData.append('signatureBase64', signatureDataUrl);
+      const leaseReturnMediaKeys = [];
+      for (const file of form.leaseReturnMedia) {
+        const key = await uploadToS3(file, 'lease-return', token, form.customerName);
+        leaseReturnMediaKeys.push(key);
+      }
 
       const res = await fetch(`${api}/lease/createlr`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          ...form,
+          odometerKey,
+          titleKey,
+          leaseReturnMediaKeys
+        })
       });
 
       const data = await res.json();
@@ -126,84 +140,67 @@ const NewLeaseForm = () => {
     <Container maxWidth="sm">
       <Paper sx={{ p: 4, mt: 5 }}>
         <Typography variant="h5" mb={2}>New Lease Return</Typography>
-        <form onSubmit={handleSubmit} encType="multipart/form-data">
-          <TextField fullWidth name="vin" label="VIN" value={form.vin} onChange={handleChange} required margin="normal" />
-          <Button variant="outlined" onClick={decodeVIN} sx={{ mb: 2 }}>Decode VIN</Button>
+        <form onSubmit={handleSubmit}>
+          <TextField fullWidth name="vin" label="VIN" value={form.vin} onChange={handleChange} margin="normal" required />
+<Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mt: 1, mb: 2 }}>
+  {form.year && (
+    <Box>
+      <Typography variant="caption" color="text.secondary">Year</Typography>
+      <Typography variant="body2">{form.year}</Typography>
+    </Box>
+  )}
+  {form.make && (
+    <Box>
+      <Typography variant="caption" color="text.secondary">Make</Typography>
+      <Typography variant="body2">{form.make}</Typography>
+    </Box>
+  )}
+  {form.model && (
+    <Box>
+      <Typography variant="caption" color="text.secondary">Model</Typography>
+      <Typography variant="body2">{form.model}</Typography>
+    </Box>
+  )}
+  {form.trim && (
+    <Box>
+      <Typography variant="caption" color="text.secondary">Trim</Typography>
+      <Typography variant="body2">{form.trim}</Typography>
+    </Box>
+  )}
+</Box>
+    
 
-          {carInfo && (
-            <Box mb={2}>
-              <Typography variant="body2">{carInfo.year} {carInfo.make} {carInfo.model} {carInfo.trim}</Typography>
-              <Typography variant="body2">Fuel Type: {carInfo.fuelType}</Typography>
-            </Box>
-          )}
+          <TextField fullWidth name="miles" label="Mileage" type="number" value={form.miles} onChange={handleChange} margin="normal" required />
+          <TextField fullWidth name="bank" label="Bank" value={form.bank} onChange={handleChange} margin="normal" required />
+          <TextField fullWidth name="customerName" label="Customer Name" value={form.customerName} onChange={handleChange} margin="normal" required />
+          <TextField fullWidth name="address" label="Address" value={form.address} onChange={handleChange} margin="normal" required />
+          <TextField fullWidth name="city" label="City" value={form.city} onChange={handleChange} margin="normal" required />
+          <TextField fullWidth name="state" label="State" value={form.state} onChange={handleChange} margin="normal" required />
+          <TextField fullWidth name="zip" label="Zip Code" value={form.zip} onChange={handleChange} margin="normal" required />
+          <TextField fullWidth name="date" label="Date" type="date" value={form.date} onChange={handleChange} margin="normal" InputLabelProps={{ shrink: true }} required />
 
-          <TextField fullWidth name="miles" label="Miles" type="number" value={form.miles} onChange={handleChange} required margin="normal" />
-          <TextField fullWidth name="bank" label="Bank" value={form.bank} onChange={handleChange} required margin="normal" />
-          <TextField fullWidth name="customerName" label="Customer Name" value={form.customerName} onChange={handleChange} required margin="normal" />
-          <TextField fullWidth name="address" label="Address" value={form.address} onChange={handleChange} required margin="normal" />
-          <TextField fullWidth name="city" label="City" value={form.city} onChange={handleChange} required margin="normal" />
-          <TextField fullWidth name="state" label="State" value={form.state} onChange={handleChange} required margin="normal" />
-          <TextField fullWidth name="zip" label="ZIP Code" value={form.zip} onChange={handleChange} required margin="normal" />
-          <TextField fullWidth name="date" label="Date of Statement" type="date" value={form.date} onChange={handleChange} required margin="normal" InputLabelProps={{ shrink: true }} />
-
-          <TextField select fullWidth name="salesPerson" label="Salesperson" value={form.salesPerson} onChange={handleChange} required margin="normal">
+          <TextField fullWidth select name="salesPerson" label="Salesperson" value={form.salesPerson} onChange={handleChange} margin="normal" required>
             {salespeople.map(sp => (
-              <MenuItem key={sp._id} value={sp._id}>{sp.name || sp.email}</MenuItem>
+              <MenuItem key={sp._id} value={sp._id}>{sp.name}</MenuItem>
             ))}
           </TextField>
 
-          <TextField select fullWidth name="driver" label="Driver" value={form.driver} onChange={handleChange} required margin="normal">
+          <TextField fullWidth select name="driver" label="Driver" value={form.driver} onChange={handleChange} margin="normal" required>
             {drivers.map(d => (
-              <MenuItem key={d._id} value={d._id}>{d.name || d.email}</MenuItem>
+              <MenuItem key={d._id} value={d._id}>{d.name}</MenuItem>
             ))}
           </TextField>
 
-          <TextField fullWidth name="damageReport" label="Damage Report" value={form.damageReport} onChange={handleChange} margin="normal" multiline rows={2} />
+          <TextField fullWidth name="damageReport" label="Damage Report" value={form.damageReport} onChange={handleChange} margin="normal" multiline rows={3} />
 
-          <Box mt={2}><Typography>Upload Odometer Picture *</Typography><input type="file" name="odometer" onChange={handleFile} required /></Box>
-          <Box mt={2}><Typography>Upload Title Picture (if any)</Typography><input type="file" name="title" onChange={handleFile} /></Box>
+          <Box mt={2}><Typography variant="body1">Upload Odometer Picture *</Typography><input type="file" name="odometer" accept="image/*" onChange={handleFile} required /></Box>
+          <Box mt={2}><Typography variant="body1">Upload Title Picture (optional)</Typography><input type="file" name="title" accept="image/*" onChange={handleFile} /></Box>
           <Box mt={2}><Typography>Upload Lease Return Pictures/Videos</Typography><input type="file" name="leaseReturnMedia" accept="image/*,video/*" multiple onChange={handleFile} /></Box>
-
-          <Box mt={3}>
-            <Typography variant="body1" mb={1}>Customer Signature</Typography>
-            <Paper variant="outlined" sx={{ width: '100%', height: 150 }}>
-              <SignatureCanvas ref={signatureRef} canvasProps={{ width: 500, height: 150, className: 'sigCanvas' }} />
-            </Paper>
-            <Box mt={1}>
-              <Button
-                onClick={() => {
-                  if (signatureRef.current.isEmpty()) {
-                    setSnack({ open: true, msg: 'Please sign before saving.', severity: 'warning' });
-                    return;
-                  }
-                  const rawCanvas = signatureRef.current.getCanvas();
-                  const trimmed = trimCanvas(rawCanvas);
-                  const trimmedDataUrl = trimmed.toDataURL('image/png');
-                  setSignatureDataUrl(trimmedDataUrl);
-                  setSnack({ open: true, msg: 'Signature saved.', severity: 'success' });
-                }}
-                variant="outlined"
-              >
-                Save Signature
-              </Button>
-              <Button
-                onClick={() => {
-                  signatureRef.current.clear();
-                  setSignatureDataUrl('');
-                }}
-                sx={{ ml: 2 }}
-                color="error"
-              >
-                Clear
-              </Button>
-            </Box>
-          </Box>
 
           <Button type="submit" variant="contained" fullWidth sx={{ mt: 3 }} disabled={loading}>
             {loading ? <CircularProgress size={24} /> : 'Submit'}
           </Button>
         </form>
-
         <Snackbar open={snack.open} autoHideDuration={3000} onClose={() => setSnack({ ...snack, open: false })}>
           <Alert severity={snack.severity}>{snack.msg}</Alert>
         </Snackbar>

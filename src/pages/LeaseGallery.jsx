@@ -48,31 +48,29 @@ const LeaseReturnsList = () => {
   };
 
   const fetchDownloadUrl = async (key) => {
-  if (!key) return null;
-  try {
-    const res = await fetch(`${api}/api/get-download-url?key=${encodeURIComponent(key)}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const { url } = await res.json();
-    return url;
-  } catch (err) {
-    console.error('Failed to fetch PDF download URL:', err);
-    return null;
-  }
-};
-
+    if (!key) return null;
+    try {
+      const res = await fetch(`${api}/api/get-download-url?key=${encodeURIComponent(key)}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const { url } = await res.json();
+      return url;
+    } catch (err) {
+      console.error('Failed to fetch PDF download URL:', err);
+      return null;
+    }
+  };
 
   const handleViewLease = async (lease) => {
-    console.log('🔎 Lease object:', lease); // Log full lease
-    console.log('📼 damageVideoKeys:', lease.damageVideoKeys); // Check if video keys exist
-    const odometerUrl = await fetchSignedUrl(lease.odometerKey);;
-    const odometerPdfUrl = await fetchDownloadUrl(lease.odometerStatementKey);
+    const odometerUrl = await fetchSignedUrl(lease.odometerKey);
     const titleUrl = lease.hasTitle ? await fetchSignedUrl(lease.titleKey) : null;
-    const damageUrls = await Promise.all((lease.damageKeys || []).map(fetchSignedUrl));
-    const damageVideoUrls = await Promise.all((lease.damageVideoKeys || []).map(key => {
-    console.log('➡️ Fetching video signed URL for key:', key);
-    return fetchSignedUrl(key);
-}));
+    const odometerPdfUrl = await fetchDownloadUrl(lease.odometerStatementKey);
+
+    const mediaKeys = lease.leaseReturnMediaKeys || [];
+    const mediaUrls = await Promise.all(mediaKeys.map(fetchSignedUrl));
+
+    const damagePictures = mediaUrls.filter(url => url && url.match(/\.(jpg|jpeg|png|webp)/i));
+    const damageVideos = mediaUrls.filter(url => url && url.toLowerCase().includes('.mp4'));
 
     const docFiles = await Promise.all(
       (lease.documents || []).map(async (doc) => ({
@@ -82,15 +80,14 @@ const LeaseReturnsList = () => {
     );
 
     setSelectedLease({
-  ...lease,
-  odometerPicture: odometerUrl,
-  titlePicture: titleUrl,
-  damagePictures: damageUrls,
-  damageVideos: damageVideoUrls,
-  documentFiles: docFiles,
-  odometerPdfUrl
-});
-
+      ...lease,
+      odometerPicture: odometerUrl,
+      titlePicture: titleUrl,
+      damagePictures,
+      damageVideos,
+      documentFiles: docFiles,
+      odometerPdfUrl
+    });
   };
 
   const handleDelete = async () => {
@@ -168,7 +165,7 @@ const LeaseReturnsList = () => {
 
               <Typography mt={2}><strong>Odometer:</strong></Typography>
               {selectedLease.odometerPicture && (
-                selectedLease.odometerPicture.endsWith('.mp4') ? (
+                selectedLease.odometerPicture.includes('.mp4') ? (
                   <video controls style={{ width: '100%', borderRadius: 8 }}>
                     <source src={selectedLease.odometerPicture} type="video/mp4" />
                   </video>
@@ -189,10 +186,10 @@ const LeaseReturnsList = () => {
                 </video>
               ))}
 
-              {selectedLease.hasTitle && (
+              {selectedLease.hasTitle && selectedLease.titlePicture && (
                 <>
                   <Typography mt={2}><strong>Title Picture:</strong></Typography>
-                  {selectedLease.titlePicture?.endsWith('.mp4') ? (
+                  {selectedLease.titlePicture.includes('.mp4') ? (
                     <video controls style={{ width: '100%', borderRadius: 8 }}>
                       <source src={selectedLease.titlePicture} type="video/mp4" />
                     </video>
@@ -203,30 +200,29 @@ const LeaseReturnsList = () => {
               )}
 
               {selectedLease.documentFiles?.length > 0 && (
-<>
+                <>
                   <Typography mt={2}><strong>Documents:</strong></Typography>
                   {selectedLease.documentFiles.map((doc, idx) => (
                     <Box key={idx} mt={1} sx={{ backgroundColor: '#f4f4f4', p: 1, borderRadius: 2 }}>
                       <Typography variant="subtitle2">{doc.type}</Typography>
                       {!doc.url ? (
-                    <Typography color="error">⚠️ Failed to load file</Typography>
-                  ) : doc.url.endsWith('.pdf') ? (
-                    <a href={doc.url} target="_blank" rel="noopener noreferrer">📄 View PDF</a>
-                  ) : doc.url.match(/\.(jpg|jpeg|png)$/i) ? (
-                    <img src={doc.url} alt={doc.type} style={{ width: '100%', borderRadius: 8, marginTop: 4 }} />
-                  ) : doc.url.endsWith('.mp4') ? (
-                    <video controls style={{ width: '100%', borderRadius: 8, marginTop: 4 }}>
-                      <source src={doc.url} type="video/mp4" />
-                    </video>
-                  ) : (
-                    <a href={doc.url} target="_blank" rel="noopener noreferrer">🔗 Open File</a>
-                  )}
-
-
-                        </Box>
+                        <Typography color="error">⚠️ Failed to load file</Typography>
+                      ) : doc.url.endsWith('.pdf') ? (
+                        <a href={doc.url} target="_blank" rel="noopener noreferrer">📄 View PDF</a>
+                      ) : doc.url.match(/\.(jpg|jpeg|png)$/i) ? (
+                        <img src={doc.url} alt={doc.type} style={{ width: '100%', borderRadius: 8, marginTop: 4 }} />
+                      ) : doc.url.includes('.mp4') ? (
+                        <video controls style={{ width: '100%', borderRadius: 8, marginTop: 4 }}>
+                          <source src={doc.url} type="video/mp4" />
+                        </video>
+                      ) : (
+                        <a href={doc.url} target="_blank" rel="noopener noreferrer">🔗 Open File</a>
+                      )}
+                    </Box>
                   ))}
                 </>
               )}
+
               {selectedLease.odometerPdfUrl && (
                 <Box mt={3}>
                   <Typography variant="subtitle1">Odometer Statement PDF:</Typography>
