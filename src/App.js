@@ -9,6 +9,9 @@ import NewCOD from './pages/Driver/CODUpload';
 import CODList from './pages/CODlist'; 
 import NewLeaseForm from './pages/Driver/LeaseReturnUpload';
 import LeaseReturnsList from './pages/LeaseGallery';
+import NewCarForm from './pages/Driver/NewCarUpload';
+import CarGallery from './pages/CarGallery';
+import NewDeliveryForm from './pages/Sales/CreateDelivery';
 
 
 function App() {
@@ -25,6 +28,10 @@ function App() {
         <Route path="/allcods" element={<CODList />} />
         <Route path="/lease/create" element={<NewLeaseForm />} />
         <Route path="/driver/lease-returns" element={<LeaseReturnsList />} />
+        <Route path="/new-car" element={<NewCarForm />} />
+        <Route path="/cars" element={<CarGallery />} />
+        <Route path="/sales/post-delivery" element={<NewDeliveryForm />} />
+
     {/* other role-based routes */}
       </Routes>
       </Router>

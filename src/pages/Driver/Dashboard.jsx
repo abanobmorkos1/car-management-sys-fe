@@ -71,54 +71,62 @@ const DriverDashboard = () => {
           <Typography color="text.secondary">• 1 Lease Return</Typography>
         </Paper>
 
-        <Grid container spacing={3} mb={4}>
-          <Grid item xs={12} sm={6}>
-            <Card elevation={1} sx={{ borderRadius: 3 }}>
-              <CardContent>
-                <Typography variant="subtitle2" color="text.secondary">Hours Worked</Typography>
-                <Typography variant="h5" color="primary.dark">6.5 hrs</Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <Card elevation={1} sx={{ borderRadius: 3 }}>
-              <CardContent>
-                <Typography variant="subtitle2" color="text.secondary">COD Collected</Typography>
-                <Typography variant="h5" color="primary.dark">$1,200</Typography>
-              </CardContent>
-            </Card>
-          </Grid>
+              <Grid container spacing={3} mb={4}>
+                <Grid item xs={12} sm={6}>
+                  <Card elevation={1} sx={{ borderRadius: 3 }}>
+                    <CardContent>
+                      <Typography variant="subtitle2" color="text.secondary">Hours Worked</Typography>
+                      <Typography variant="h5" color="primary.dark">6.5 hrs</Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Card elevation={1} sx={{ borderRadius: 3 }}>
+                    <CardContent>
+                      <Typography variant="subtitle2" color="text.secondary">COD Collected</Typography>
+                      <Typography variant="h5" color="primary.dark">$1,200</Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              </Grid>
+
+              <Paper elevation={2} sx={{ p: 3, borderRadius: 3 }}>
+                <Typography variant="h6" gutterBottom>Uploads & Bonuses</Typography>
+                <Divider sx={{ mb: 2 }} />
+
+      <Grid container spacing={2} mb={2}>
+        <Grid item xs={12} sm={4}>
+          <Button fullWidth variant="outlined" onClick={() => navigate('/driver/cod/new')}>
+            Post Contract
+          </Button>
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <Button fullWidth variant="outlined" onClick={() => navigate('/lease/create')}>
+            Post Lease Return
+          </Button>
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <Button fullWidth variant="outlined" onClick={() => navigate('/new-car')}>
+            Post New Car
+          </Button>
         </Grid>
 
-        <Paper elevation={2} sx={{ p: 3, borderRadius: 3 }}>
-          <Typography variant="h6" gutterBottom>Uploads & Bonuses</Typography>
-          <Divider sx={{ mb: 2 }} />
-
-          <Grid container spacing={2} mb={2}>
-            <Grid item xs={12} sm={4}>
-              <Button fullWidth variant="outlined" onClick={() => navigate('/driver/cod/new')}>
-                Upload Contract
-              </Button>
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <Button fullWidth variant="outlined">Upload Car Pictures</Button>
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <Button fullWidth variant="outlined" onClick={() => navigate('/allcods')}>
-                View All CODs
-              </Button>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Button fullWidth variant="outlined" onClick={() => navigate('/driver/lease-returns')}>
-                View Lease Returns
-              </Button>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Button fullWidth variant="outlined" onClick={() => navigate('/lease/create')}>
-                Post Lease Return
-              </Button>
-            </Grid>
-          </Grid>
+        <Grid item xs={12} sm={4}>
+          <Button fullWidth variant="outlined" onClick={() => navigate('/allcods')}>
+            View CODs
+          </Button>
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <Button fullWidth variant="outlined" onClick={() => navigate('/driver/lease-returns')}>
+            View Lease Returns
+          </Button>
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <Button fullWidth variant="outlined" onClick={() => navigate('/cars')}>
+            View New Cars
+          </Button>
+        </Grid>
+      </Grid>
 
           <BonusUpload onCountUpdate={handleBonusCount} />
 

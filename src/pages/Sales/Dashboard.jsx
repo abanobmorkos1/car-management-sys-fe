@@ -1,22 +1,26 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Container, Typography, Box, Button, Grid, Paper } from '@mui/material';
+import {
+  Container, Typography, Box, Button, Grid, Paper, Card, CardContent, Divider
+} from '@mui/material';
 import { AuthContext } from '../../contexts/AuthContext';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, Legend, ResponsiveContainer } from 'recharts';
 import { useNavigate } from 'react-router-dom';
-import Topbar from '../../components/Topbar'; // ✅ Import Topbar
+import Topbar from '../../components/Topbar';
+import { LocalShipping, AttachMoney, AddBox } from '@mui/icons-material';
 
+const api = process.env.REACT_APP_API_URL;
 
-const api = process.env.API_URL
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+
 const SalesDashboard = () => {
   const { token } = useContext(AuthContext);
   const navigate = useNavigate();
-  
   const [deliveries, setDeliveries] = useState([]);
 
   useEffect(() => {
     const fetchDeliveries = async () => {
       try {
-        const res = await fetch(`${process.env.REACT_APP_API_URL}/delivery/deliveries`, {
+        const res = await fetch(`${api}/api/delivery`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         const data = await res.json();
@@ -40,24 +44,57 @@ const SalesDashboard = () => {
     return acc;
   }, {});
 
-  const barData = Object.keys(deliveriesPerDay).map(date => ({ date, deliveries: deliveriesPerDay[date] }));
-  const pieData = Object.keys(paymentMethods).map(method => ({ name: method, value: paymentMethods[method] }));
-
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+  const barData = Object.entries(deliveriesPerDay).map(([date, count]) => ({ date, deliveries: count }));
+  const pieData = Object.entries(paymentMethods).map(([name, value]) => ({ name, value }));
 
   return (
     <>
-      <Topbar /> {/* ✅ Topbar added */}
-      <Container sx={{ mt: 5 }}>
-        <Typography variant="h4" align="center" gutterBottom>
-          Salesperson Dashboard
+      <Topbar />
+      <Container sx={{ mt: 4 }}>
+        <Typography variant="h4" fontWeight="bold" textAlign="center" gutterBottom>
+          📈 Sales Dashboard
         </Typography>
 
+        <Grid container spacing={3} mb={4}>
+          <Grid item xs={12} sm={4}>
+            <Card sx={{ p: 2, textAlign: 'center', boxShadow: 3 }}>
+              <CardContent>
+                <LocalShipping fontSize="large" color="primary" />
+                <Typography variant="h6" mt={1}>Total Deliveries</Typography>
+                <Typography variant="h4">{deliveries.length}</Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} sm={4}>
+            <Card sx={{ p: 2, textAlign: 'center', boxShadow: 3 }}>
+              <CardContent>
+                <AttachMoney fontSize="large" color="success" />
+                <Typography variant="h6" mt={1}>Collected CODs</Typography>
+                <Typography variant="h4">
+                  {deliveries.filter(d => d.codCollected).length}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} sm={4}>
+            <Card sx={{ p: 2, textAlign: 'center', boxShadow: 3 }}>
+              <CardContent>
+                <AddBox fontSize="large" color="secondary" />
+                <Typography variant="h6" mt={1}>Create Delivery</Typography>
+                <Button variant="contained" onClick={() => navigate('/sales/post-delivery')} sx={{ mt: 1 }}>
+                  New Delivery
+                </Button>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+
         <Grid container spacing={4}>
-          {/* Bar Chart */}
           <Grid item xs={12} md={6}>
-            <Paper sx={{ p: 3 }}>
-              <Typography variant="h6" mb={2}>Deliveries Per Day</Typography>
+            <Paper sx={{ p: 3, boxShadow: 3 }}>
+              <Typography variant="h6" gutterBottom>📅 Deliveries Per Day</Typography>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={barData}>
                   <XAxis dataKey="date" />
@@ -69,10 +106,9 @@ const SalesDashboard = () => {
             </Paper>
           </Grid>
 
-          {/* Pie Chart */}
           <Grid item xs={12} md={6}>
-            <Paper sx={{ p: 3 }}>
-              <Typography variant="h6" mb={2}>Payment Methods</Typography>
+            <Paper sx={{ p: 3, boxShadow: 3 }}>
+              <Typography variant="h6" gutterBottom>💳 Payment Methods</Typography>
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie data={pieData} dataKey="value" nameKey="name" outerRadius={100} label>
@@ -86,13 +122,6 @@ const SalesDashboard = () => {
             </Paper>
           </Grid>
         </Grid>
-
-        {/* Button to Create New Delivery */}
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-          <Button variant="contained" color="primary" onClick={() => navigate('/delivery/new')}>
-            Create New Delivery
-          </Button>
-        </Box>
       </Container>
     </>
   );

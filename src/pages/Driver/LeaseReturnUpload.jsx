@@ -37,7 +37,7 @@ const NewLeaseForm = () => {
 
   const [form, setForm] = useState({
     vin: '', miles: '', bank: '', customerName: '', address: '',
-    city: '', state: '', zip: '', date: '', salesPerson: '', driver: '',
+    city: '', state: '', zip: '',  salesPerson: '', driver: '',
     damageReport: '', hasTitle: false, odometer: null, title: null,
     leaseReturnMedia: [],
     year: '', make: '', model: '', trim: '', engine: '', driveType: '', fuelType: '', bodyStyle: ''
@@ -177,7 +177,7 @@ const NewLeaseForm = () => {
           <TextField fullWidth name="city" label="City" value={form.city} onChange={handleChange} margin="normal" required />
           <TextField fullWidth name="state" label="State" value={form.state} onChange={handleChange} margin="normal" required />
           <TextField fullWidth name="zip" label="Zip Code" value={form.zip} onChange={handleChange} margin="normal" required />
-          <TextField fullWidth name="date" label="Date" type="date" value={form.date} onChange={handleChange} margin="normal" InputLabelProps={{ shrink: true }} required />
+          
 
           <TextField fullWidth select name="salesPerson" label="Salesperson" value={form.salesPerson} onChange={handleChange} margin="normal" required>
             {salespeople.map(sp => (
