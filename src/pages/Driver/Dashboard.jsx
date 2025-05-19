@@ -19,10 +19,11 @@ import { AuthContext } from '../../contexts/AuthContext';
 const api = process.env.REACT_APP_API_URL;
 
 const DriverDashboard = () => {
-  const { userName, token } = useContext(AuthContext);
+  const { userName, token, user } = useContext(AuthContext);
   const navigate = useNavigate();
   const [showGallery, setShowGallery] = useState(false);
   const [counts, setCounts] = useState({ review: 0, customer: 0 });
+  const [todaysDeliveries, setTodaysDeliveries] = useState([]);
 
   const handleBonusCount = (data) => {
     setCounts(data);
@@ -47,7 +48,28 @@ const DriverDashboard = () => {
       }
     };
 
+    const fetchDeliveries = async () => {
+      try {
+        const res = await fetch(`${api}/api/delivery/deliveries`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        const data = await res.json();
+        const today = new Date().toISOString().split('T')[0];
+
+        const filtered = data.filter(del => {
+          const deliveryDate = new Date(del.deliveryDate).toISOString().split('T')[0];
+          return deliveryDate === today;
+        });
+
+        setTodaysDeliveries(filtered);
+      } catch (err) {
+        console.error('Error fetching deliveries:', err);
+      }
+    };
+
     fetchCounts();
+    fetchDeliveries();
   }, [token]);
 
   return (
@@ -66,67 +88,73 @@ const DriverDashboard = () => {
 
         <Paper elevation={2} sx={{ p: 3, borderRadius: 3, mb: 4 }}>
           <Typography variant="h6" gutterBottom>Today's Deliveries</Typography>
-          <Typography color="text.secondary" mb={0.5}>• 2 New Cars</Typography>
-          <Typography color="text.secondary" mb={0.5}>• 1 COD Pickup</Typography>
-          <Typography color="text.secondary">• 1 Lease Return</Typography>
+          {todaysDeliveries.length === 0 ? (
+            <Typography color="text.secondary">No deliveries scheduled for today.</Typography>
+          ) : (
+            todaysDeliveries.map((d, i) => (
+              <Typography key={i} color="text.secondary" mb={0.5}>
+                {d.customerName} • {new Date(d.deliveryDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </Typography>
+            ))
+          )}
         </Paper>
 
-              <Grid container spacing={3} mb={4}>
-                <Grid item xs={12} sm={6}>
-                  <Card elevation={1} sx={{ borderRadius: 3 }}>
-                    <CardContent>
-                      <Typography variant="subtitle2" color="text.secondary">Hours Worked</Typography>
-                      <Typography variant="h5" color="primary.dark">6.5 hrs</Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Card elevation={1} sx={{ borderRadius: 3 }}>
-                    <CardContent>
-                      <Typography variant="subtitle2" color="text.secondary">COD Collected</Typography>
-                      <Typography variant="h5" color="primary.dark">$1,200</Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              </Grid>
-
-              <Paper elevation={2} sx={{ p: 3, borderRadius: 3 }}>
-                <Typography variant="h6" gutterBottom>Uploads & Bonuses</Typography>
-                <Divider sx={{ mb: 2 }} />
-
-      <Grid container spacing={2} mb={2}>
-        <Grid item xs={12} sm={4}>
-          <Button fullWidth variant="outlined" onClick={() => navigate('/driver/cod/new')}>
-            Post Contract
-          </Button>
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <Button fullWidth variant="outlined" onClick={() => navigate('/lease/create')}>
-            Post Lease Return
-          </Button>
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <Button fullWidth variant="outlined" onClick={() => navigate('/new-car')}>
-            Post New Car
-          </Button>
+        <Grid container spacing={3} mb={4}>
+          <Grid item xs={12} sm={6}>
+            <Card elevation={1} sx={{ borderRadius: 3 }}>
+              <CardContent>
+                <Typography variant="subtitle2" color="text.secondary">Hours Worked</Typography>
+                <Typography variant="h5" color="primary.dark">6.5 hrs</Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <Card elevation={1} sx={{ borderRadius: 3 }}>
+              <CardContent>
+                <Typography variant="subtitle2" color="text.secondary">COD Collected</Typography>
+                <Typography variant="h5" color="primary.dark">$1,200</Typography>
+              </CardContent>
+            </Card>
+          </Grid>
         </Grid>
 
-        <Grid item xs={12} sm={4}>
-          <Button fullWidth variant="outlined" onClick={() => navigate('/allcods')}>
-            View CODs
-          </Button>
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <Button fullWidth variant="outlined" onClick={() => navigate('/driver/lease-returns')}>
-            View Lease Returns
-          </Button>
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <Button fullWidth variant="outlined" onClick={() => navigate('/cars')}>
-            View New Cars
-          </Button>
-        </Grid>
-      </Grid>
+        <Paper elevation={2} sx={{ p: 3, borderRadius: 3 }}>
+          <Typography variant="h6" gutterBottom>Uploads & Bonuses</Typography>
+          <Divider sx={{ mb: 2 }} />
+
+          <Grid container spacing={2} mb={2}>
+            <Grid item xs={12} sm={4}>
+              <Button fullWidth variant="outlined" onClick={() => navigate('/driver/cod/new')}>
+                Post Contract
+              </Button>
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <Button fullWidth variant="outlined" onClick={() => navigate('/lease/create')}>
+                Post Lease Return
+              </Button>
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <Button fullWidth variant="outlined" onClick={() => navigate('/new-car')}>
+                Post New Car
+              </Button>
+            </Grid>
+
+            <Grid item xs={12} sm={4}>
+              <Button fullWidth variant="outlined" onClick={() => navigate('/allcods')}>
+                View CODs
+              </Button>
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <Button fullWidth variant="outlined" onClick={() => navigate('/driver/lease-returns')}>
+                View Lease Returns
+              </Button>
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <Button fullWidth variant="outlined" onClick={() => navigate('/cars')}>
+                View New Cars
+              </Button>
+            </Grid>
+          </Grid>
 
           <BonusUpload onCountUpdate={handleBonusCount} />
 
@@ -144,7 +172,7 @@ const DriverDashboard = () => {
           </Grid>
 
           <Typography mt={2} variant="body2" color="text.secondary">
-            💰 $20 per review picture · $5 per customer picture
+            💰 $20 per review picture · $20 per review picture \xb7 $5 per customer picture
           </Typography>
         </Paper>
 
