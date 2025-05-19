@@ -20,7 +20,7 @@ const SalesDashboard = () => {
   useEffect(() => {
     const fetchDeliveries = async () => {
       try {
-        const res = await fetch(`${api}/api/delivery`, {
+        const res = await fetch(`${api}/api/delivery/deliveries`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         const data = await res.json();
