@@ -24,16 +24,15 @@ const DriverDashboard = () => {
   const [totalHours, setTotalHours] = useState(0);
   const [secondsWorked, setSecondsWorked] = useState(0);
   const [clockInTime, setClockInTime] = useState(null);
+  const [clockInStatus, setClockInStatus] = useState(null);
 
 useEffect(() => {
   const getClockStatus = async () => {
     try {
       const res = await fetchWithToken(`${api}/api/hours/status`, token);
       setIsClockedIn(res.isClockedIn);
-      if (res.clockIn) {
-        const clockedDate = new Date(res.clockIn);
-        setClockInTime(clockedDate);
-      }
+      setClockInTime(res.clockIn ? new Date(res.clockIn) : null);
+      setClockInStatus(res); // new line
     } catch (err) {
       console.error('Failed to fetch clock-in status', err.message);
     }
@@ -140,22 +139,51 @@ useEffect(() => {
             Welcome, {userName || 'Driver'} 👋
           </Typography>
 
-          <Button
-            variant="contained"
-            onClick={handleClockInOut}
-            fullWidth
-            sx={{
-              mb: 3,
-              py: 1,
-              fontSize: '0.9rem',
-              backgroundColor: isClockedIn ? 'error.main' : 'blue',
-              '&:hover': {
-                backgroundColor: isClockedIn ? 'error.dark' : 'primary.dark',
-              }
-            }}
-          >
-            {isClockedIn ? 'Clock Out' : 'Clock In'}
-          </Button>
+          {!isClockedIn ? (
+            <Button
+              variant="contained"
+              color="primary"
+              fullWidth
+              sx={{ mb: 3 }}
+              onClick={async () => {
+                try {
+                  const res = await fetchWithToken(`${api}/api/hours/clock-in-request`, token, {
+                    method: 'POST',
+                    body: JSON.stringify({ driverId: user._id, timestamp: new Date() })
+                  });
+                  alert('✅ Request sent. Waiting for approval.');
+                  setIsClockedIn(true);
+                  setClockInTime(new Date());
+                  setClockInStatus({ status: 'pending' });
+                } catch (err) {
+                  alert('❌ Request failed. ' + (err?.message || 'Please try again.'));
+                }
+              }}
+            >
+                    Request Clock-In
+            </Button>
+          ) : (
+            clockInStatus?.status === 'approved' && (
+              <Button
+                variant="contained"
+                color="error"
+                fullWidth
+                sx={{ mb: 3 }}
+                onClick={handleClockInOut}
+              >
+                Clock Out
+              </Button>
+            )
+          )}
+        <Typography textAlign="center" mb={2}>
+          {isClockedIn ? (
+            <span>
+              ⏳ You are clocked in. Status: <strong>{clockInStatus?.status || 'pending'}</strong>
+            </span>
+          ) : (
+            <span>🕒 You are currently clocked out.</span>
+          )}
+        </Typography>
 
           <Paper elevation={2} sx={{ p: 3, borderRadius: 3, mb: 4 }}>
             <Typography variant="h6" gutterBottom>
