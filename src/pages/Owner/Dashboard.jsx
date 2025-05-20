@@ -10,6 +10,7 @@ import { AuthContext } from '../../contexts/AuthContext';
 import Topbar from '../../components/Topbar';
 import { fetchWithToken } from '../../utils/fetchWithToken';
 
+
 const api = process.env.REACT_APP_API_URL;
 
 const OwnerDashboard = () => {
@@ -29,7 +30,7 @@ const OwnerDashboard = () => {
   });
 
   const [dateRange, setDateRange] = useState([null, null]);
-
+  const [clockSessions, setClockSessions] = useState([]);
   const fetchOwnerStats = async (startDate, endDate) => {
     try {
       let url = `${api}/api/owner/stats`;
@@ -44,10 +45,27 @@ const OwnerDashboard = () => {
       console.error('Failed to fetch owner stats', err);
     }
   };
+useEffect(() => {
+  fetchOwnerStats();
+  fetchClockSessions();
+}, [token]);
 
-  useEffect(() => {
-    fetchOwnerStats();
-  }, [token]);
+const fetchClockSessions = async () => {
+  try {
+    const res = await fetchWithToken(`${api}/api/hours/today-sessions`, token);
+
+    if (res.ok) {
+      const data = await res.json();
+      console.log('📦 Clock Sessions:', data);
+      setClockSessions(data);
+    } else {
+      const err = await res.json().catch(() => ({}));
+      console.error('❌ API error:', res.status, err);
+    }
+  } catch (err) {
+    console.error('❌ Fetch error:', err.message);
+  }
+};
 
   const StatCard = ({ title, value, color }) => (
     <Card sx={{ borderLeft: `5px solid ${color}`, boxShadow: 2 }}>
@@ -123,15 +141,15 @@ const OwnerDashboard = () => {
               <Paper elevation={1} sx={{ p: 3 }}>
                 <Typography variant="h6" mb={1}>🏅 Top Performing Drivers</Typography>
                 <Divider sx={{ mb: 2 }} />
-                {stats.topDrivers.length === 0 ? (
-                  <Typography>No data available.</Typography>
-                ) : (
-                  stats.topDrivers.map((d, i) => (
-                    <Typography key={i}>
-                      {i + 1}. {d.name} – {d.totalDeliveries} deliveries
-                    </Typography>
-                  ))
-                )}
+                {Array.isArray(stats.topDrivers) && stats.topDrivers.length > 0 ? (
+                      stats.topDrivers.map((d, i) => (
+                        <Typography key={i}>
+                          {i + 1}. {d.name} – {d.totalDeliveries} deliveries
+                        </Typography>
+                      ))
+                    ) : (
+                      <Typography>No data available.</Typography>
+                    )}
               </Paper>
             </Grid>
 
@@ -139,18 +157,71 @@ const OwnerDashboard = () => {
               <Paper elevation={1} sx={{ p: 3 }}>
                 <Typography variant="h6" mb={1}>💼 Top Performing Salespeople</Typography>
                 <Divider sx={{ mb: 2 }} />
-                {stats.topSalespeople.length === 0 ? (
-                  <Typography>No data available.</Typography>
-                ) : (
-                  stats.topSalespeople.map((s, i) => (
-                    <Typography key={i}>
-                      {i + 1}. {s.name} – ${s.totalCOD.toFixed(2)}
-                    </Typography>
-                  ))
-                )}
+                  {Array.isArray(stats.topSalespeople) && stats.topSalespeople.length > 0 ? (
+                    stats.topSalespeople.map((s, i) => (
+                      <Typography key={i}>
+                        {i + 1}. {s.name} – ${s.totalCOD.toFixed(2)}
+                      </Typography>
+                    ))
+                  ) : (
+                    <Typography>No data available.</Typography>
+                  )}
               </Paper>
             </Grid>
           </Grid>
+          <Grid container spacing={3} mt={4}>
+  <Grid item xs={12}>
+    <Paper elevation={2} sx={{ p: 3, borderRadius: 3 }}>
+      <Typography variant="h6" gutterBottom>
+        🕒 Today's Clock-In Sessions
+      </Typography>
+
+      {clockSessions.length === 0 ? (
+        <Typography>No sessions recorded today.</Typography>
+      ) : (
+        clockSessions.map((driver, index) =>
+          driver?.driver ? (
+            <Box
+              key={driver.driver._id || index}
+              mb={2}
+              p={2}
+              border="1px solid #ccc"
+              borderRadius={2}
+              bgcolor="#f9f9f9"
+            >
+              <Typography fontWeight="bold">{driver.driver.name}</Typography>
+              <Typography variant="body2" color="text.secondary">
+                Total Hours: {(driver.totalHours ?? 0).toFixed(2)} hrs
+              </Typography>
+
+              {Array.isArray(driver.sessions) && driver.sessions.length > 0 ? (
+                driver.sessions.map((sesh, idx) => (
+                  <Box key={idx} ml={1} mt={1}>
+                    <Typography variant="body2">
+                      {new Date(sesh.clockIn).toLocaleTimeString()} –{' '}
+                      {sesh.clockOut
+                        ? new Date(sesh.clockOut).toLocaleTimeString()
+                        : 'In progress'}{' '}
+                      ({(sesh.totalHours ?? 0).toFixed(2)} hrs)
+                    </Typography>
+                  </Box>
+                ))
+              ) : (
+                <Typography variant="body2" color="text.secondary" ml={1}>
+                  No sessions recorded.
+                </Typography>
+              )}
+            </Box>
+          ) : (
+            <Typography key={index} color="error">
+              ⚠️ Invalid driver data
+            </Typography>
+          )
+        )
+      )}
+    </Paper>
+  </Grid>
+</Grid>
         </Container>
       </Box>
     </>

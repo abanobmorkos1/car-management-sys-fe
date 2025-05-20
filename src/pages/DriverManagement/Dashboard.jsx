@@ -365,7 +365,6 @@ const fetchDrivers = async () => {
               <Grid item xs={12} sm={4}><Button fullWidth variant="outlined" onClick={() => navigate('/driver/lease-returns')}>View Lease Returns</Button></Grid>
               <Grid item xs={12} sm={4}><Button fullWidth variant="outlined" onClick={() => navigate('/cars')}>View New Cars</Button></Grid>
             </Grid>
-
             <BonusUpload onCountUpdate={fetchCounts} />
 
             <Grid container spacing={2} mt={2}>

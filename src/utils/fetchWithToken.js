@@ -1,4 +1,4 @@
-// src/utils/fetchWithToken.js
+// utils/fetchWithToken.js
 export const fetchWithToken = async (url, token, options = {}) => {
   const res = await fetch(url, {
     ...options,
@@ -10,10 +10,5 @@ export const fetchWithToken = async (url, token, options = {}) => {
     body: options.body ? JSON.stringify(JSON.parse(options.body)) : undefined
   });
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || 'Request failed');
-  }
-
-  return res.json();
+  return res; // return full Response object
 };
