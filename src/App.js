@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider } from './contexts/AuthContext'; // ✅ Only import the Provider
 import Login from './pages/Login';
 import Register from './pages/Register';
 import DriverDashboard from './pages/Driver/Dashboard';
@@ -12,10 +12,12 @@ import LeaseReturnsList from './pages/LeaseGallery';
 import NewCarForm from './pages/Driver/NewCarUpload';
 import CarGallery from './pages/CarGallery';
 import NewDeliveryForm from './pages/Sales/CreateDelivery';
+import ManDashboard from './pages/DriverManagement/Dashboard';
 
 
 function App() {
   return (
+    
     <AuthProvider>
       <Router>
       <Routes>
@@ -31,11 +33,13 @@ function App() {
         <Route path="/new-car" element={<NewCarForm />} />
         <Route path="/cars" element={<CarGallery />} />
         <Route path="/sales/post-delivery" element={<NewDeliveryForm />} />
+        <Route path="/management/dashboard" element={<ManDashboard />} />
 
     {/* other role-based routes */}
       </Routes>
       </Router>
     </AuthProvider>
+    
   );
 }
 

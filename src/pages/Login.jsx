@@ -61,19 +61,13 @@ const Login = () => {
       setSnackOpen(true);
       login(data.token, data.role,  data.name);
 
-      switch (data.role) {
-        case 'Driver':
-          navigate('/driver/dashboard');
-          break;
-        case 'Sales':
-          navigate('/sales/dashboard');
-          break;
-        case 'Owner':
-          navigate('/driver/dashboard');
-          break;
-        default:
-          navigate('/');
+        switch (data.role) {
+        case 'Driver': navigate('/driver/dashboard'); break;
+        case 'Sales': navigate('/sales/dashboard'); break;
+        case 'Owner': navigate('/owner/dashboard'); break;
+        case 'Management': navigate('/management/dashboard'); break;
       }
+
     } catch (err) {
       setError('Server error. Please try again.');
     }

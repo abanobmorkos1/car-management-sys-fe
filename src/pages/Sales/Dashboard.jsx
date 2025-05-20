@@ -18,20 +18,27 @@ const SalesDashboard = () => {
   const [deliveries, setDeliveries] = useState([]);
 
   useEffect(() => {
-    const fetchDeliveries = async () => {
-      try {
-        const res = await fetch(`${api}/api/delivery/deliveries`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const data = await res.json();
-        setDeliveries(data);
-      } catch (err) {
-        console.error('Failed to fetch deliveries', err);
-      }
-    };
+  const fetchDeliveries = async () => {
+    try {
+      const res = await fetch(`${api}/api/delivery/deliveries`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
 
-    fetchDeliveries();
-  }, [token]);
+      if (res.ok && Array.isArray(data)) {
+        setDeliveries(data);
+      } else {
+        console.error('Unexpected response:', data);
+        setDeliveries([]); // fallback to empty array to avoid reduce crash
+      }
+    } catch (err) {
+      console.error('Failed to fetch deliveries', err);
+      setDeliveries([]); // again, fallback to empty array
+    }
+  };
+
+  if (token) fetchDeliveries(); // only run if token exists
+}, [token]);
 
   const deliveriesPerDay = deliveries.reduce((acc, d) => {
     const date = new Date(d.deliveryDate).toLocaleDateString();

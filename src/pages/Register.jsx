@@ -86,6 +86,7 @@ const Register = () => {
                 <MenuItem value="Driver">Driver</MenuItem>
                 <MenuItem value="Sales">Sales</MenuItem>
                 <MenuItem value="Owner">Owner</MenuItem>
+                <MenuItem value="Management">Management</MenuItem>
               </Select>
             </FormControl>
 

@@ -1,19 +1,19 @@
 import React, { createContext, useState, useEffect } from 'react';
 import { jwtDecode } from 'jwt-decode';
 
-export const AuthContext = createContext();
+export const AuthContext = createContext(); // ✅ Named export
 
-export const AuthProvider = ({ children }) => {
+export const AuthProvider = ({ children }) => { // ✅ Named export
   const [token, setToken] = useState(localStorage.getItem('token') || null);
   const [role, setRole] = useState(localStorage.getItem('role') || null);
-  const [user, setUser] = useState(null); // ✅ full user object
+  const [user, setUser] = useState(null);
 
   const login = (token, role) => {
     try {
       const decoded = jwtDecode(token);
       setToken(token);
       setRole(role);
-      setUser({ _id: decoded.id, name: decoded.name }); // ✅ decoded ID from JWT
+      setUser({ _id: decoded.id, name: decoded.name });
       localStorage.setItem('token', token);
       localStorage.setItem('role', role);
     } catch (err) {
@@ -32,7 +32,7 @@ export const AuthProvider = ({ children }) => {
     if (token) {
       try {
         const decoded = jwtDecode(token);
-        setUser({ _id: decoded.id, name: decoded.name }); // ✅ initialize on refresh
+        setUser({ _id: decoded.id, name: decoded.name });
       } catch (err) {
         console.error('Invalid token');
       }

@@ -63,6 +63,10 @@ const NewDeliveryForm = () => {
         ...form,
         salesperson: user?._id // ✅ Inject salesperson here
       };
+          if (!form.codCollected) {
+          delete payload.codMethod;
+          delete payload.codCollectionDate;
+    }
 
       console.log('📦 Submitting Payload:', payload);
 
@@ -82,22 +86,22 @@ const NewDeliveryForm = () => {
 
       // ✅ Reset form (salesperson handled in payload)
       setForm({
-        customerName: '',
-        phoneNumber: '',
-        address: '',
-        pickupFrom: '',
-        deliveryDate: '',
-        codAmount: '',
-        codCollected: false,
-        codMethod: '',
-        codCollectionDate: '',
-        notes: '',
-        vin: '',
-        make: '',
-        model: '',
-        trim: '',
-        color: ''
-      });
+      customerName: '',
+      phoneNumber: '',
+      address: '',
+      pickupFrom: '',
+      deliveryDate: '',
+      codAmount: '',
+      codCollected: false,
+      codMethod: '',
+      codCollectionDate: '',
+      notes: '',
+      vin: '',
+      make: '',
+      model: '',
+      trim: '',
+      color: ''
+    });
     } catch (err) {
       setSnack({ open: true, msg: err.message, severity: 'error' });
     } finally {
