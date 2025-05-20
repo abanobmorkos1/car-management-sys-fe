@@ -8,9 +8,9 @@ const Topbar = () => {
   const { token, logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  let userName = '';
+  let userName = 'User';
   try {
-    if (token) {
+    if (token && typeof token === 'string') {
       const decoded = jwtDecode(token);
       userName = decoded.name || 'User';
     }
@@ -20,7 +20,7 @@ const Topbar = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/'); // Redirect to login or homepage
+    navigate('/login'); // ✅ Ensure this matches your defined login route
   };
 
   return (

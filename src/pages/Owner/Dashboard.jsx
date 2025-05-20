@@ -5,13 +5,13 @@ import {
 import { DateRangePicker } from '@mui/x-date-pickers-pro/DateRangePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import dayjs from 'dayjs';
 import { AuthContext } from '../../contexts/AuthContext';
 import Topbar from '../../components/Topbar';
 import { fetchWithToken } from '../../utils/fetchWithToken';
 
 
 const api = process.env.REACT_APP_API_URL;
+
 
 const OwnerDashboard = () => {
   const { token } = useContext(AuthContext);
@@ -31,41 +31,39 @@ const OwnerDashboard = () => {
 
   const [dateRange, setDateRange] = useState([null, null]);
   const [clockSessions, setClockSessions] = useState([]);
+  const [selectedDriverId, setSelectedDriverId] = useState('all');
+
   const fetchOwnerStats = async (startDate, endDate) => {
+  try {
+    let url = `${api}/api/owner/stats`;
+    if (startDate && endDate) {
+      const from = startDate.toISOString();
+      const to = endDate.toISOString();
+      url += `?from=${from}&to=${to}`;
+    }
+    const data = await fetchWithToken(url, token); // ✅ no extra .json()
+    console.log('📊 Owner Stats:', data);
+    setStats(data);
+  } catch (err) {
+    console.error('Failed to fetch owner stats');
+  }
+};
+
+  const fetchClockSessions = async () => {
     try {
-      let url = `${api}/api/owner/stats`;
-      if (startDate && endDate) {
-        const from = startDate.toISOString();
-        const to = endDate.toISOString();
-        url += `?from=${from}&to=${to}`;
-      }
-      const data = await fetchWithToken(url, token);
-      setStats(data);
+      const res = await fetchWithToken(`${api}/api/hours/today-sessions`, token);
+      const data = await res.json();
+      console.log('🕒 Clock Sessions:', data);
+      setClockSessions(data);
     } catch (err) {
-      console.error('Failed to fetch owner stats', err);
+      console.error('❌ Fetch error:', err);
     }
   };
+
 useEffect(() => {
   fetchOwnerStats();
   fetchClockSessions();
 }, [token]);
-
-const fetchClockSessions = async () => {
-  try {
-    const res = await fetchWithToken(`${api}/api/hours/today-sessions`, token);
-
-    if (res.ok) {
-      const data = await res.json();
-      console.log('📦 Clock Sessions:', data);
-      setClockSessions(data);
-    } else {
-      const err = await res.json().catch(() => ({}));
-      console.error('❌ API error:', res.status, err);
-    }
-  } catch (err) {
-    console.error('❌ Fetch error:', err.message);
-  }
-};
 
   const StatCard = ({ title, value, color }) => (
     <Card sx={{ borderLeft: `5px solid ${color}`, boxShadow: 2 }}>
@@ -142,14 +140,17 @@ const fetchClockSessions = async () => {
                 <Typography variant="h6" mb={1}>🏅 Top Performing Drivers</Typography>
                 <Divider sx={{ mb: 2 }} />
                 {Array.isArray(stats.topDrivers) && stats.topDrivers.length > 0 ? (
-                      stats.topDrivers.map((d, i) => (
-                        <Typography key={i}>
-                          {i + 1}. {d.name} – {d.totalDeliveries} deliveries
-                        </Typography>
-                      ))
-                    ) : (
-                      <Typography>No data available.</Typography>
-                    )}
+                  stats.topDrivers.map((d, i) => (
+                    <Typography key={i}>
+                      {i + 1}. {d.name} – {d.totalDeliveries} deliveries
+                    </Typography>
+                  ))
+                ) : (
+                  <>
+                    {console.log('📭 No drivers to show:', stats.topDrivers)}
+                    <Typography>No data available.</Typography>
+                  </>
+                )}
               </Paper>
             </Grid>
 
@@ -157,74 +158,100 @@ const fetchClockSessions = async () => {
               <Paper elevation={1} sx={{ p: 3 }}>
                 <Typography variant="h6" mb={1}>💼 Top Performing Salespeople</Typography>
                 <Divider sx={{ mb: 2 }} />
-                  {Array.isArray(stats.topSalespeople) && stats.topSalespeople.length > 0 ? (
-                    stats.topSalespeople.map((s, i) => (
-                      <Typography key={i}>
-                        {i + 1}. {s.name} – ${s.totalCOD.toFixed(2)}
-                      </Typography>
-                    ))
-                  ) : (
+                {Array.isArray(stats.topSalespeople) && stats.topSalespeople.length > 0 ? (
+                  stats.topSalespeople.map((s, i) => (
+                    <Typography key={i}>
+                      {i + 1}. {s.name} – ${s.totalCOD.toFixed(2)}
+                    </Typography>
+                  ))
+                ) : (
+                  <>
+                    {console.log('📭 No salespeople to show:', stats.topSalespeople)}
                     <Typography>No data available.</Typography>
-                  )}
+                  </>
+                )}
               </Paper>
             </Grid>
           </Grid>
           <Grid container spacing={3} mt={4}>
   <Grid item xs={12}>
     <Paper elevation={2} sx={{ p: 3, borderRadius: 3 }}>
+      <Box mb={2}>
+  <TextField
+    select
+    fullWidth
+    size="small"
+    label="Filter by Driver"
+    value={selectedDriverId}
+    onChange={(e) => setSelectedDriverId(e.target.value)}
+    SelectProps={{ native: true }}
+  >
+    <option value="all">All Drivers</option>
+    {clockSessions.map((driver) => (
+      <option key={driver.driver._id} value={driver.driver._id}>
+        {driver.driver.name}
+      </option>
+    ))}
+  </TextField>
+</Box>
+
       <Typography variant="h6" gutterBottom>
         🕒 Today's Clock-In Sessions
       </Typography>
 
-      {clockSessions.length === 0 ? (
-        <Typography>No sessions recorded today.</Typography>
-      ) : (
-        clockSessions.map((driver, index) =>
-          driver?.driver ? (
-            <Box
-              key={driver.driver._id || index}
-              mb={2}
-              p={2}
-              border="1px solid #ccc"
-              borderRadius={2}
-              bgcolor="#f9f9f9"
-            >
-              <Typography fontWeight="bold">{driver.driver.name}</Typography>
-              <Typography variant="body2" color="text.secondary">
-                Total Hours: {(driver.totalHours ?? 0).toFixed(2)} hrs
-              </Typography>
-
-              {Array.isArray(driver.sessions) && driver.sessions.length > 0 ? (
-                driver.sessions.map((sesh, idx) => (
-                  <Box key={idx} ml={1} mt={1}>
-                    <Typography variant="body2">
-                      {new Date(sesh.clockIn).toLocaleTimeString()} –{' '}
-                      {sesh.clockOut
-                        ? new Date(sesh.clockOut).toLocaleTimeString()
-                        : 'In progress'}{' '}
-                      ({(sesh.totalHours ?? 0).toFixed(2)} hrs)
-                    </Typography>
-                  </Box>
-                ))
-              ) : (
-                <Typography variant="body2" color="text.secondary" ml={1}>
-                  No sessions recorded.
-                </Typography>
-              )}
-            </Box>
+          {clockSessions.length === 0 ? (
+            <Typography>No sessions recorded today.</Typography>
           ) : (
-            <Typography key={index} color="error">
-              ⚠️ Invalid driver data
-            </Typography>
-          )
-        )
-      )}
+            clockSessions
+              .filter((driver) =>
+                selectedDriverId === 'all' ? true : driver.driver._id === selectedDriverId
+              )
+              .map((driver, index) =>
+                driver?.driver ? (
+                  <Box
+                    key={driver.driver._id || index}
+                    mb={2}
+                    p={2}
+                    border="1px solid #ccc"
+                    borderRadius={2}
+                    bgcolor="#f9f9f9"
+                  >
+                    <Typography fontWeight="bold">{driver.driver.name}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Total Hours: {(driver.totalHours ?? 0).toFixed(2)} hrs
+                    </Typography>
+
+                    {Array.isArray(driver.sessions) && driver.sessions.length > 0 ? (
+                      driver.sessions.map((sesh, idx) => (
+                        <Box key={idx} ml={1} mt={1}>
+                          <Typography variant="body2">
+                            {new Date(sesh.clockIn).toLocaleTimeString()} –{' '}
+                            {sesh.clockOut
+                              ? new Date(sesh.clockOut).toLocaleTimeString()
+                              : 'In progress'}{' '}
+                            ({(sesh.totalHours ?? 0).toFixed(2)} hrs)
+                          </Typography>
+                        </Box>
+                      ))
+                    ) : (
+                      <Typography variant="body2" color="text.secondary" ml={1}>
+                        No sessions recorded.
+                      </Typography>
+                    )}
+                  </Box>
+                ) : (
+                  <Typography key={index} color="error">
+                    ⚠️ Invalid driver data
+                  </Typography>
+                )
+              )
+          )}
     </Paper>
   </Grid>
 </Grid>
-        </Container>
-      </Box>
-    </>
+  </Container>
+</Box>
+  </>
   );
 };
 

@@ -1,14 +1,17 @@
-// utils/fetchWithToken.js
 export const fetchWithToken = async (url, token, options = {}) => {
+  console.log('🛡️ Sending token:', token); // <--- add this line
+
   const res = await fetch(url, {
     ...options,
     headers: {
-      'Content-Type': 'application/json',
+      ...options.headers,
       Authorization: `Bearer ${token}`,
-      ...(options.headers || {})
     },
-    body: options.body ? JSON.stringify(JSON.parse(options.body)) : undefined
   });
 
-  return res; // return full Response object
+  if (!res.ok) {
+    console.warn(`⚠️ Request to ${url} failed:`, res.status);
+  }
+
+  return res.json(); // only if res has a body
 };

@@ -13,7 +13,7 @@ import BonusGallery from '../../components/BonusGallery';
 const api = process.env.REACT_APP_API_URL;
 
 const ManDashboard = () => {
-  const { token, role } = useContext(AuthContext);
+  const { token, role , user } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const [allDeliveries, setAllDeliveries] = useState([]);
@@ -66,32 +66,35 @@ const ManDashboard = () => {
   }
 };
 
-  const fetchDeliveries = useCallback(async () => {
+const fetchDeliveries = useCallback(async () => {
     try {
-      const res = await fetch(`${api}/api/delivery/deliveries`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
+      const data = await fetchWithToken(`${api}/api/delivery/deliveries`, token);
       const today = new Date().toISOString().split('T')[0];
       const todayDeliveries = data.filter(del =>
         new Date(del.deliveryDate).toISOString().split('T')[0] === today
       );
       setAllDeliveries(todayDeliveries);
     } catch (err) {
-      console.error('Error fetching deliveries:', err);
+      console.error('Error fetching deliveries:', err.message);
     }
   }, [token]);
 
 const fetchDrivers = async () => {
   try {
-    const data = await fetchWithToken(`${api}/api/users/drivers`, token); // fetchWithToken already returns parsed JSON
+    const data = await fetchWithToken(`${api}/api/users/drivers`, token); // no .json() here
     console.log('✅ Drivers fetched:', data);
-    setDrivers(data);
+
+    if (Array.isArray(data)) {
+      setDrivers(data);
+    } else {
+      console.warn('❌ Unexpected driver response:', data);
+      setDrivers([]);
+    }
   } catch (err) {
     console.error('❌ Failed to fetch drivers:', err);
+    setDrivers([]);
   }
 };
-
       <ToggleButtonGroup
         color="primary"
         exclusive
@@ -217,10 +220,11 @@ const fetchDrivers = async () => {
     return () => clearInterval(interval);
   }, [isClockedIn, clockInTime]);
 
-    const filteredDeliveries = allDeliveries.filter(del => {
-      if (filter === 'all') return true;
-      return del.driver?._id?.toString() === filter;
-    });
+const filteredDeliveries = allDeliveries.filter(del =>
+  filter === 'all'
+    ? true
+    : del.driver?._id === filter
+);
 
   return (
     <>
@@ -282,8 +286,12 @@ const fetchDrivers = async () => {
 
 <Paper elevation={2} sx={{ p: 3, borderRadius: 3, mb: 4 }}>
   <Typography variant="h6" gutterBottom>Today's Deliveries ({filteredDeliveries.length})</Typography>
-  {filteredDeliveries.length === 0 ? (
+{filteredDeliveries.length === 0 ? (
+  <>
     <Typography>No deliveries found.</Typography>
+    <pre>{JSON.stringify(allDeliveries, null, 2)}</pre>
+    <pre>Filter: {filter}</pre>
+  </>
   ) : (
     filteredDeliveries.map((d) => (
       <Box key={d._id} mb={2} p={2} border="1px solid #ccc" borderRadius={2} bgcolor="#fff">

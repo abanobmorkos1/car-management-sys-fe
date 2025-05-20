@@ -9,17 +9,22 @@ export const AuthProvider = ({ children }) => { // ✅ Named export
   const [user, setUser] = useState(null);
 
   const login = (token, role) => {
-    try {
-      const decoded = jwtDecode(token);
-      setToken(token);
-      setRole(role);
-      setUser({ _id: decoded.id, name: decoded.name });
-      localStorage.setItem('token', token);
-      localStorage.setItem('role', role);
-    } catch (err) {
-      console.error('❌ Token decoding failed', err);
-    }
-  };
+  if (!token || typeof token !== 'string') {
+    console.error('❌ Invalid token passed to login:', token);
+    return;
+  }
+
+  try {
+    const decoded = jwtDecode(token);
+    setToken(token);
+    setRole(role);
+    setUser({ _id: decoded.id, name: decoded.name });
+    localStorage.setItem('token', token);
+    localStorage.setItem('role', role);
+  } catch (err) {
+    console.error('❌ Token decoding failed', err);
+  }
+};
 
   const logout = () => {
     setToken(null);
@@ -29,15 +34,19 @@ export const AuthProvider = ({ children }) => { // ✅ Named export
   };
 
   useEffect(() => {
-    if (token) {
-      try {
-        const decoded = jwtDecode(token);
-        setUser({ _id: decoded.id, name: decoded.name });
-      } catch (err) {
-        console.error('Invalid token');
-      }
-    }
-  }, [token]);
+  if (!token || typeof token !== 'string') return;
+
+  try {
+    const decoded = jwtDecode(token);
+    setUser({ _id: decoded.id, name: decoded.name });
+  } catch (err) {
+    console.error('❌ Invalid token in effect:', err);
+    setToken(null);
+    setRole(null);
+    setUser(null);
+    localStorage.clear();
+  }
+}, [token]);
 
   return (
     <AuthContext.Provider value={{ token, role, user, login, logout }}>
