@@ -14,7 +14,7 @@ import { fetchWithToken } from '../../utils/fetchWithToken';
 import { PieChart, Pie, Cell, Legend, ResponsiveContainer } from 'recharts';
 import dayjs from 'dayjs';
 
-const api = process.env.REACT_APP_API_URL;
+const api = process.env.REACT_APP_API_URL; 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
 const OwnerDashboard = () => {
