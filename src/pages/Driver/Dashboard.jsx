@@ -151,6 +151,7 @@ useEffect(() => {
                     method: 'POST',
                     body: JSON.stringify({ driverId: user._id, timestamp: new Date() })
                   });
+                  
                   alert('✅ Request sent. Waiting for approval.');
                   setIsClockedIn(true);
                   setClockInTime(new Date());

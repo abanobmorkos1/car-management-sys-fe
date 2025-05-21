@@ -7,6 +7,7 @@ export const fetchWithToken = async (url, token, options = {}) => {
       ...options.headers,
       Authorization: `Bearer ${token}`,
     },
+    cache: 'no-store'
   });
 
   if (!res.ok) {

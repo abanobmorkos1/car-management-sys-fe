@@ -50,15 +50,15 @@ const OwnerDashboard = () => {
       console.error('Failed to fetch owner stats');
     }
   };
-
-  const fetchClockSessions = async () => {
-    try {
-      const res = await fetchWithToken(`${api}/api/hours/today-sessions`, token);
-      setClockSessions(res);
-    } catch (err) {
-      console.error('❌ Fetch error:', err);
-    }
-  };
+const fetchClockSessions = async () => {
+  try {
+    const sessions = await fetchWithToken(`${api}/api/hours/today-sessions`, token);
+    console.log('✅ Today’s sessions:', sessions);
+    setClockSessions(sessions);
+  } catch (err) {
+    console.error('❌ Fetch error:', err);
+  }
+};
 
   const fetchPendingRequests = async () => {
   try {
