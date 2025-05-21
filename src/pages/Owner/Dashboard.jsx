@@ -182,11 +182,16 @@ const handleApproval = async (id, approve = true) => {
         </Accordion>
           
           {/* Delivery + COD Summary with Date Picker */}
-    <Paper elevation={3} sx={{ p: 4, borderRadius: 3, mt: 4 }}>
+<Accordion elevation={3} sx={{ p: 0, borderRadius: 3, mt: 4 }}>
+  <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ px: 4, py: 3 }}>
+    <Typography variant="h5" fontWeight="bold" color="primary.main">
+      🚚 Delivery Summary
+    </Typography>
+  </AccordionSummary>
+
+  <AccordionDetails>
+    <Box sx={{ px: 4, pb: 4 }}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3} flexWrap="wrap">
-        <Typography variant="h5" fontWeight="bold" color="primary.main" mb={1}>
-          🚚 Delivery Summary
-        </Typography>
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           <DateRangePicker
             value={dateRange}
@@ -202,7 +207,7 @@ const handleApproval = async (id, approve = true) => {
             localeText={{ start: 'Start Date', end: 'End Date' }}
             slotProps={{
               textField: { size: 'small' },
-              fieldSeparator: { children: 'to' }
+              fieldSeparator: { children: 'to' },
             }}
           />
         </LocalizationProvider>
@@ -241,10 +246,11 @@ const handleApproval = async (id, approve = true) => {
                   <Typography>{new Date(delivery.deliveryDate).toLocaleDateString()}</Typography>
                 </Box>
                 <Box>
-                  <Typography variant="caption" color="text.secondary">COD Collected</Typography>
+                  <Typography fontWeight="bold" variant="caption" color="text.secondary">COD</Typography>
                   <Typography fontWeight="bold">${delivery.codAmount}</Typography>
                 </Box>
               </Stack>
+
               {delivery.status && (
                 <Box mt={2}>
                   <Typography variant="caption" color="text.secondary">Status: {delivery.status}</Typography>
@@ -260,8 +266,10 @@ const handleApproval = async (id, approve = true) => {
           ))
         )}
       </Box>
-    </Paper>
-  ;
+    </Box>
+  </AccordionDetails>
+</Accordion>
+
           {/* Clock-in Accordion */}
           <Accordion  sx={{ mt: 5, borderRadius: 2, boxShadow: 2 }}>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
