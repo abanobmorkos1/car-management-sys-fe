@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Container, Typography, Box, Button, Grid, Paper, Card, CardContent, Divider
 } from '@mui/material';
-import { AuthContext } from '../../contexts/AuthContext';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, Legend, ResponsiveContainer } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import Topbar from '../../components/Topbar';
@@ -13,32 +12,31 @@ const api = process.env.REACT_APP_API_URL;
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
 const SalesDashboard = () => {
-  const { token } = useContext(AuthContext);
   const navigate = useNavigate();
   const [deliveries, setDeliveries] = useState([]);
 
   useEffect(() => {
-  const fetchDeliveries = async () => {
-    try {
-      const res = await fetch(`${api}/api/delivery/deliveries`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
+    const fetchDeliveries = async () => {
+      try {
+        const res = await fetch(`${api}/api/delivery/deliveries`, {
+          credentials: 'include'
+        });
+        const data = await res.json();
 
-      if (res.ok && Array.isArray(data)) {
-        setDeliveries(data);
-      } else {
-        console.error('Unexpected response:', data);
-        setDeliveries([]); // fallback to empty array to avoid reduce crash
+        if (res.ok && Array.isArray(data)) {
+          setDeliveries(data);
+        } else {
+          console.error('Unexpected response:', data);
+          setDeliveries([]);
+        }
+      } catch (err) {
+        console.error('Failed to fetch deliveries', err);
+        setDeliveries([]);
       }
-    } catch (err) {
-      console.error('Failed to fetch deliveries', err);
-      setDeliveries([]); // again, fallback to empty array
-    }
-  };
+    };
 
-  if (token) fetchDeliveries(); // only run if token exists
-}, [token]);
+    fetchDeliveries();
+  }, []);
 
   const deliveriesPerDay = deliveries.reduce((acc, d) => {
     const date = new Date(d.deliveryDate).toLocaleDateString();
@@ -59,7 +57,7 @@ const SalesDashboard = () => {
       <Topbar />
       <Container sx={{ mt: 4 }}>
         <Typography variant="h4" fontWeight="bold" textAlign="center" gutterBottom>
-          📈 Sales Dashboard
+          📊 Sales Dashboard
         </Typography>
 
         <Grid container spacing={3} mb={4}>
@@ -101,7 +99,7 @@ const SalesDashboard = () => {
         <Grid container spacing={4}>
           <Grid item xs={12} md={6}>
             <Paper sx={{ p: 3, boxShadow: 3 }}>
-              <Typography variant="h6" gutterBottom>📅 Deliveries Per Day</Typography>
+              <Typography variant="h6" gutterBottom>Deliveries Per Day</Typography>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={barData}>
                   <XAxis dataKey="date" />

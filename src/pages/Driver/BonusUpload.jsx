@@ -1,5 +1,4 @@
-import React, { useState, useContext } from 'react';
-import { AuthContext } from '../../contexts/AuthContext';
+import React, { useState } from 'react';
 import {
   Box, Button, Typography, MenuItem, Select, InputLabel,
   FormControl, Snackbar, Alert
@@ -8,7 +7,6 @@ import {
 const api = process.env.REACT_APP_API_URL;
 
 const BonusUpload = ({ onCountUpdate }) => {
-  const { token } = useContext(AuthContext);
   const [type, setType] = useState('review');
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState('');
@@ -16,7 +14,6 @@ const BonusUpload = ({ onCountUpdate }) => {
 
   const handleFileChange = (e) => {
     const selected = e.target.files?.[0];
-
     if (!selected) {
       setFile(null);
       setPreviewUrl('');
@@ -41,9 +38,7 @@ const BonusUpload = ({ onCountUpdate }) => {
   const fetchAndUpdateCounts = async () => {
     try {
       const res = await fetch(`${api}/api/driver/my-uploads`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+        credentials: 'include'
       });
 
       if (!res.ok) return;
@@ -64,38 +59,41 @@ const BonusUpload = ({ onCountUpdate }) => {
     if (!file || !type) return;
 
     try {
-      // Step 1: Get pre-signed S3 upload URL
-      const urlRes = await fetch(
-        `${api}/api/get-upload-url?fileName=${encodeURIComponent(file.name)}&fileType=${encodeURIComponent(file.type)}&folder=bonuses`,
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
+      // Step 1: Request signed upload URL
+      const urlRes = await fetch(`${api}/api/s3/generate-url`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileName: file.name,
+          fileType: file.type,
+          uploadCategory: 'bonus'
+        })
+      });
 
-      if (!urlRes.ok) throw new Error('Failed to get signed URL');
+      const { uploadUrl, key } = await urlRes.json(); // ✅ Use correct key from backend
 
-      const { url, key } = await urlRes.json();
-
-      // Step 2: Upload the file to S3
-      const uploadRes = await fetch(url, {
+      // Step 2: Upload to S3
+      const uploadRes = await fetch(uploadUrl, {
         method: 'PUT',
         headers: { 'Content-Type': file.type },
-        body: file,
+        body: file
       });
 
-      if (!uploadRes.ok) throw new Error('S3 upload failed');
+      if (!uploadRes.ok) {
+        const errorText = await uploadRes.text();
+        throw new Error(`S3 upload failed: ${uploadRes.status} - ${errorText}`);
+      }
 
-      // Step 3: Save the file key to the backend
+      // Step 3: Save reference in DB
       const saveRes = await fetch(`${api}/api/driver/save-upload`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ key, type }),
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key, type })
       });
 
-      if (!saveRes.ok) throw new Error('Failed to save upload');
+      if (!saveRes.ok) throw new Error('Failed to save upload record');
 
       setSnack({ open: true, msg: 'Upload successful!', severity: 'success' });
       setFile(null);

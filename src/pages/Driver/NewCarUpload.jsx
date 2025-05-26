@@ -1,14 +1,12 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box, Container, Typography, TextField, Button, MenuItem,
   CircularProgress, Snackbar, Alert
 } from '@mui/material';
-import { AuthContext } from '../../contexts/AuthContext';
 
 const api = process.env.REACT_APP_API_URL;
 
 const NewCarForm = () => {
-  const { token } = useContext(AuthContext);
   const [form, setForm] = useState({
     vin: '',
     year: '',
@@ -31,14 +29,18 @@ const NewCarForm = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       const [salesRes, driverRes] = await Promise.all([
-        fetch(`${api}/api/users/salespeople`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${api}/api/users/drivers`, { headers: { Authorization: `Bearer ${token}` } })
+        fetch(`${api}/api/users/salespeople`, {
+          credentials: 'include'
+        }),
+        fetch(`${api}/api/users/drivers`, {
+          credentials: 'include'
+        })
       ]);
       setSalespeople(await salesRes.json());
       setDrivers(await driverRes.json());
     };
     fetchUsers();
-  }, [token]);
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -72,10 +74,8 @@ const NewCarForm = () => {
   const uploadToS3 = async (file, category, customerName) => {
     const res = await fetch(`${api}/api/s3/generate-url`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`
-      },
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({
         fileName: file.name,
         fileType: file.type,
@@ -88,18 +88,21 @@ const NewCarForm = () => {
         }
       })
     });
+
     const { uploadUrl, key } = await res.json();
     await fetch(uploadUrl, {
       method: 'PUT',
       headers: { 'Content-Type': file.type },
       body: file
     });
+
     return key;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+
     try {
       const pictureUrls = [];
       for (const pic of form.pictureFiles) {
@@ -117,17 +120,15 @@ const NewCarForm = () => {
 
       const res = await fetch(`${api}/api/car`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           vin: form.vin,
           make: form.make,
           model: form.model,
           trim: form.trim,
           year: parseInt(form.year),
-          salesPerson: form.salesPersonid, // ✅ Corrected field name
+          salesPerson: form.salesPersonid,
           driver: form.driver,
           damageReport: form.damageReport,
           pictureUrls,
@@ -184,7 +185,16 @@ const NewCarForm = () => {
           ))}
         </TextField>
 
-        <TextField fullWidth name="damageReport" label="Damage Report" value={form.damageReport} onChange={handleChange} margin="normal" multiline rows={3} />
+        <TextField
+          fullWidth
+          name="damageReport"
+          label="Damage Report"
+          value={form.damageReport}
+          onChange={handleChange}
+          margin="normal"
+          multiline
+          rows={3}
+        />
 
         <Box mt={2}>
           <Typography>Upload Car Pictures</Typography>
@@ -205,6 +215,7 @@ const NewCarForm = () => {
           {loading ? <CircularProgress size={24} /> : 'Submit'}
         </Button>
       </form>
+
       <Snackbar open={snack.open} autoHideDuration={3000} onClose={() => setSnack({ ...snack, open: false })}>
         <Alert severity={snack.severity}>{snack.msg}</Alert>
       </Snackbar>

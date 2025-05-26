@@ -2,25 +2,17 @@ import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
 import {
-  Container,
-  Box,
-  Paper,
-  Typography,
-  TextField,
-  Button,
-  Alert,
-  Snackbar
+  Container, Box, Paper, Typography, TextField, Button, Snackbar
 } from '@mui/material';
 import MuiAlert from '@mui/material/Alert';
 
 const api = process.env.REACT_APP_API_URL;
 
 const Login = () => {
-  const { login } = useContext(AuthContext);
+  const { login } = useContext(AuthContext); // ✅ login fetches session
   const navigate = useNavigate();
 
   const [form, setForm] = useState({ email: '', password: '' });
-  const [error, setError] = useState('');
   const [snackOpen, setSnackOpen] = useState(false);
   const [snackMsg, setSnackMsg] = useState('');
   const [snackType, setSnackType] = useState('success');
@@ -30,68 +22,61 @@ const Login = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
+  e.preventDefault();
+  try {
+    const res = await fetch(`${api}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(form),
+      credentials: 'include'
+    });
 
-    try {
-      const res = await fetch(`${api}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-        credentials: 'include' // if cookies are used
-      });
-      
+    const data = await res.json();
 
-      let data = {};
-      try {
-        data = await res.json();
-      } catch (parseError) {
-        console.error('❌ Login JSON Parse Error:', parseError);
-      }
-
-      if (!res.ok) {
-        setSnackMsg(data.message || 'Login failed');
-        setSnackType('error');
-        setSnackOpen(true);
-        return;
-      }
-
-      setSnackMsg('Login successful! Redirecting...');
-      setSnackType('success');
+    if (!res.ok) {
+      setSnackMsg(data.message || 'Login failed');
+      setSnackType('error');
       setSnackOpen(true);
-      login(data.token, data.role,  data.name);
-
-        switch (data.role) {
-        case 'Driver': navigate('/driver/dashboard'); break;
-        case 'Sales': navigate('/sales/dashboard'); break;
-        case 'Owner': navigate('/owner/dashboard'); break;
-        case 'Management': navigate('/management/dashboard'); break;
-      }
-
-    } catch (err) {
-      setError('Server error. Please try again.');
+      return;
     }
-  };
+
+    // ✅ Pass user object to context
+    login(data.user);
+
+    setSnackMsg('Login successful! Redirecting...');
+    setSnackType('success');
+    setSnackOpen(true);
+
+    // ✅ Route based on session role
+    switch (data.user?.role) {
+      case 'Driver': navigate('/driver/dashboard'); break;
+      case 'Sales': navigate('/sales/dashboard'); break;
+      case 'Owner': navigate('/owner/dashboard'); break;
+      case 'Management': navigate('/management/dashboard'); break;
+      default: navigate('/'); break;
+    }
+
+  } catch (err) {
+    console.error('🔥 Login error:', err);
+    setSnackMsg('Server error. Please try again.');
+    setSnackType('error');
+    setSnackOpen(true);
+  }
+};
+
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        backgroundColor: '#f5f5f5',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 2,
-      }}
-    >
+    <Box sx={{
+      minHeight: '100vh',
+      backgroundColor: '#f5f5f5',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 2
+    }}>
       <Container maxWidth="sm">
         <Paper elevation={3} sx={{ padding: 4, borderRadius: 3 }}>
-          <Typography variant="h5" textAlign="center" gutterBottom>
-            Login
-          </Typography>
-
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-
+          <Typography variant="h5" textAlign="center" gutterBottom>Login</Typography>
           <form onSubmit={handleSubmit} noValidate>
             <TextField
               fullWidth
@@ -100,7 +85,6 @@ const Login = () => {
               type="email"
               value={form.email}
               onChange={handleChange}
-              autoComplete="email"
               margin="normal"
               required
             />
@@ -111,7 +95,6 @@ const Login = () => {
               type="password"
               value={form.password}
               onChange={handleChange}
-              autoComplete="current-password"
               margin="normal"
               required
             />
@@ -119,13 +102,7 @@ const Login = () => {
               Sign In
             </Button>
           </form>
-
-          <Button
-            fullWidth
-            variant="text"
-            onClick={() => navigate('/register')}
-            sx={{ mt: 2 }}
-          >
+          <Button fullWidth variant="text" onClick={() => navigate('/register')} sx={{ mt: 2 }}>
             Don’t have an account? Register
           </Button>
         </Paper>
@@ -137,13 +114,7 @@ const Login = () => {
         onClose={() => setSnackOpen(false)}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
-        <MuiAlert
-          onClose={() => setSnackOpen(false)}
-          severity={snackType}
-          sx={{ width: '100%' }}
-          elevation={6}
-          variant="filled"
-        >
+        <MuiAlert onClose={() => setSnackOpen(false)} severity={snackType} variant="filled">
           {snackMsg}
         </MuiAlert>
       </Snackbar>

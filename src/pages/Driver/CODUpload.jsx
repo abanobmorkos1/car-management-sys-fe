@@ -1,17 +1,17 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { AuthContext } from '../../contexts/AuthContext';
+import React, { useState, useEffect } from 'react';
 import {
-  Container, Paper, TextField, Button, Typography, Box, Grid, MenuItem, CircularProgress, Alert
+  Container, Paper, TextField, Button, Typography, Box, Grid, MenuItem,
+  CircularProgress, Alert
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 
-const uploadToS3 = async (file, category, token, customerName) => {
-  const res = await fetch(`${process.env.REACT_APP_API_URL}/api/s3/generate-url`, {
+const api = process.env.REACT_APP_API_URL;
+
+const uploadToS3 = async (file, category, customerName) => {
+  const res = await fetch(`${api}/api/s3/generate-url`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`
-    },
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify({
       fileName: file.name,
       fileType: file.type,
@@ -19,18 +19,26 @@ const uploadToS3 = async (file, category, token, customerName) => {
       meta: { customerName }
     })
   });
+
   const { uploadUrl, key } = await res.json();
-  await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file });
+
+  await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': file.type },
+    body: file
+  });
+
   return key;
 };
 
-const NewCOD = () => {
-  const { token } = useContext(AuthContext);
+const NewCOD = ({ prefill = null, fromDelivery = false }) => {
   const navigate = useNavigate();
   const [form, setForm] = useState({
     customerName: '', phoneNumber: '', address: '', amount: '',
-    method: 'None', salesperson: '', driver: '', car: { year: '', make: '', model: '' }
+    method: 'None', salesperson: '', driver: '', delivery: '',
+    car: { year: '', make: '', model: '', trim: '', color: '' }
   });
+
   const [salespeople, setSalespeople] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [contractPicture, setContractPicture] = useState(null);
@@ -40,24 +48,49 @@ const NewCOD = () => {
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      const [salesRes, driverRes] = await Promise.all([
-        fetch(`${process.env.REACT_APP_API_URL}/api/users/salespeople`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${process.env.REACT_APP_API_URL}/api/users/drivers`, { headers: { Authorization: `Bearer ${token}` } })
-      ]);
-      setSalespeople(await salesRes.json());
-      setDrivers(await driverRes.json());
-    };
-    fetchUsers();
-  }, [token]);
+    if (prefill) {
+      setForm({
+        customerName: prefill.customerName || '',
+        phoneNumber: prefill.phoneNumber || '',
+        address: prefill.address || '',
+        amount: prefill.amount || prefill.codAmount || 0,
+        method: prefill.method || prefill.codMethod || 'None',
+        salesperson: prefill.salesperson?._id || prefill.salesperson || '',
+        driver: prefill.driver?._id || prefill.driver || '',
+        delivery: prefill.delivery?._id || prefill.delivery || '',
+        car: {
+          year: prefill.car?.year || prefill.year || '',
+          make: prefill.car?.make || prefill.make || '',
+          model: prefill.car?.model || prefill.model || '',
+          trim: prefill.car?.trim || prefill.trim || '',
+          color: prefill.car?.color || prefill.color || ''
+        }
+      });
+    }
+  }, [prefill]);
+
+  useEffect(() => {
+    if (!fromDelivery) {
+      const fetchUsers = async () => {
+        const [salesRes, driverRes] = await Promise.all([
+          fetch(`${api}/api/users/salespeople`, { credentials: 'include' }),
+          fetch(`${api}/api/users/drivers`, { credentials: 'include' })
+        ]);
+
+        if (salesRes.ok) setSalespeople(await salesRes.json());
+        if (driverRes.ok) setDrivers(await driverRes.json());
+      };
+      fetchUsers();
+    }
+  }, [fromDelivery]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name in form.car) {
-      setForm(prev => ({ ...prev, car: { ...prev.car, [name]: value } }));
-    } else {
-      setForm(prev => ({ ...prev, [name]: value }));
-    }
+    setForm(prev =>
+      name in prev.car
+        ? { ...prev, car: { ...prev.car, [name]: value } }
+        : { ...prev, [name]: value }
+    );
   };
 
   const handleSubmit = async (e) => {
@@ -67,31 +100,42 @@ const NewCOD = () => {
     setLoading(true);
 
     try {
-      let contractKey = null;
-      let checkKey = null;
-      if (contractPicture) {
-        contractKey = await uploadToS3(contractPicture, 'cod', token, form.customerName);
-      }
-      if (form.method === 'Check' && checkPicture) {
-        checkKey = await uploadToS3(checkPicture, 'cod', token, form.customerName);
-      }
+      if (!contractPicture) throw new Error('Contract picture is required');
 
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/cod/newcod`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ ...form, contractKey, checkKey })
-      });
+      const contractKey = await uploadToS3(contractPicture, 'cod', form.customerName);
+      const checkKey = form.method === 'Check' && checkPicture
+        ? await uploadToS3(checkPicture, 'cod', form.customerName)
+        : null;
+
+const res = await fetch(`${api}/cod/newcod`, {
+  method: 'POST',
+  credentials: 'include',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    customerName: form.customerName,
+    phoneNumber: form.phoneNumber,
+    address: form.address,
+    amount: Number(form.amount || 0),
+    method: form.method,
+    contractKey,
+    checkKey,
+    salesperson: form.salesperson,
+    driver: form.driver,
+    delivery: form.delivery,
+    car: form.car
+  })
+});
 
       const data = await res.json();
       if (res.ok) {
         setSuccess('COD created successfully!');
         setTimeout(() => navigate('/allcods'), 2000);
       } else {
-        setError(data.message || 'Failed to create COD');
+        throw new Error(data.message || 'Failed to create COD');
       }
     } catch (err) {
-      console.error('COD submission error:', err);
-      setError('Server error');
+      console.error('❌ COD submission error:', err);
+      setError(err.message || 'Server error');
     } finally {
       setLoading(false);
     }
@@ -105,48 +149,56 @@ const NewCOD = () => {
         {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
 
         <Box component="form" onSubmit={handleSubmit}>
-          <TextField fullWidth name="customerName" label="Customer Name" value={form.customerName} onChange={handleChange} margin="normal" required />
-          <TextField fullWidth name="phoneNumber" label="Phone Number" value={form.phoneNumber} onChange={handleChange} margin="normal" required />
-          <TextField fullWidth name="address" label="Address" value={form.address} onChange={handleChange} margin="normal" required />
+          <TextField fullWidth name="customerName" label="Customer Name" value={form.customerName} onChange={handleChange} margin="normal" required disabled={fromDelivery} />
+          <TextField fullWidth name="phoneNumber" label="Phone Number" value={form.phoneNumber} onChange={handleChange} margin="normal" required disabled={fromDelivery} />
+          <TextField fullWidth name="address" label="Address" value={form.address} onChange={handleChange} margin="normal" required disabled={fromDelivery} />
           <TextField fullWidth name="amount" label="Amount (0 if none)" type="number" value={form.amount} onChange={handleChange} margin="normal" />
-
           <TextField fullWidth select name="method" label="Payment Method" value={form.method} onChange={handleChange} margin="normal">
-            <MenuItem value="None">None</MenuItem>
-            <MenuItem value="Cash">Cash</MenuItem>
-            <MenuItem value="Zelle">Zelle</MenuItem>
-            <MenuItem value="Check">Check</MenuItem>
-          </TextField>
-
-          <TextField fullWidth select name="salesperson" label="Salesperson" value={form.salesperson} onChange={handleChange} margin="normal" required>
-            {salespeople.map(sp => (
-              <MenuItem key={sp._id} value={sp._id}>{sp.name}</MenuItem>
+            {['None', 'Cash', 'Zelle', 'Check'].map(method => (
+              <MenuItem key={method} value={method}>{method}</MenuItem>
             ))}
           </TextField>
 
-          <TextField fullWidth select name="driver" label="Driver" value={form.driver} onChange={handleChange} margin="normal" required>
-            {drivers.map(d => (
-              <MenuItem key={d._id} value={d._id}>{d.name}</MenuItem>
-            ))}
-          </TextField>
+          {!fromDelivery && (
+            <>
+              <TextField fullWidth select name="salesperson" label="Salesperson" value={form.salesperson} onChange={handleChange} margin="normal" required>
+                {salespeople.map(sp => <MenuItem key={sp._id} value={sp._id}>{sp.name}</MenuItem>)}
+              </TextField>
+              <TextField fullWidth select name="driver" label="Driver" value={form.driver} onChange={handleChange} margin="normal" required>
+                {drivers.map(d => <MenuItem key={d._id} value={d._id}>{d.name}</MenuItem>)}
+              </TextField>
+            </>
+          )}
 
           <Typography variant="h6" mt={3} mb={1}>Car Info</Typography>
           <Grid container spacing={2}>
-            <Grid item xs={6}><TextField fullWidth name="year" label="Year" value={form.car.year} onChange={handleChange} /></Grid>
-            <Grid item xs={6}><TextField fullWidth name="make" label="Make" value={form.car.make} onChange={handleChange} /></Grid>
-            <Grid item xs={12}><TextField fullWidth name="model" label="Model" value={form.car.model} onChange={handleChange} /></Grid>
+            {['year', 'make', 'model', 'trim', 'color'].map(field => (
+              <Grid item xs={12} sm={6} key={field}>
+                <TextField
+                  fullWidth
+                  name={field}
+                  label={field.charAt(0).toUpperCase() + field.slice(1)}
+                  value={form.car[field]}
+                  onChange={handleChange}
+                  disabled={fromDelivery && !!form.car[field]}
+                />
+              </Grid>
+            ))}
           </Grid>
 
-          <Box mt={3}><Typography variant="body1">Upload Contract Picture *</Typography>
-            <input type="file" onChange={(e) => setContractPicture(e.target.files[0])} required />
+          <Box mt={3}>
+            <Typography variant="body1">Upload Contract Picture *</Typography>
+            <input type="file" required onChange={(e) => setContractPicture(e.target.files[0])} />
           </Box>
 
           {form.method === 'Check' && (
-            <Box mt={2}><Typography>Upload Check Picture</Typography>
+            <Box mt={2}>
+              <Typography>Upload Check Picture</Typography>
               <input type="file" onChange={(e) => setCheckPicture(e.target.files[0])} />
             </Box>
           )}
 
-          <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 3 }} disabled={loading}>
+          <Button type="submit" variant="contained" fullWidth sx={{ mt: 3 }} disabled={loading}>
             {loading ? <CircularProgress size={24} /> : 'Create COD'}
           </Button>
         </Box>

@@ -8,13 +8,11 @@ import { useNavigate } from 'react-router-dom';
 
 const api = process.env.REACT_APP_API_URL;
 
-const uploadToS3 = async (file, category, token, customerName) => {
+const uploadToS3 = async (file, category, customerName) => {
   const res = await fetch(`${api}/api/s3/generate-url`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`
-    },
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify({
       fileName: file.name,
       fileType: file.type,
@@ -22,22 +20,24 @@ const uploadToS3 = async (file, category, token, customerName) => {
       meta: { customerName }
     })
   });
+
   const { uploadUrl, key } = await res.json();
+
   await fetch(uploadUrl, {
     method: 'PUT',
     headers: { 'Content-Type': file.type },
     body: file
   });
+
   return key;
 };
 
 const NewLeaseForm = () => {
-  const { token } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
     vin: '', miles: '', bank: '', customerName: '', address: '',
-    city: '', state: '', zip: '',  salesPerson: '', driver: '',
+    city: '', state: '', zip: '', salesPerson: '', driver: '',
     damageReport: '', hasTitle: false, odometer: null, title: null,
     leaseReturnMedia: [],
     year: '', make: '', model: '', trim: '', engine: '', driveType: '', fuelType: '', bodyStyle: ''
@@ -51,14 +51,20 @@ const NewLeaseForm = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       const [salesRes, driverRes] = await Promise.all([
-        fetch(`${api}/api/users/salespeople`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${api}/api/users/drivers`, { headers: { Authorization: `Bearer ${token}` } })
+        fetch(`${api}/api/users/salespeople`, {
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include'
+        }),
+        fetch(`${api}/api/users/drivers`, {
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include'
+        })
       ]);
       setSalespeople(await salesRes.json());
       setDrivers(await driverRes.json());
     };
     fetchUsers();
-  }, [token]);
+  }, []);
 
   const handleChange = async (e) => {
     const { name, value, type, checked } = e.target;
@@ -101,18 +107,19 @@ const NewLeaseForm = () => {
     setLoading(true);
 
     try {
-      const odometerKey = await uploadToS3(form.odometer, 'lease-return', token, form.customerName);
-      const titleKey = form.title ? await uploadToS3(form.title, 'lease-return', token, form.customerName) : null;
+      const odometerKey = await uploadToS3(form.odometer, 'lease-return', form.customerName);
+      const titleKey = form.title ? await uploadToS3(form.title, 'lease-return', form.customerName) : null;
 
       const leaseReturnMediaKeys = [];
       for (const file of form.leaseReturnMedia) {
-        const key = await uploadToS3(file, 'lease-return', token, form.customerName);
+        const key = await uploadToS3(file, 'lease-return', form.customerName);
         leaseReturnMediaKeys.push(key);
       }
 
       const res = await fetch(`${api}/lease/createlr`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           ...form,
           odometerKey,
@@ -136,39 +143,39 @@ const NewLeaseForm = () => {
     }
   };
 
-  return (
+
+    return (
     <Container maxWidth="sm">
       <Paper sx={{ p: 4, mt: 5 }}>
         <Typography variant="h5" mb={2}>New Lease Return</Typography>
         <form onSubmit={handleSubmit}>
           <TextField fullWidth name="vin" label="VIN" value={form.vin} onChange={handleChange} margin="normal" required />
-<Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mt: 1, mb: 2 }}>
-  {form.year && (
-    <Box>
-      <Typography variant="caption" color="text.secondary">Year</Typography>
-      <Typography variant="body2">{form.year}</Typography>
-    </Box>
-  )}
-  {form.make && (
-    <Box>
-      <Typography variant="caption" color="text.secondary">Make</Typography>
-      <Typography variant="body2">{form.make}</Typography>
-    </Box>
-  )}
-  {form.model && (
-    <Box>
-      <Typography variant="caption" color="text.secondary">Model</Typography>
-      <Typography variant="body2">{form.model}</Typography>
-    </Box>
-  )}
-  {form.trim && (
-    <Box>
-      <Typography variant="caption" color="text.secondary">Trim</Typography>
-      <Typography variant="body2">{form.trim}</Typography>
-    </Box>
-  )}
-</Box>
-    
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mt: 1, mb: 2 }}>
+            {form.year && (
+              <Box>
+                <Typography variant="caption" color="text.secondary">Year</Typography>
+                <Typography variant="body2">{form.year}</Typography>
+              </Box>
+            )}
+            {form.make && (
+              <Box>
+                <Typography variant="caption" color="text.secondary">Make</Typography>
+                <Typography variant="body2">{form.make}</Typography>
+              </Box>
+            )}
+            {form.model && (
+              <Box>
+                <Typography variant="caption" color="text.secondary">Model</Typography>
+                <Typography variant="body2">{form.model}</Typography>
+              </Box>
+            )}
+            {form.trim && (
+              <Box>
+                <Typography variant="caption" color="text.secondary">Trim</Typography>
+                <Typography variant="body2">{form.trim}</Typography>
+              </Box>
+            )}
+          </Box>
 
           <TextField fullWidth name="miles" label="Mileage" type="number" value={form.miles} onChange={handleChange} margin="normal" required />
           <TextField fullWidth name="bank" label="Bank" value={form.bank} onChange={handleChange} margin="normal" required />
@@ -177,7 +184,6 @@ const NewLeaseForm = () => {
           <TextField fullWidth name="city" label="City" value={form.city} onChange={handleChange} margin="normal" required />
           <TextField fullWidth name="state" label="State" value={form.state} onChange={handleChange} margin="normal" required />
           <TextField fullWidth name="zip" label="Zip Code" value={form.zip} onChange={handleChange} margin="normal" required />
-          
 
           <TextField fullWidth select name="salesPerson" label="Salesperson" value={form.salesPerson} onChange={handleChange} margin="normal" required>
             {salespeople.map(sp => (

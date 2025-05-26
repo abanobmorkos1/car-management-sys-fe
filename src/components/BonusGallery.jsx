@@ -1,5 +1,4 @@
-import React, { useEffect, useState, useContext } from 'react';
-import { AuthContext } from '../contexts/AuthContext';
+import React, { useEffect, useState } from 'react';
 import {
   Box, Typography, Grid, Card, CardMedia, Chip, CardActions,
   Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle
@@ -8,22 +7,19 @@ import {
 const api = process.env.REACT_APP_API_URL;
 
 const BonusGallery = () => {
-  const { token } = useContext(AuthContext);
   const [uploads, setUploads] = useState([]);
   const [signedUrls, setSignedUrls] = useState({});
   const [openConfirm, setOpenConfirm] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
 
   useEffect(() => {
-    if (token) {
-      fetchUploads();
-    }
-  }, [token]);
+    fetchUploads();
+  }, []);
 
   const fetchUploads = async () => {
     try {
       const res = await fetch(`${api}/api/driver/my-uploads`, {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include'
       });
 
       if (res.ok) {
@@ -48,7 +44,7 @@ const BonusGallery = () => {
   const fetchSignedUrl = async (key, id) => {
     try {
       const res = await fetch(`${api}/api/get-image-url?key=${encodeURIComponent(key)}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include'
       });
 
       if (res.ok) {
@@ -71,7 +67,7 @@ const BonusGallery = () => {
     try {
       const res = await fetch(`${api}/api/driver/delete-upload/${selectedId}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include'
       });
 
       if (res.ok) {
@@ -109,7 +105,7 @@ const BonusGallery = () => {
                   alt={upload.type}
                   onError={(e) => {
                     console.error(`❌ Image failed to load for ID: ${upload._id}, key: ${upload.key}`);
-                    e.target.src = '/fallback-image.png'; // Replace with your actual fallback path
+                    e.target.src = '/fallback-image.png';
                   }}
                 />
               ) : (

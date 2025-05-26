@@ -1,56 +1,67 @@
 import React, { createContext, useState, useEffect } from 'react';
-import { jwtDecode } from 'jwt-decode';
 
-export const AuthContext = createContext(); // ✅ Named export
+export const AuthContext = createContext();
 
-export const AuthProvider = ({ children }) => { // ✅ Named export
-  const [token, setToken] = useState(localStorage.getItem('token') || null);
-  const [role, setRole] = useState(localStorage.getItem('role') || null);
+export const AuthProvider = ({ children }) => {
+  const [token, setToken] = useState(null); // only used as "logged-in" flag
+  const [role, setRole] = useState(null);
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const login = (token, role) => {
-  if (!token || typeof token !== 'string') {
-    console.error('❌ Invalid token passed to login:', token);
-    return;
-  }
+  // ✅ Called after login
+  const login = (userData) => {
+    setToken('session'); // placeholder
+    setRole(userData.role);
+    setUser(userData);
+  };
 
+  const logout = async () => {
+    setToken(null);
+    setRole(null);
+    setUser(null);
+    try {
+      await fetch(`${process.env.REACT_APP_API_URL}/api/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (err) {
+      console.warn('⚠️ Logout failed:', err);
+    }
+  };
+
+  // ✅ Called on page reload
+// ✅ Called on page reload
+const checkSession = async () => {
   try {
-    const decoded = jwtDecode(token);
-    setToken(token);
-    setRole(role);
-    setUser({ _id: decoded.id, name: decoded.name });
-    localStorage.setItem('token', token);
-    localStorage.setItem('role', role);
+    const res = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/sessions`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+
+    if (!res.ok) throw new Error('Not authenticated');
+      const data = await res.json();
+      console.log('🔐 Session data:', data);
+
+      const userData = data.user || data;
+
+      setToken('session');
+      setRole(userData.role);
+      setUser(userData);
   } catch (err) {
-    console.error('❌ Token decoding failed', err);
+    console.warn('⚠️ No active session:', err);
+  } finally {
+    setLoading(false);
   }
 };
 
-  const logout = () => {
-    setToken(null);
-    setRole(null);
-    setUser(null);
-    localStorage.clear();
-  };
 
   useEffect(() => {
-  if (!token || typeof token !== 'string') return;
-
-  try {
-    const decoded = jwtDecode(token);
-    setUser({ _id: decoded.id, name: decoded.name });
-  } catch (err) {
-    console.error('❌ Invalid token in effect:', err);
-    setToken(null);
-    setRole(null);
-    setUser(null);
-    localStorage.clear();
-  }
-}, [token]);
+    checkSession();
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ token, role, user, login, logout }}>
-      {children}
+    <AuthContext.Provider value={{ token, setToken, role, user, login, logout }}>
+      {!loading && children}
     </AuthContext.Provider>
   );
 };

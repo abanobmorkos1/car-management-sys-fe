@@ -24,7 +24,9 @@ const LeaseReturnsList = () => {
     const fetchUsers = async () => {
       try {
         const res = await fetch(`${api}/api/users/all`, {
-          headers: { Authorization: `Bearer ${token}` }
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include'
         });
         const data = await res.json();
         const userMap = {};
@@ -38,7 +40,9 @@ const LeaseReturnsList = () => {
     const fetchLeases = async () => {
       try {
         const res = await fetch(`${api}/lease/getlr`, {
-          headers: { Authorization: `Bearer ${token}` }
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include'
         });
         const data = await res.json();
         setLeases(data);
@@ -55,14 +59,15 @@ const LeaseReturnsList = () => {
     fetchLeases();
   }, [token]);
 
-  const fetchThumbnails = async (leaseList) => {
+    const fetchThumbnails = async (leaseList) => {
     const thumbs = {};
     for (const lease of leaseList) {
       const key = lease.leaseReturnMediaKeys?.find(k => /\.(jpg|jpeg|png|webp)$/i.test(k)) || lease.leaseReturnMediaKeys?.[0];
       if (key) {
         try {
           const res = await fetch(`${api}/api/get-image-url?key=${encodeURIComponent(key)}`, {
-            headers: { Authorization: `Bearer ${token}` }
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include'
           });
           const { url } = await res.json();
           thumbs[lease._id] = url;
@@ -73,6 +78,7 @@ const LeaseReturnsList = () => {
     }
     setThumbnails(thumbs);
   };
+
 
   useEffect(() => {
     const term = search.toLowerCase();
@@ -88,7 +94,8 @@ const LeaseReturnsList = () => {
     if (!key) return null;
     try {
       const res = await fetch(`${api}/api/get-image-url?key=${encodeURIComponent(key)}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
       });
       const { url } = await res.json();
       return url?.startsWith('http:') ? url.replace('http:', 'https:') : url;
