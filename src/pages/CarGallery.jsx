@@ -64,7 +64,6 @@ const CarGallery = () => {
                   alt="Car"
                   onError={(e) => {
                     e.target.onerror = null;
-                    e.target.src = 'https://via.placeholder.com/300x180?text=No+Image';
                   }}
                 />
                 <CardContent>
