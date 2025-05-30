@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../contexts/AuthContext';
 import {
@@ -6,64 +6,54 @@ import {
 } from '@mui/material';
 import MuiAlert from '@mui/material/Alert';
 
-const api = process.env.REACT_APP_API_URL;
-
 const Login = () => {
-  const { login } = useContext(AuthContext); // ✅ login fetches session
+  const { login, user } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const [form, setForm] = useState({ email: '', password: '' });
+  const [loading, setLoading] = useState(false);
   const [snackOpen, setSnackOpen] = useState(false);
   const [snackMsg, setSnackMsg] = useState('');
   const [snackType, setSnackType] = useState('success');
+
+  useEffect(() => {
+    if (user?.role) {
+      switch (user.role) {
+        case 'Driver': navigate('/driver/dashboard'); break;
+        case 'Sales': navigate('/sales/dashboard'); break;
+        case 'Owner': navigate('/owner/dashboard'); break;
+        case 'Management': navigate('/management/dashboard'); break;
+        default: navigate('/');
+      }
+    }
+  }, [user, navigate]);
 
   const handleChange = (e) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  try {
-    const res = await fetch(`${api}/api/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
-      credentials: 'include'
-    });
+    e.preventDefault();
+    setLoading(true);
 
-    const data = await res.json();
+    const payload = {
+      email: form.email.trim().toLowerCase(),
+      password: form.password
+    };
 
-    if (!res.ok) {
-      setSnackMsg(data.message || 'Login failed');
+    const result = await login(payload);
+
+    if (result.success) {
+      setSnackMsg('Login successful! Redirecting...');
+      setSnackType('success');
+    } else {
+      setSnackMsg(result.message || 'Login failed');
       setSnackType('error');
-      setSnackOpen(true);
-      return;
     }
 
-    // ✅ Pass user object to context
-    login(data.user);
-
-    setSnackMsg('Login successful! Redirecting...');
-    setSnackType('success');
     setSnackOpen(true);
-
-    // ✅ Route based on session role
-    switch (data.user?.role) {
-      case 'Driver': navigate('/driver/dashboard'); break;
-      case 'Sales': navigate('/sales/dashboard'); break;
-      case 'Owner': navigate('/owner/dashboard'); break;
-      case 'Management': navigate('/management/dashboard'); break;
-      default: navigate('/'); break;
-    }
-
-  } catch (err) {
-    console.error('🔥 Login error:', err);
-    setSnackMsg('Server error. Please try again.');
-    setSnackType('error');
-    setSnackOpen(true);
-  }
-};
-
+    setLoading(false);
+  };
 
   return (
     <Box sx={{
@@ -87,6 +77,7 @@ const Login = () => {
               onChange={handleChange}
               margin="normal"
               required
+              autoFocus
             />
             <TextField
               fullWidth
@@ -98,13 +89,16 @@ const Login = () => {
               margin="normal"
               required
             />
-            <Button type="submit" fullWidth variant="contained" sx={{ mt: 3, py: 1.5 }}>
-              Sign In
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              sx={{ mt: 3, py: 1.5 }}
+              disabled={loading}
+            >
+              {loading ? 'Signing In...' : 'Sign In'}
             </Button>
           </form>
-          <Button fullWidth variant="text" onClick={() => navigate('/register')} sx={{ mt: 2 }}>
-            Don’t have an account? Register
-          </Button>
         </Paper>
       </Container>
 

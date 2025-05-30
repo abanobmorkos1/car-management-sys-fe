@@ -1,37 +1,30 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Container, Grid, Card, CardContent, Typography, CardMedia, CircularProgress
 } from '@mui/material';
-import { AuthContext } from '../contexts/AuthContext';
-import { fetchWithToken } from '../utils/fetchWithToken';
+import { fetchWithSession } from '../utils/fetchWithSession';
 
 const api = process.env.REACT_APP_API_URL;
 
 const CarGallery = () => {
-  const { token } = useContext(AuthContext);
   const [cars, setCars] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!token) return;
-
-    const fetchCarsWithSignedUrls = async () => {
+    const fetchCars = async () => {
       try {
-        const data = await fetchWithToken(`${api}/api/car`, token);
-
-        if (!Array.isArray(data)) {
-          throw new Error('Expected an array of cars, but got: ' + JSON.stringify(data));
-        }
+        const data = await fetchWithSession(`${api}/api/car`);
+        if (!Array.isArray(data)) throw new Error('Expected array of cars');
 
         const carsWithSignedUrls = await Promise.all(
           data.map(async (car) => {
             const signedUrls = await Promise.all(
               (car.pictureUrls || []).map(async (key) => {
                 try {
-                  const { url } = await fetchWithToken(`${api}/api/s3/signed-url?key=${encodeURIComponent(key)}`, token);
-                  return url;
+                  const res = await fetchWithSession(`${api}/api/s3/signed-url?key=${encodeURIComponent(key)}`);
+                  return res?.url || null;
                 } catch (err) {
-                  console.warn('❌ Error fetching signed URL for:', key, err);
+                  console.warn(`❌ Failed to get signed URL for key: ${key}`, err);
                   return null;
                 }
               })
@@ -42,44 +35,38 @@ const CarGallery = () => {
 
         setCars(carsWithSignedUrls);
       } catch (err) {
-        console.error('❌ Failed to fetch cars or signed URLs:', err);
+        console.error('❌ Error loading cars:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchCarsWithSignedUrls();
-  }, [token]);
+    fetchCars();
+  }, []);
 
   return (
     <Container sx={{ mt: 4 }}>
-      <Typography variant="h5" mb={3} textAlign="center">New Cars Posted</Typography>
+      <Typography variant="h5" mb={3} textAlign="center">
+        New Cars Posted
+      </Typography>
+
       {loading ? (
         <CircularProgress />
       ) : (
         <Grid container spacing={2}>
-          {cars.map(car => (
+          {cars.map((car) => (
             <Grid item xs={12} sm={6} md={4} key={car._id}>
               <Card sx={{ height: '100%' }}>
-                {car.signedUrls?.[0] ? (
-                  <CardMedia
-                    component="img"
-                    sx={{ height: 180, objectFit: 'cover' }}
-                    image={car.signedUrls[0]}
-                    alt="car"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = 'https://via.placeholder.com/300x180?text=No+Image';
-                    }}
-                  />
-                ) : (
-                  <CardMedia
-                    component="img"
-                    sx={{ height: 180, objectFit: 'cover' }}
-                    image='https://via.placeholder.com/300x180?text=No+Image'
-                    alt="No image"
-                  />
-                )}
+                <CardMedia
+                  component="img"
+                  sx={{ height: 180, objectFit: 'cover' }}
+                  image={car.signedUrls?.[0] || 'https://via.placeholder.com/300x180?text=No+Image'}
+                  alt="Car"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = 'https://via.placeholder.com/300x180?text=No+Image';
+                  }}
+                />
                 <CardContent>
                   <Typography fontWeight={600}>
                     {car.year} {car.make} {car.model}

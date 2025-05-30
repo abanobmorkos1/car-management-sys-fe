@@ -43,7 +43,8 @@ const DriverDashboardLayout = ({
   weeklyEarnings,
   dailyBreakdown,
   lastSessionEarnings,
-  clockRequestPending
+  clockRequestPending,
+  submittingClockIn
 }) => {
   return (
     <>
@@ -73,10 +74,10 @@ const DriverDashboardLayout = ({
             deliveries.map(del => (
               <Box key={del._id} mb={2}>
                 <DriverDeliveryCard
-                delivery={del}
-                onStatusChange={handleStatusChange}
-                userId={user?._id}
-              />
+                  delivery={del}
+                  onStatusChange={handleStatusChange}
+                  userId={user?._id}
+                />
               </Box>
             ))
           ) : (
@@ -101,34 +102,39 @@ const DriverDashboardLayout = ({
                       : `${Number(totalHours || 0).toFixed(2)} hrs`}
                   </Typography>
                   <Typography variant="body2" mt={1} color="text.secondary">
-                     You've earned: <strong>${(weeklyEarnings ?? 0).toFixed(2)}</strong> this week
+                    You've earned: <strong>${(weeklyEarnings ?? 0).toFixed(2)}</strong> this week
                   </Typography>
                   {lastSessionEarnings !== null && (
                     <Typography variant="body2" color="info.main" sx={{ mt: 1 }}>
                       🕓 Last session earnings: <strong>${lastSessionEarnings.toFixed(2)}</strong>
                     </Typography>
                   )}
-                <Button
-                  variant="contained"
-                  fullWidth
-                  onClick={handleClockInOut}
-                  disabled={clockRequestPending}
-                  sx={{
-                    mt: 2,
-                    bgcolor:
-                      clockRequestPending
-                        ? 'grey.500'
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      onClick={handleClockInOut}
+                      disabled={submittingClockIn}
+                      sx={{
+                        mt: 2,
+                        bgcolor:
+                          submittingClockIn
+                            ? 'info.main'
+                            : clockInStatus?.status === 'pending'
+                            ? 'warning.main'
+                            : isClockedIn && clockInStatus?.status === 'approved'
+                            ? 'error.main'
+                            : 'success.main'
+                      }}
+                    >
+                      {submittingClockIn
+                        ? 'Submitting Request...'
+                        : clockInStatus?.status === 'pending'
+                        ? 'Awaiting Approval...'
                         : isClockedIn && clockInStatus?.status === 'approved'
-                        ? 'error.main'
-                        : 'success.main'
-                  }}
-                >
-                  {clockRequestPending
-                    ? 'Awaiting Approval...'
-                    : isClockedIn && clockInStatus?.status === 'approved'
-                    ? 'Clock Out'
-                    : 'Clock In'}
-                </Button>
+                        ? 'Clock Out'
+                        : 'Clock In'}
+                    </Button>
+
                   <ClockStatusMessage clockInStatus={clockInStatus} />
                 </CardContent>
               </Card>

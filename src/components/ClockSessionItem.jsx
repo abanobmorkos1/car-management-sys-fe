@@ -1,5 +1,4 @@
 // components/ClockSessionItem.jsx
-
 import { Box, Typography, Grid } from '@mui/material';
 
 const ClockSessionItem = ({ driver, weeklyTotal }) => {

@@ -23,8 +23,11 @@ const useDriverDashboardData = (user, navigate) => {
   const [dailyBreakdown, setDailyBreakdown] = useState([]);
   const [lastSessionEarnings, setLastSessionEarnings] = useState(null);
   const [clockRequestPending, setClockRequestPending] = useState(false);
+  const [submittingClockIn, setSubmittingClockIn] = useState(false);
 
   const loadInitialData = useCallback(async () => {
+    if (!user || !user._id) return;
+
     try {
       const [deliveries, status, uploads, earnings, breakdown] = await Promise.all([
         fetchTodayDeliveries(),
@@ -33,7 +36,7 @@ const useDriverDashboardData = (user, navigate) => {
         fetchWeeklyEarnings(),
         fetchWeeklyBreakdown()
       ]);
-      console.log('📊 Weekly Earnings Response:', earnings);
+
       setAllDeliveries(Array.isArray(deliveries) ? deliveries : []);
       setIsClockedIn(status.isClockedIn);
       setClockInTime(status.clockIn ? new Date(status.clockIn) : null);
@@ -50,38 +53,48 @@ const useDriverDashboardData = (user, navigate) => {
     } catch (err) {
       console.error('❌ Failed to load driver dashboard data:', err.message);
     }
-  }, []);
+  }, [user]);
 
-  const handleClockInOut = async () => {
+  useEffect(() => {
+    if (user && user._id) {
+      loadInitialData();
+    }
+  }, [user, loadInitialData]);
+
+const handleClockInOut = async () => {
   try {
     if (isClockedIn) {
-      // Clocking out
+      // CLOCKING OUT
       setIsClockedIn(false);
       setClockInTime(null);
       setSecondsWorked(0);
       setClockInStatus(null);
+
       const result = await clockOut();
       if (result?.earnings !== undefined) {
         setLastSessionEarnings(result.earnings);
       }
     } else {
-      // Requesting clock-in
-      setClockRequestPending(true); // Make button gray
-      await requestClockIn();       // This sets clockInStatus to 'pending'
+      // CLOCKING IN
+      setClockRequestPending(true);
+
+      // Immediately reflect pending status in UI
+      setClockInStatus({ status: 'pending' });
+      setIsClockedIn(true); // Assume success for UI behavior
+
+      await requestClockIn(); // Send clock-in request
       setLastSessionEarnings(null);
+
+      // Fetch backend-confirmed status (could still be pending or approved)
+      const statusAfterRequest = await fetchDriverStatus();
+      setClockInStatus(statusAfterRequest);
     }
 
-    await loadInitialData();
-
-    // Recheck if rejected
-    if (clockInStatus?.status === 'rejected') {
-      setClockRequestPending(false); // Allow retry
-    } else {
-      setClockRequestPending(false); // Button active again after response
-    }
+    setClockRequestPending(false);
+    await loadInitialData(); // refresh UI
   } catch (err) {
     console.error('Clock in/out error:', err.message);
-    setClockRequestPending(false); // Reset in case of error
+    setClockRequestPending(false);
   }
 };
 
@@ -93,51 +106,35 @@ const useDriverDashboardData = (user, navigate) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
       });
-      await loadInitialData();
+
       if (newStatus === 'Delivered') {
         navigate(`/driver/cod/from-delivery/${id}`);
       }
+
+      await loadInitialData(); // ✅ Refresh deliveries after status change
     } catch (err) {
       console.error('❌ Failed to update status:', err.message);
     }
   };
 
+  // Realtime worked seconds
   useEffect(() => {
-    if (user?._id) {
-      loadInitialData();
+    let interval;
+    if (isClockedIn && clockInTime) {
+      const parsedTime = new Date(clockInTime);
+      if (!isNaN(parsedTime)) {
+        interval = setInterval(() => {
+          const now = new Date();
+          const diff = Math.floor((now - parsedTime) / 1000);
+          setSecondsWorked(diff);
+        }, 1000);
+      }
     }
-  }, [user?._id, loadInitialData]);
 
-  useEffect(() => {
-    if (!user?._id) return;
-    const interval = setInterval(() => {
-      console.log('🔄 Polling dashboard refresh...');
-      loadInitialData();
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [user?._id, loadInitialData]);
-
-useEffect(() => {
-  let interval;
-
-  if (isClockedIn && clockInTime) {
-    const parsedTime = new Date(clockInTime);
-    if (!isNaN(parsedTime)) {
-      interval = setInterval(() => {
-        const now = new Date();
-        const diff = Math.floor((now - parsedTime) / 1000);
-        setSecondsWorked(diff);
-      }, 1000);
-    }
-  }
-
-  return () => {
-    if (interval) {
-      clearInterval(interval);
-      console.log('⏱️ Timer cleared');
-    }
-  };
-}, [isClockedIn, clockInTime]);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isClockedIn, clockInTime]);
 
   const filteredDeliveries = (allDeliveries || []).filter(del => {
     if (filter === 'assigned') {
@@ -166,9 +163,10 @@ useEffect(() => {
     dailyBreakdown,
     handleClockInOut,
     handleStatusChange,
-    loadInitialData,
     lastSessionEarnings,
-
+    clockRequestPending,
+    submittingClockIn,
+    refreshData: loadInitialData
   };
 };
 

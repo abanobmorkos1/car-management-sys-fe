@@ -1,6 +1,20 @@
 // services/ownerDashboardService.js
 
 const api = process.env.REACT_APP_API_URL;
+// const fetchWithSession = async (url, options = {}) => {
+//   const res = await fetch(url, {
+//     ...options,
+//     credentials: 'include',
+//     headers: {
+//       'Content-Type': 'application/json',
+//       ...(options.headers || {})
+//     }
+//   });
+
+//   if (!res.ok) throw new Error(await res.text());
+//   return await res.json();
+  
+// }; fetchWithSession is not used in this file look at it ... IMPORTANT
 
 // Fetch deliveries in a date range
 export const fetchDeliveriesByDate = async (startDate, endDate) => {

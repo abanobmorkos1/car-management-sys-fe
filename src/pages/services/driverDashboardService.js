@@ -6,8 +6,9 @@ const fetchWithSession = async (url, options = {}) => {
       ...options,
       credentials: 'include',
       headers: {
-        'Content-Type': 'application/json',
-        ...(options.headers || {})
+        ...(options.headers || {}),
+        'Cache-Control': 'no-cache',
+        Pragma: 'no-cache'
       }
     });
 
@@ -38,7 +39,11 @@ export const requestClockIn = async () => {
   const res = await fetch(`${api}/api/hours/driver/clock-in-request`, {
     method: 'POST',
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json' }
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache',
+      Pragma: 'no-cache'
+    }
   });
 
   if (!res.ok) throw new Error(await res.text());
@@ -46,7 +51,9 @@ export const requestClockIn = async () => {
 };
 
 export const clockOut = async () => {
-  return await fetchWithSession(`${api}/api/hours/driver/clock-out`, { method: 'POST' });
+  return await fetchWithSession(`${api}/api/hours/driver/clock-out`, {
+    method: 'POST'
+  });
 };
 
 export const fetchDriverUploads = async () => {
