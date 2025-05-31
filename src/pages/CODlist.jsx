@@ -6,26 +6,49 @@ import {
 import { AuthContext } from '../contexts/AuthContext';
 
 const CODList = () => {
-  const { token } = useContext(AuthContext);
   const [cods, setCODs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCOD, setSelectedCOD] = useState(null);
+  const [imageMap, setImageMap] = useState({});
+
+  const api = process.env.REACT_APP_API_URL;
 
   useEffect(() => {
     const fetchCODs = async () => {
       try {
-        const res = await fetch(`${process.env.REACT_APP_API_URL}/cod/all`, {
-          headers: { Authorization: `Bearer ${token}` },
+        const res = await fetch(`${api}/cod/all`, {
+          credentials: 'include'
         });
         const data = await res.json();
         setCODs(data);
+
+        // Fetch signed URLs for each contract image
+        const urls = await Promise.all(
+          data.map(async (cod) => {
+            if (cod.contractPicture) {
+              const imgRes = await fetch(`${api}/api/s3/signed-url?key=${encodeURIComponent(cod.contractPicture)}`, {
+                credentials: 'include'
+              });
+              const { url } = await imgRes.json();
+              return { id: cod._id, url };
+            }
+            return { id: cod._id, url: null };
+          })
+        );
+
+        const imageMapObj = {};
+        urls.forEach(({ id, url }) => {
+          imageMapObj[id] = url;
+        });
+        setImageMap(imageMapObj);
+
         setLoading(false);
       } catch (err) {
         console.error('Failed to fetch CODs:', err);
       }
     };
     fetchCODs();
-  }, [token]);
+  }, [api]);
 
   const handleOpen = (cod) => setSelectedCOD(cod);
   const handleClose = () => setSelectedCOD(null);
@@ -48,11 +71,11 @@ const CODList = () => {
                 '&:hover': { transform: 'scale(1.02)' }
               }}
             >
-              {cod.contractPicture && (
+              {imageMap[cod._id] && (
                 <CardMedia
                   component="img"
                   height="140"
-                  image={cod.contractPicture}
+                  image={imageMap[cod._id]}
                   alt="Contract"
                 />
               )}
@@ -70,7 +93,6 @@ const CODList = () => {
         ))}
       </Grid>
 
-      {/* Modal Dialog */}
       <Dialog open={!!selectedCOD} onClose={handleClose} fullWidth maxWidth="sm">
         <DialogTitle>Delivery & Salesperson Details</DialogTitle>
         <DialogContent dividers>
@@ -92,9 +114,9 @@ const CODList = () => {
               <Typography>
                 Car: {selectedCOD.car?.year} {selectedCOD.car?.make} {selectedCOD.car?.model}
               </Typography>
-              {selectedCOD.contractPicture && (
+              {imageMap[selectedCOD._id] && (
                 <img
-                  src={selectedCOD.contractPicture}
+                  src={imageMap[selectedCOD._id]}
                   alt="Contract"
                   style={{ width: '100%', borderRadius: '8px', marginTop: '12px' }}
                 />

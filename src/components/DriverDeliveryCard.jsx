@@ -14,9 +14,11 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import LocalAtmIcon from '@mui/icons-material/LocalAtm';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import NotesIcon from '@mui/icons-material/Notes';
+import { useNavigate } from 'react-router-dom';
 
 const DriverDeliveryCard = ({ delivery, onStatusChange, onAssignDriver, userId, availableDrivers }) => {
   const theme = useTheme();
+  
 
 const isAssigned =
   (typeof delivery.driver === 'string' && delivery.driver === userId) ||
@@ -47,25 +49,25 @@ const isAssigned =
         {delivery.customerName}
       </Typography>
 
-      <Typography variant="body2" color="text.secondary" display="flex" alignItems="center" gap={1}>
+      <Typography variant="body2" color="blue" display="flex" alignItems="center" gap={1}>
         <PhoneIcon fontSize="small" /> {delivery.phoneNumber}
       </Typography>
-      <Typography variant="body2" color="text.secondary" display="flex" alignItems="center" gap={1}>
+      <Typography variant="body2" color="blue" display="flex" alignItems="center" gap={1}>
         <LocationOnIcon fontSize="small" /> {delivery.address}
       </Typography>
-      <Typography variant="body2" color="text.secondary" display="flex" alignItems="center" gap={1}>
+      <Typography variant="body2" color="blue" display="flex" alignItems="center" gap={1}>
         <AccessTimeIcon fontSize="small" /> {new Date(delivery.deliveryDate).toLocaleString()}
       </Typography>
-      <Typography variant="body2" color="text.secondary" display="flex" alignItems="center" gap={1}>
+      <Typography variant="body2" color="blue" display="flex" alignItems="center" gap={1}>
         <LocalAtmIcon fontSize="small" />
         ${delivery.codAmount} {delivery.codCollected ? `(via ${delivery.codMethod})` : '(Pending)'}
       </Typography>
-      <Typography variant="body2" color="text.secondary" display="flex" alignItems="center" gap={1}>
+      <Typography variant="body2" color="blue" display="flex" alignItems="center" gap={1}>
         <DirectionsCarIcon fontSize="small" />
         {delivery.year} {delivery.make} {delivery.model} {delivery.trim} - {delivery.color}
       </Typography>
       {delivery.notes && (
-        <Typography variant="body2" color="text.secondary" display="flex" alignItems="center" gap={1}>
+        <Typography variant="body2" color="blue" display="flex" alignItems="center" gap={1}>
           <NotesIcon fontSize="small" /> {delivery.notes}
         </Typography>
       )}
@@ -118,7 +120,6 @@ const isAssigned =
                 {d.name}
               </MenuItem>
             ))}
-            <MenuItem value={userId}>Assign Myself</MenuItem>
           </Select>
         </>
       ) : (
@@ -130,5 +131,4 @@ const isAssigned =
   );
 };
 
-// Ensure this component receives `userId` and `availableDrivers` props correctly from parent layout
 export default DriverDeliveryCard;

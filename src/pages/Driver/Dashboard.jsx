@@ -31,7 +31,8 @@ const DriverDashboard = () => {
     handleClockInOut,
     handleStatusChange,
     lastSessionEarnings,
-    clockRequestPending
+    clockRequestPending,
+    bonusCounts
   } = useDriverDashboardData(user, navigate);
 
   if (loading || !user) {
@@ -53,8 +54,6 @@ const DriverDashboard = () => {
       secondsWorked={secondsWorked}
       totalHours={totalHours}
       counts={counts}
-      showGallery={showGallery}
-      setShowGallery={setShowGallery}
       filter={filter}
       setFilter={setFilter}
       deliveries={deliveries}
@@ -63,6 +62,11 @@ const DriverDashboard = () => {
       lastSessionEarnings={lastSessionEarnings}
       clockRequestPending={clockRequestPending}
       navigate={navigate}
+      showGallery={showGallery}
+      setShowGallery={setShowGallery}
+      triggerInitialBonusFetch={true}
+      bonusCounts={bonusCounts}
+      
     />
   );
 };

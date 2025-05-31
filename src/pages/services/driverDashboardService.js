@@ -27,8 +27,16 @@ const fetchWithSession = async (url, options = {}) => {
 export const fetchTodayDeliveries = async () => {
   const data = await fetchWithSession(`${api}/api/delivery/deliveries`);
   if (!Array.isArray(data)) return [];
-  const today = new Date().toISOString().split('T')[0];
-  return data.filter(del => new Date(del.deliveryDate).toISOString().split('T')[0] === today);
+
+  const today = new Date();
+  return data.filter(del => {
+    const deliveryDate = new Date(del.deliveryDate);
+    return (
+      deliveryDate.getDate() === today.getDate() &&
+      deliveryDate.getMonth() === today.getMonth() &&
+      deliveryDate.getFullYear() === today.getFullYear()
+    );
+  });
 };
 
 export const fetchDriverStatus = async () => {
@@ -56,11 +64,6 @@ export const clockOut = async () => {
   });
 };
 
-export const fetchDriverUploads = async () => {
-  const res = await fetchWithSession(`${api}/api/driver/my-uploads`);
-  return Array.isArray(res) ? res : [];
-};
-
 export const fetchWeeklyEarnings = async () => {
   const res = await fetchWithSession(`${api}/api/hours/driver/weekly-earnings`);
   return res || { totalHours: 0, bonus: 0, totalEarnings: 0 };
@@ -70,3 +73,11 @@ export const fetchWeeklyBreakdown = async () => {
   const res = await fetchWithSession(`${api}/api/hours/driver/weekly-breakdown`);
   return Array.isArray(res) ? res : [];
 };
+
+export async function fetchBonusCounts() {
+  const res = await fetch(`${process.env.REACT_APP_API_URL}/api/bonus/uploads`, {
+    credentials: 'include',
+  });
+  if (!res.ok) throw new Error('Failed to fetch bonus counts');
+  return await res.json(); // Expected format: { review: number, customer: number }
+}

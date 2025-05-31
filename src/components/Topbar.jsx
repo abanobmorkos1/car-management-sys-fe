@@ -67,7 +67,7 @@ const Topbar = () => {
     <>
       <AppBar position="sticky" color="primary" sx={{ mb: 2 }}>
         <Toolbar sx={{ justifyContent: 'space-between' }}>
-          <Typography variant="h6" fontWeight="bold" color="inherit">
+          <Typography variant="h6" color="inherit">
             Welcome, {user?.name || 'User'}
           </Typography>
 

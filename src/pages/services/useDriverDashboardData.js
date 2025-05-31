@@ -4,14 +4,12 @@ import {
   fetchDriverStatus,
   requestClockIn,
   clockOut,
-  fetchDriverUploads,
   fetchWeeklyEarnings,
   fetchWeeklyBreakdown
 } from '../services/driverDashboardService';
 
 const useDriverDashboardData = (user, navigate) => {
   const [showGallery, setShowGallery] = useState(false);
-  const [counts, setCounts] = useState({ review: 0, customer: 0 });
   const [allDeliveries, setAllDeliveries] = useState([]);
   const [filter, setFilter] = useState('assigned');
   const [isClockedIn, setIsClockedIn] = useState(false);
@@ -19,154 +17,111 @@ const useDriverDashboardData = (user, navigate) => {
   const [secondsWorked, setSecondsWorked] = useState(0);
   const [clockInTime, setClockInTime] = useState(null);
   const [clockInStatus, setClockInStatus] = useState(null);
-  const [weeklyEarnings, setWeeklyEarnings] = useState(0);
+  const [weeklyEarnings, setWeeklyEarnings] = useState({
+    baseEarnings: 0,
+    bonus: 0,
+    totalEarnings: 0,
+    reviewPhotos: 0,
+    customerPhotos: 0,
+    totalHours: 0
+  });
   const [dailyBreakdown, setDailyBreakdown] = useState([]);
   const [lastSessionEarnings, setLastSessionEarnings] = useState(null);
   const [clockRequestPending, setClockRequestPending] = useState(false);
-  const [submittingClockIn, setSubmittingClockIn] = useState(false);
+  const [bonusCounts, setBonusCounts] = useState({ review: 0, customer: 0 });
 
   const loadInitialData = useCallback(async () => {
-    if (!user || !user._id) return;
+    const [deliveries, status, earnings, breakdown] = await Promise.all([
+      fetchTodayDeliveries(),
+      fetchDriverStatus(),
+      fetchWeeklyEarnings(),
+      fetchWeeklyBreakdown()
+    ]);
 
-    try {
-      const [deliveries, status, uploads, earnings, breakdown] = await Promise.all([
-        fetchTodayDeliveries(),
-        fetchDriverStatus(),
-        fetchDriverUploads(),
-        fetchWeeklyEarnings(),
-        fetchWeeklyBreakdown()
-      ]);
+    setAllDeliveries(Array.isArray(deliveries) ? deliveries : []);
+    setClockInStatus(status);
+    setWeeklyEarnings(earnings || {});
+    setTotalHours(parseFloat(earnings?.totalHours || 0));
+    setDailyBreakdown(Array.isArray(breakdown) ? breakdown : []);
 
-      setAllDeliveries(Array.isArray(deliveries) ? deliveries : []);
-      setIsClockedIn(status.isClockedIn);
-      setClockInTime(status.clockIn ? new Date(status.clockIn) : null);
-      setClockInStatus(status);
-
-      setCounts({
-        review: uploads.filter(u => u.type === 'review').length,
-        customer: uploads.filter(u => u.type === 'customer').length
-      });
-
-      setTotalHours(Number(earnings.totalHours || 0));
-      setWeeklyEarnings(earnings.totalEarnings ?? earnings.total ?? 0);
-      setDailyBreakdown(Array.isArray(breakdown) ? breakdown : []);
-    } catch (err) {
-      console.error('❌ Failed to load driver dashboard data:', err.message);
+    // Calculate bonus counts from breakdown
+    if (Array.isArray(breakdown)) {
+      const review = breakdown.reduce((sum, day) => sum + (day.reviewPhotos || 0), 0);
+      const customer = breakdown.reduce((sum, day) => sum + (day.customerPhotos || 0), 0);
+      setBonusCounts({ review, customer });
     }
-  }, [user]);
+
+    if (status?.isClockedIn && status?.clockIn) {
+      const clockInDate = new Date(status.clockIn);
+      const now = new Date();
+      setClockInTime(clockInDate);
+      setSecondsWorked(Math.floor((now - clockInDate) / 1000));
+    }
+
+    setIsClockedIn(status?.isClockedIn || false);
+    setClockRequestPending(status?.status === 'pending');
+  }, []);
 
   useEffect(() => {
-    if (user && user._id) {
+    if (user?._id) {
       loadInitialData();
     }
-  }, [user, loadInitialData]);
+  }, [user?._id, loadInitialData]);
 
-const handleClockInOut = async () => {
-  try {
-    if (isClockedIn) {
-      // CLOCKING OUT
-      setIsClockedIn(false);
-      setClockInTime(null);
-      setSecondsWorked(0);
-      setClockInStatus(null);
-
-      const result = await clockOut();
-      if (result?.earnings !== undefined) {
-        setLastSessionEarnings(result.earnings);
-      }
-    } else {
-      // CLOCKING IN
-      setClockRequestPending(true);
-
-      // Immediately reflect pending status in UI
-      setClockInStatus({ status: 'pending' });
-      setIsClockedIn(true); // Assume success for UI behavior
-
-      await requestClockIn(); // Send clock-in request
-      setLastSessionEarnings(null);
-
-      // Fetch backend-confirmed status (could still be pending or approved)
-      const statusAfterRequest = await fetchDriverStatus();
-      setClockInStatus(statusAfterRequest);
-    }
-
-    setClockRequestPending(false);
-    await loadInitialData(); // refresh UI
-  } catch (err) {
-    console.error('Clock in/out error:', err.message);
-    setClockRequestPending(false);
-  }
-};
-
-  const handleStatusChange = async (id, newStatus) => {
-    try {
-      await fetch(`${process.env.REACT_APP_API_URL}/api/delivery/status/${id}`, {
-        method: 'PUT',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus })
-      });
-
-      if (newStatus === 'Delivered') {
-        navigate(`/driver/cod/from-delivery/${id}`);
-      }
-
-      await loadInitialData(); // ✅ Refresh deliveries after status change
-    } catch (err) {
-      console.error('❌ Failed to update status:', err.message);
-    }
-  };
-
-  // Realtime worked seconds
   useEffect(() => {
     let interval;
     if (isClockedIn && clockInTime) {
-      const parsedTime = new Date(clockInTime);
-      if (!isNaN(parsedTime)) {
-        interval = setInterval(() => {
-          const now = new Date();
-          const diff = Math.floor((now - parsedTime) / 1000);
-          setSecondsWorked(diff);
-        }, 1000);
-      }
+      interval = setInterval(() => {
+        const now = new Date();
+        const diff = Math.floor((now - clockInTime) / 1000);
+        setSecondsWorked(diff);
+      }, 1000);
     }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
+    return () => clearInterval(interval);
   }, [isClockedIn, clockInTime]);
 
-  const filteredDeliveries = (allDeliveries || []).filter(del => {
-    if (filter === 'assigned') {
-      const driverId = typeof del.driver === 'string' ? del.driver : del.driver?._id;
-      return driverId?.toString() === user?._id?.toString();
+  const handleClockInOut = async () => {
+    if (!isClockedIn) {
+      const res = await requestClockIn();
+      if (res?.status === 'pending') {
+        setClockRequestPending(true);
+      }
+    } else {
+      const result = await clockOut();
+      if (result?.earnings) {
+        setLastSessionEarnings(result.earnings);
+      }
+      setIsClockedIn(false);
+      setClockInTime(null);
     }
-    return true;
-  });
+
+    await loadInitialData();
+  };
+
+  const handleStatusChange = () => {
+    loadInitialData();
+  };
 
   return {
     showGallery,
     setShowGallery,
-    counts,
+    allDeliveries,
+    deliveries: allDeliveries.filter(del =>
+      filter === 'assigned' ? del.driver?._id === user?._id : true
+    ),
     filter,
     setFilter,
     isClockedIn,
-    setIsClockedIn,
-    clockInStatus,
-    setClockInStatus,
-    clockInTime,
-    setClockInTime,
-    secondsWorked,
     totalHours,
+    secondsWorked,
+    clockInStatus,
     weeklyEarnings,
-    deliveries: filteredDeliveries,
     dailyBreakdown,
     handleClockInOut,
     handleStatusChange,
     lastSessionEarnings,
     clockRequestPending,
-    submittingClockIn,
-    refreshData: loadInitialData
+    bonusCounts
   };
 };
 

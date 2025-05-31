@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import Topbar from '../components/Topbar';
 import {
   Box, Button, Card, CardContent, Container, Divider,
@@ -34,8 +35,6 @@ const DriverDashboardLayout = ({
   secondsWorked,
   totalHours,
   counts,
-  showGallery,
-  setShowGallery,
   filter,
   setFilter,
   deliveries,
@@ -43,9 +42,32 @@ const DriverDashboardLayout = ({
   weeklyEarnings,
   dailyBreakdown,
   lastSessionEarnings,
-  clockRequestPending,
-  submittingClockIn
+  submittingClockIn,
+  showGallery,
+  setShowGallery,
 }) => {
+  const [bonusCounts, setBonusCounts] = useState({ review: 0, customer: 0 });
+  const base = weeklyEarnings?.baseEarnings || 0;
+  const bonus = bonusCounts.review * 20 + bonusCounts.customer * 5;
+  const total = base + bonus;
+
+  useEffect(() => {
+    const fetchBonusCounts = async () => {
+      try {
+        const res = await fetch(`${process.env.REACT_APP_API_URL}/api/driver/my-uploads`, {
+          credentials: 'include'
+        });
+        const data = await res.json();
+        const reviewCount = data.filter(u => u.type === 'review').length;
+        const customerCount = data.filter(u => u.type === 'customer').length;
+        setBonusCounts({ review: reviewCount, customer: customerCount });
+      } catch (err) {
+        console.error('❌ Failed to fetch bonus counts', err);
+      }
+    };
+    fetchBonusCounts();
+  }, []);
+
   return (
     <>
       <Topbar />
@@ -55,7 +77,6 @@ const DriverDashboardLayout = ({
             Driver Dashboard
           </Typography>
 
-          {/* Deliveries Section */}
           <Typography variant="h6" fontWeight="medium" color="text.primary" gutterBottom>
             Deliveries
           </Typography>
@@ -88,7 +109,6 @@ const DriverDashboardLayout = ({
 
           <Divider sx={{ my: 4 }} />
 
-          {/* Clock & Bonus Section */}
           <Grid container spacing={2} mb={3}>
             <Grid item xs={12}>
               <Card elevation={2} sx={{ borderRadius: 2, bgcolor: '#ffffff' }}>
@@ -102,39 +122,41 @@ const DriverDashboardLayout = ({
                       : `${Number(totalHours || 0).toFixed(2)} hrs`}
                   </Typography>
                   <Typography variant="body2" mt={1} color="text.secondary">
-                    You've earned: <strong>${(weeklyEarnings ?? 0).toFixed(2)}</strong> this week
+                    You've earned: <strong>${total.toFixed(2)}</strong> this week
+                  </Typography>
+                  <Typography variant="body2" color="success.main">
+                    Base: ${base.toFixed(2)} + Bonus: ${bonus.toFixed(2)}
                   </Typography>
                   {lastSessionEarnings !== null && (
                     <Typography variant="body2" color="info.main" sx={{ mt: 1 }}>
                       🕓 Last session earnings: <strong>${lastSessionEarnings.toFixed(2)}</strong>
                     </Typography>
                   )}
-                    <Button
-                      variant="contained"
-                      fullWidth
-                      onClick={handleClockInOut}
-                      disabled={submittingClockIn}
-                      sx={{
-                        mt: 2,
-                        bgcolor:
-                          submittingClockIn
-                            ? 'info.main'
-                            : clockInStatus?.status === 'pending'
-                            ? 'warning.main'
-                            : isClockedIn && clockInStatus?.status === 'approved'
-                            ? 'error.main'
-                            : 'success.main'
-                      }}
-                    >
-                      {submittingClockIn
-                        ? 'Submitting Request...'
-                        : clockInStatus?.status === 'pending'
-                        ? 'Awaiting Approval...'
-                        : isClockedIn && clockInStatus?.status === 'approved'
-                        ? 'Clock Out'
-                        : 'Clock In'}
-                    </Button>
-
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    onClick={handleClockInOut}
+                    disabled={submittingClockIn}
+                    sx={{
+                      mt: 2,
+                      bgcolor:
+                        submittingClockIn
+                          ? 'info.main'
+                          : clockInStatus?.status === 'pending'
+                          ? 'warning.main'
+                          : isClockedIn && clockInStatus?.status === 'approved'
+                          ? 'error.main'
+                          : 'success.main'
+                    }}
+                  >
+                    {submittingClockIn
+                      ? 'Submitting Request...'
+                      : clockInStatus?.status === 'pending'
+                      ? 'Awaiting Approval...'
+                      : isClockedIn && clockInStatus?.status === 'approved'
+                      ? 'Clock Out'
+                      : 'Clock In'}
+                  </Button>
                   <ClockStatusMessage clockInStatus={clockInStatus} />
                 </CardContent>
               </Card>
@@ -147,20 +169,22 @@ const DriverDashboardLayout = ({
                     Bonus Uploads
                   </Typography>
                   <Typography variant="body2" mb={0.5}>
-                    Review Photos: <strong>{counts?.review ?? 0}</strong>
+                    Review Photos: <strong>{bonusCounts.review}</strong>
                   </Typography>
                   <Typography variant="body2">
-                    Customer Photos: <strong>{counts?.customer ?? 0}</strong>
+                    Customer Photos: <strong>{bonusCounts.customer}</strong>
+                  </Typography>
+                  <Typography variant="body2" color="primary" fontWeight="bold" mt={1}>
+                    Total Bonus: ${bonusCounts.review * 20 + bonusCounts.customer * 5}
                   </Typography>
                   <Box mt={2}>
-                    <BonusUpload onCountUpdate={setShowGallery} />
+                    <BonusUpload onCountUpdate={(counts) => setBonusCounts(counts)} />
                   </Box>
                 </CardContent>
               </Card>
             </Grid>
           </Grid>
 
-          {/* Weekly Breakdown Section */}
           <Box mt={4}>
             <Typography variant="h6" gutterBottom>
               🗓 Weekly Breakdown
