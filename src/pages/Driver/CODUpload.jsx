@@ -1,155 +1,210 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  Box, Typography, Button, Stack, MenuItem, Select, InputLabel, FormControl, CircularProgress
+  Container, Paper, TextField, Button, Typography, Box, Grid, MenuItem,
+  CircularProgress, Alert
 } from '@mui/material';
-import { AuthContext } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const api = process.env.REACT_APP_API_URL;
-const REVIEW_RATE = 20;
-const CUSTOMER_RATE = 5;
 
-const BonusUpload = () => {
-  const { user } = useContext(AuthContext);
-  const [type, setType] = useState('review');
-  const [file, setFile] = useState(null);
-  const [uploads, setUploads] = useState([]);
+const uploadToS3 = async (file, category, customerName) => {
+  const res = await fetch(`${api}/api/s3/generate-url`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({
+      fileName: file.name,
+      fileType: file.type,
+      uploadCategory: category,
+      meta: { customerName }
+    })
+  });
+
+  const { uploadUrl, key } = await res.json();
+
+  await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': file.type },
+    body: file
+  });
+
+  return key;
+};
+
+const NewCOD = ({ prefill = null, fromDelivery = false }) => {
+  const navigate = useNavigate();
+  const [form, setForm] = useState({
+    customerName: '', phoneNumber: '', address: '', amount: '',
+    method: 'None', salesperson: '', driver: '', delivery: '',
+    car: { year: '', make: '', model: '', trim: '', color: '' }
+  });
+
+  const [salespeople, setSalespeople] = useState([]);
+  const [drivers, setDrivers] = useState([]);
+  const [contractPicture, setContractPicture] = useState(null);
+  const [checkPicture, setCheckPicture] = useState(null);
   const [loading, setLoading] = useState(false);
-
-  const fetchUploads = async () => {
-    try {
-      const res = await fetch(`${api}/api/bonus/my-uploads`, {
-        credentials: 'include'
-      });
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        setUploads(data);
-      }
-    } catch (err) {
-      console.error('Failed to fetch uploads:', err);
-    }
-  };
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   useEffect(() => {
-    fetchUploads();
-  }, []);
+    if (prefill) {
+      setForm({
+        customerName: prefill.customerName || '',
+        phoneNumber: prefill.phoneNumber || '',
+        address: prefill.address || '',
+        amount: prefill.amount || prefill.codAmount || 0,
+        method: prefill.method || prefill.codMethod || 'None',
+        salesperson: prefill.salesperson?._id || prefill.salesperson || '',
+        driver: prefill.driver?._id || prefill.driver || '',
+        delivery: prefill.delivery?._id || prefill.delivery || '',
+        car: {
+          year: prefill.car?.year || prefill.year || '',
+          make: prefill.car?.make || prefill.make || '',
+          model: prefill.car?.model || prefill.model || '',
+          trim: prefill.car?.trim || prefill.trim || '',
+          color: prefill.car?.color || prefill.color || ''
+        }
+      });
+    }
+  }, [prefill]);
 
-  const handleUpload = async () => {
-    if (!file) return;
+  useEffect(() => {
+    if (!fromDelivery) {
+      const fetchUsers = async () => {
+        const [salesRes, driverRes] = await Promise.all([
+          fetch(`${api}/api/users/salespeople`, { credentials: 'include' }),
+          fetch(`${api}/api/users/drivers`, { credentials: 'include' })
+        ]);
 
+        if (salesRes.ok) setSalespeople(await salesRes.json());
+        if (driverRes.ok) setDrivers(await driverRes.json());
+      };
+      fetchUsers();
+    }
+  }, [fromDelivery]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm(prev =>
+      name in prev.car
+        ? { ...prev, car: { ...prev.car, [name]: value } }
+        : { ...prev, [name]: value }
+    );
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
     setLoading(true);
-    const fileName = file.name;
-    const fileType = file.type;
 
     try {
-      // Step 1: Get signed upload URL
-      const res = await fetch(`${api}/api/aws/generate-url`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fileName,
-          fileType,
-          uploadCategory: 'bonus',
-          meta: {}, // not needed for bonus
-        }),
-      });
+      if (!contractPicture) throw new Error('Contract picture is required');
 
-      const { uploadUrl, key } = await res.json();
+      const contractKey = await uploadToS3(contractPicture, 'cod', form.customerName);
+      const checkKey = form.method === 'Check' && checkPicture
+        ? await uploadToS3(checkPicture, 'cod', form.customerName)
+        : null;
 
-      // Step 2: Upload file to S3
-      await fetch(uploadUrl, {
-        method: 'PUT',
-        headers: { 'Content-Type': fileType },
-        body: file,
-      });
+const res = await fetch(`${api}/cod/newcod`, {
+  method: 'POST',
+  credentials: 'include',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    customerName: form.customerName,
+    phoneNumber: form.phoneNumber,
+    address: form.address,
+    amount: Number(form.amount || 0),
+    method: form.method,
+    contractKey,
+    checkKey,
+    salesperson: form.salesperson,
+    driver: form.driver,
+    delivery: form.delivery,
+    car: form.car
+  })
+});
 
-      // Step 3: Save to DB
-      const saveRes = await fetch(`${api}/api/bonus/upload`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, key }),
-      });
-
-      if (saveRes.ok) {
-        setFile(null);
-        setType('review');
-        fetchUploads();
+      const data = await res.json();
+      if (res.ok) {
+        setSuccess('COD created successfully!');
+        setTimeout(() => navigate('/allcods'), 2000);
       } else {
-        console.error('Failed to save bonus record');
+        throw new Error(data.message || 'Failed to create COD');
       }
     } catch (err) {
-      console.error('Upload failed:', err);
+      console.error('❌ COD submission error:', err);
+      setError(err.message || 'Server error');
     } finally {
       setLoading(false);
     }
   };
 
-  // 🧮 Totals
-  const reviewCount = uploads.filter(u => u.type === 'review').length;
-  const customerCount = uploads.filter(u => u.type === 'customer').length;
-  const totalBonus = (reviewCount * REVIEW_RATE) + (customerCount * CUSTOMER_RATE);
-
   return (
-    <Box>
-      <Typography variant="h6" fontWeight="bold" gutterBottom>
-        Upload Bonus Proof
-      </Typography>
+    <Container maxWidth="sm" sx={{ mt: 5 }}>
+      <Paper sx={{ p: 4, borderRadius: 3 }}>
+        <Typography variant="h4" mb={3} align="center">Create New COD</Typography>
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
 
-      <Stack direction="row" spacing={2} alignItems="center" mb={2}>
-        <FormControl size="small" sx={{ minWidth: 150 }}>
-          <InputLabel>Type</InputLabel>
-          <Select value={type} label="Type" onChange={(e) => setType(e.target.value)}>
-            <MenuItem value="review">Google Review Photo</MenuItem>
-            <MenuItem value="customer">Customer Picture</MenuItem>
-          </Select>
-        </FormControl>
+        <Box component="form" onSubmit={handleSubmit}>
+          <TextField fullWidth name="customerName" label="Customer Name" value={form.customerName} onChange={handleChange} margin="normal" required disabled={fromDelivery} />
+          <TextField fullWidth name="phoneNumber" label="Phone Number" value={form.phoneNumber} onChange={handleChange} margin="normal" required disabled={fromDelivery} />
+          <TextField fullWidth name="address" label="Address" value={form.address} onChange={handleChange} margin="normal" required disabled={fromDelivery} />
+          <TextField fullWidth name="amount" label="Amount (0 if none)" type="number" value={form.amount} onChange={handleChange} margin="normal" />
+          <TextField fullWidth select name="method" label="Payment Method" value={form.method} onChange={handleChange} margin="normal">
+            {['None', 'Cash', 'Zelle', 'Check'].map(method => (
+              <MenuItem key={method} value={method}>{method}</MenuItem>
+            ))}
+          </TextField>
 
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => setFile(e.target.files[0])}
-          style={{ flexGrow: 1 }}
-        />
+          {!fromDelivery && (
+            <>
+              <TextField fullWidth select name="salesperson" label="Salesperson" value={form.salesperson} onChange={handleChange} margin="normal" required>
+                {salespeople.map(sp => <MenuItem key={sp._id} value={sp._id}>{sp.name}</MenuItem>)}
+              </TextField>
+              <TextField fullWidth select name="driver" label="Driver" value={form.driver} onChange={handleChange} margin="normal" required>
+                {drivers.map(d => <MenuItem key={d._id} value={d._id}>{d.name}</MenuItem>)}
+              </TextField>
+            </>
+          )}
 
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleUpload}
-          disabled={loading || !file}
-        >
-          {loading ? <CircularProgress size={20} /> : 'Upload'}
-        </Button>
-      </Stack>
+          <Typography variant="h6" mt={3} mb={1}>Car Info</Typography>
+          <Grid container spacing={2}>
+            {['year', 'make', 'model', 'trim', 'color'].map(field => (
+              <Grid item xs={12} sm={6} key={field}>
+                <TextField
+                  fullWidth
+                  name={field}
+                  label={field.charAt(0).toUpperCase() + field.slice(1)}
+                  value={form.car[field]}
+                  onChange={handleChange}
+                  disabled={fromDelivery && !!form.car[field]}
+                />
+              </Grid>
+            ))}
+          </Grid>
 
-      {/* 🔢 Bonus Summary */}
-      <Typography variant="subtitle1" fontWeight="bold" mt={2}>
-        Weekly Bonus Summary
-      </Typography>
-      <Typography variant="body2">Review Photos: {reviewCount} × ${REVIEW_RATE} = ${reviewCount * REVIEW_RATE}</Typography>
-      <Typography variant="body2">Customer Photos: {customerCount} × ${CUSTOMER_RATE} = ${customerCount * CUSTOMER_RATE}</Typography>
-      <Typography variant="body2" fontWeight="bold">Total Bonus: ${totalBonus}</Typography>
+          <Box mt={3}>
+            <Typography variant="body1">Upload Contract Picture *</Typography>
+            <input type="file" required onChange={(e) => setContractPicture(e.target.files[0])} />
+          </Box>
 
-      {/* 📋 Uploaded Entries */}
-      <Typography variant="subtitle1" mt={3} gutterBottom>
-        Your Uploaded Bonuses
-      </Typography>
-
-      <Stack spacing={1}>
-        {uploads.length > 0 ? (
-          uploads.map((u) => (
-            <Box key={u._id} sx={{ border: '1px solid #ddd', borderRadius: 2, p: 1 }}>
-              <Typography variant="body2" color="text.secondary">
-                📤 <strong>{u.type}</strong> | {new Date(u.dateUploaded).toLocaleString()}
-              </Typography>
+          {form.method === 'Check' && (
+            <Box mt={2}>
+              <Typography>Upload Check Picture</Typography>
+              <input type="file" onChange={(e) => setCheckPicture(e.target.files[0])} />
             </Box>
-          ))
-        ) : (
-          <Typography variant="body2" color="text.secondary">No uploads found.</Typography>
-        )}
-      </Stack>
-    </Box>
+          )}
+
+          <Button type="submit" variant="contained" fullWidth sx={{ mt: 3 }} disabled={loading}>
+            {loading ? <CircularProgress size={24} /> : 'Create COD'}
+          </Button>
+        </Box>
+      </Paper>
+    </Container>
   );
 };
 
-export default BonusUpload;
+export default NewCOD;
