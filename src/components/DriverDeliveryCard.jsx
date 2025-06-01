@@ -50,6 +50,7 @@ const DriverDeliveryCard = ({ delivery, onStatusChange, onAssignDriver, userId, 
         {delivery.customerName}
       </Typography>
 
+      {/* ✅ Show completed badge for all roles */}
       {delivery.status === 'Delivered' && (
         <Typography variant="body2" color="success.main" fontWeight="bold" mb={1}>
           ✅ Delivery Completed
@@ -81,6 +82,7 @@ const DriverDeliveryCard = ({ delivery, onStatusChange, onAssignDriver, userId, 
 
       <Divider sx={{ my: 2 }} />
 
+      {/* ✅ Show controls if assigned */}
       {isAssigned ? (
         <>
           <Typography variant="body2" fontWeight="bold" gutterBottom>
