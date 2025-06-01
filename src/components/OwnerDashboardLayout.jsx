@@ -34,7 +34,7 @@ const OwnerDashboardLayout = ({
   const handleApprove = async (id) => {
     try {
       setLoadingId(id);
-      await onApprove(id);
+      onApprove(id);
       setSnack({ open: true, message: 'Clock-in approved ✅', severity: 'success' });
     } catch (err) {
       setSnack({ open: true, message: 'Failed to approve ❌', severity: 'error' });

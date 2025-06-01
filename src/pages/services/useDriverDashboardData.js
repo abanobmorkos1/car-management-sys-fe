@@ -11,7 +11,7 @@ import {
 const useDriverDashboardData = (user, navigate) => {
   const [showGallery, setShowGallery] = useState(false);
   const [allDeliveries, setAllDeliveries] = useState([]);
-  const [filter, setFilter] = useState('assigned');
+  const [filter, setFilter] = useState('all');
   const [isClockedIn, setIsClockedIn] = useState(false);
   const [totalHours, setTotalHours] = useState(0);
   const [secondsWorked, setSecondsWorked] = useState(0);
@@ -97,11 +97,11 @@ const useDriverDashboardData = (user, navigate) => {
     await loadInitialData();
   };
 
-  const handleStatusChange = () => {
-    loadInitialData();
+  const handleStatusChange = async () => {
+    const updatedDeliveries = await fetchTodayDeliveries();
+    setAllDeliveries(Array.isArray(updatedDeliveries) ? updatedDeliveries : []);
   };
 
-  // ✅ This filters today's deliveries either to assigned or all
   const filteredDeliveries = allDeliveries.filter(del =>
     filter === 'assigned'
       ? del.driver === user?._id || del.driver?._id === user?._id

@@ -50,7 +50,6 @@ const theme = createTheme({
 
 function App() {
   return (
-     <ThemeProvider theme={theme}>
     <AuthProvider>
       <Router>
         <Routes>
@@ -72,7 +71,6 @@ function App() {
         </Routes>
       </Router>
     </AuthProvider>
-    </ThemeProvider>
   );
 }
 

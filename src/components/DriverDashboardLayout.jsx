@@ -7,6 +7,7 @@ import {
 import DriverDeliveryCard from '../components/DriverDeliveryCard';
 import BonusUpload from '../pages/Driver/BonusUpload';
 import BonusGallery from '../components/BonusGallery';
+import { useNavigate } from 'react-router-dom';
 
 const ClockStatusMessage = ({ clockInStatus }) => {
   if (clockInStatus?.status === 'pending') {
@@ -87,8 +88,18 @@ const DriverDashboardLayout = ({
             fullWidth
             sx={{ mb: 3, '& .MuiToggleButton-root': { fontWeight: 'bold' } }}
           >
-            <ToggleButton value="assigned">Assigned</ToggleButton>
-            <ToggleButton value="all">All</ToggleButton>
+                <Button
+            onClick={() => setFilter('assigned')}
+            variant={filter === 'assigned' ? 'contained' : 'outlined'}
+          >
+            Assigned
+          </Button>
+          <Button
+            onClick={() => setFilter('all')}
+            variant={filter === 'all' ? 'contained' : 'outlined'}
+          >
+            All
+          </Button>
           </ToggleButtonGroup>
 
           {deliveries.length > 0 ? (
@@ -98,6 +109,7 @@ const DriverDashboardLayout = ({
                   delivery={del}
                   onStatusChange={handleStatusChange}
                   userId={user?._id}
+                  navigate={navigate}
                 />
               </Box>
             ))

@@ -20,10 +20,11 @@ import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import LogoutIcon from '@mui/icons-material/Logout';
 import Inventory2Icon from '@mui/icons-material/Inventory2';
 import AssignmentReturnIcon from '@mui/icons-material/AssignmentReturn';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import { AuthContext } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
-const Topbar = () => {
+const Topbar = ({ onRefresh }) => {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const theme = useTheme();
@@ -38,6 +39,10 @@ const Topbar = () => {
   const handleNav = (path) => {
     navigate(path);
     setOpen(false);
+  };
+
+  const handleRefresh = () => {
+    if (onRefresh) onRefresh(); // Use prop to trigger data refresh
   };
 
   const drawerItems = [
@@ -55,6 +60,11 @@ const Topbar = () => {
       text: 'CODs',
       path: '/allcods',
       icon: <Inventory2Icon />
+    },
+    {
+      text: 'Refresh',
+      action: handleRefresh,
+      icon: <RefreshIcon />
     },
     {
       text: 'Logout',
@@ -85,6 +95,9 @@ const Topbar = () => {
               </Button>
               <Button color="inherit" startIcon={<Inventory2Icon />} onClick={() => handleNav('/allcods')}>
                 CODs
+              </Button>
+              <Button color="inherit" startIcon={<RefreshIcon />} onClick={handleRefresh}>
+                Refresh
               </Button>
               <Button
                 startIcon={<LogoutIcon />}

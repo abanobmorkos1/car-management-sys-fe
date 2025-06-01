@@ -16,7 +16,13 @@ import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import NotesIcon from '@mui/icons-material/Notes';
 import { useNavigate } from 'react-router-dom';
 
-const DriverDeliveryCard = ({ delivery, onStatusChange, onAssignDriver, userId, availableDrivers }) => {
+const DriverDeliveryCard = ({
+  delivery,
+  onStatusChange,
+  onAssignDriver,
+  userId,
+  availableDrivers,
+}) => {
   const theme = useTheme();
   const navigate = useNavigate();
 
@@ -24,9 +30,22 @@ const DriverDeliveryCard = ({ delivery, onStatusChange, onAssignDriver, userId, 
     (typeof delivery.driver === 'string' && delivery.driver === userId) ||
     (typeof delivery.driver === 'object' && delivery.driver?._id === userId);
 
-  const handleStatusChange = (e) => {
-    onStatusChange(delivery._id, e.target.value);
-  };
+  const normalizedStatus = delivery.status?.toLowerCase();
+  const showUploadButton = isAssigned && normalizedStatus === 'delivered';
+
+  console.log('🧾 userId:', userId);
+  console.log('🚗 delivery.driver:', delivery.driver);
+  console.log('🧪 isAssigned:', isAssigned, 'status:', delivery.status, 'normalized:', normalizedStatus);
+  console.log('📦 showUploadButton:', showUploadButton);
+
+const handleStatusChange = async (e) => {
+  const newStatus = e.target.value;
+  await onStatusChange(delivery._id, newStatus);
+
+  if (newStatus === 'Delivered') {
+    navigate(`/driver/cod/from-delivery/${delivery._id}`);
+  }
+};
 
   const handleAssignDriver = async (e) => {
     const newDriverId = e.target.value;
@@ -36,22 +55,22 @@ const DriverDeliveryCard = ({ delivery, onStatusChange, onAssignDriver, userId, 
       console.error('❌ Failed to assign driver:', err.message);
     }
   };
+  
 
   return (
     <Box
       p={2}
       border="1px solid #e0e0e0"
       borderRadius={2}
-      bgcolor={delivery.status === 'Delivered' ? '#f3f4f6' : theme.palette.background.paper}
+      bgcolor={normalizedStatus === 'delivered' ? '#f3f4f6' : theme.palette.background.paper}
       boxShadow={2}
-      sx={{ opacity: delivery.status === 'Delivered' ? 0.6 : 1 }}
+      sx={{ opacity: normalizedStatus === 'delivered' ? 0.6 : 1 }}
     >
       <Typography fontWeight="bold" fontSize="1.1rem" mb={1} color="primary.main">
         {delivery.customerName}
       </Typography>
 
-      {/* ✅ Show completed badge for all roles */}
-      {delivery.status === 'Delivered' && (
+      {normalizedStatus === 'delivered' && (
         <Typography variant="body2" color="success.main" fontWeight="bold" mb={1}>
           ✅ Delivery Completed
         </Typography>
@@ -82,7 +101,6 @@ const DriverDeliveryCard = ({ delivery, onStatusChange, onAssignDriver, userId, 
 
       <Divider sx={{ my: 2 }} />
 
-      {/* ✅ Show controls if assigned */}
       {isAssigned ? (
         <>
           <Typography variant="body2" fontWeight="bold" gutterBottom>
@@ -99,18 +117,6 @@ const DriverDeliveryCard = ({ delivery, onStatusChange, onAssignDriver, userId, 
             <MenuItem value="Heading to Customer">Heading to customer</MenuItem>
             <MenuItem value="Delivered">Delivered</MenuItem>
           </Select>
-
-          {delivery.status === 'Delivered' && (
-            <Button
-              fullWidth
-              sx={{ mt: 1 }}
-              variant="outlined"
-              color="primary"
-              onClick={() => navigate(`/driver/cod/from-delivery/${delivery._id}`)}
-            >
-              Upload COD
-            </Button>
-          )}
         </>
       ) : availableDrivers ? (
         <>
