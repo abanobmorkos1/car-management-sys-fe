@@ -44,7 +44,6 @@ const useDriverDashboardData = (user, navigate) => {
     setTotalHours(parseFloat(earnings?.totalHours || 0));
     setDailyBreakdown(Array.isArray(breakdown) ? breakdown : []);
 
-    // Calculate bonus counts from breakdown
     if (Array.isArray(breakdown)) {
       const review = breakdown.reduce((sum, day) => sum + (day.reviewPhotos || 0), 0);
       const customer = breakdown.reduce((sum, day) => sum + (day.customerPhotos || 0), 0);
@@ -102,13 +101,18 @@ const useDriverDashboardData = (user, navigate) => {
     loadInitialData();
   };
 
+  // ✅ This filters today's deliveries either to assigned or all
+  const filteredDeliveries = allDeliveries.filter(del =>
+    filter === 'assigned'
+      ? del.driver === user?._id || del.driver?._id === user?._id
+      : true
+  );
+
   return {
     showGallery,
     setShowGallery,
     allDeliveries,
-    deliveries: allDeliveries.filter(del =>
-      filter === 'assigned' ? del.driver?._id === user?._id : true
-    ),
+    deliveries: filteredDeliveries,
     filter,
     setFilter,
     isClockedIn,

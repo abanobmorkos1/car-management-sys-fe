@@ -18,36 +18,43 @@ import { useNavigate } from 'react-router-dom';
 
 const DriverDeliveryCard = ({ delivery, onStatusChange, onAssignDriver, userId, availableDrivers }) => {
   const theme = useTheme();
-  
+  const navigate = useNavigate();
 
-const isAssigned =
-  (typeof delivery.driver === 'string' && delivery.driver === userId) ||
-  (typeof delivery.driver === 'object' && delivery.driver?._id === userId);
+  const isAssigned =
+    (typeof delivery.driver === 'string' && delivery.driver === userId) ||
+    (typeof delivery.driver === 'object' && delivery.driver?._id === userId);
 
   const handleStatusChange = (e) => {
     onStatusChange(delivery._id, e.target.value);
   };
 
   const handleAssignDriver = async (e) => {
-  const newDriverId = e.target.value;
-  try {
-    await onAssignDriver(delivery._id, newDriverId);
-  } catch (err) {
-    console.error('❌ Failed to assign driver:', err.message);
-  }
-};
+    const newDriverId = e.target.value;
+    try {
+      await onAssignDriver(delivery._id, newDriverId);
+    } catch (err) {
+      console.error('❌ Failed to assign driver:', err.message);
+    }
+  };
 
   return (
     <Box
       p={2}
       border="1px solid #e0e0e0"
       borderRadius={2}
-      bgcolor={theme.palette.background.paper}
+      bgcolor={delivery.status === 'Delivered' ? '#f3f4f6' : theme.palette.background.paper}
       boxShadow={2}
+      sx={{ opacity: delivery.status === 'Delivered' ? 0.6 : 1 }}
     >
       <Typography fontWeight="bold" fontSize="1.1rem" mb={1} color="primary.main">
         {delivery.customerName}
       </Typography>
+
+      {delivery.status === 'Delivered' && (
+        <Typography variant="body2" color="success.main" fontWeight="bold" mb={1}>
+          ✅ Delivery Completed
+        </Typography>
+      )}
 
       <Typography variant="body2" color="blue" display="flex" alignItems="center" gap={1}>
         <PhoneIcon fontSize="small" /> {delivery.phoneNumber}
@@ -91,15 +98,15 @@ const isAssigned =
             <MenuItem value="Delivered">Delivered</MenuItem>
           </Select>
 
-          {delivery.status !== 'Delivered' && (
+          {delivery.status === 'Delivered' && (
             <Button
               fullWidth
               sx={{ mt: 1 }}
-              variant="contained"
-              color="success"
-              onClick={() => onStatusChange(delivery._id, 'Delivered')}
+              variant="outlined"
+              color="primary"
+              onClick={() => navigate(`/driver/cod/from-delivery/${delivery._id}`)}
             >
-              Mark as Delivered
+              Upload COD
             </Button>
           )}
         </>

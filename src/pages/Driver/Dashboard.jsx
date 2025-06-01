@@ -66,7 +66,6 @@ const DriverDashboard = () => {
       setShowGallery={setShowGallery}
       triggerInitialBonusFetch={true}
       bonusCounts={bonusCounts}
-      
     />
   );
 };

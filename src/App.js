@@ -17,7 +17,7 @@ import NewCarForm from './pages/Driver/NewCarUpload';
 import CarGallery from './pages/CarGallery';
 import NewDeliveryForm from './pages/Sales/CreateDelivery';
 import ManDashboard from './pages/DriverManagement/Dashboard';
-import CodFromDelivery from './pages/Driver/CodFromDelivery';
+import PrefilledCODWrapper from './components/PrefilledCODWrapper'; 
 
 const theme = createTheme({
   palette: {
@@ -68,7 +68,7 @@ function App() {
           <Route path="/cars" element={<CarGallery />} />
           <Route path="/sales/post-delivery" element={<NewDeliveryForm />} />
           <Route path="/management/dashboard" element={<ManDashboard />} />
-          <Route path="/driver/cod/from-delivery/:id" element={<NewCOD />} />
+          <Route path="/driver/cod/from-delivery/:id" element={<PrefilledCODWrapper />}  />
         </Routes>
       </Router>
     </AuthProvider>

@@ -57,7 +57,7 @@ const NewCOD = ({ prefill = null, fromDelivery = false }) => {
         method: prefill.method || prefill.codMethod || 'None',
         salesperson: prefill.salesperson?._id || prefill.salesperson || '',
         driver: prefill.driver?._id || prefill.driver || '',
-        delivery: prefill.delivery?._id || prefill.delivery || '',
+        delivery: prefill._id || '',
         car: {
           year: prefill.car?.year || prefill.year || '',
           make: prefill.car?.make || prefill.make || '',
@@ -149,9 +149,39 @@ const res = await fetch(`${api}/cod/newcod`, {
         {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
 
         <Box component="form" onSubmit={handleSubmit}>
-          <TextField fullWidth name="customerName" label="Customer Name" value={form.customerName} onChange={handleChange} margin="normal" required disabled={fromDelivery} />
-          <TextField fullWidth name="phoneNumber" label="Phone Number" value={form.phoneNumber} onChange={handleChange} margin="normal" required disabled={fromDelivery} />
-          <TextField fullWidth name="address" label="Address" value={form.address} onChange={handleChange} margin="normal" required disabled={fromDelivery} />
+                        <TextField
+                fullWidth
+                name="customerName"
+                label="Customer Name"
+                value={form.customerName}
+                onChange={handleChange}
+                margin="normal"
+                required
+                disabled={fromDelivery && !!form.customerName}
+              />
+
+              <TextField
+                fullWidth
+                name="phoneNumber"
+                label="Phone Number"
+                value={form.phoneNumber}
+                onChange={handleChange}
+                margin="normal"
+                required
+                disabled={fromDelivery && !!form.phoneNumber}
+              />
+
+              <TextField
+                fullWidth
+                name="address"
+                label="Address"
+                value={form.address}
+                onChange={handleChange}
+                margin="normal"
+                required
+                disabled={fromDelivery && !!form.address}
+              />
+
           <TextField fullWidth name="amount" label="Amount (0 if none)" type="number" value={form.amount} onChange={handleChange} margin="normal" />
           <TextField fullWidth select name="method" label="Payment Method" value={form.method} onChange={handleChange} margin="normal">
             {['None', 'Cash', 'Zelle', 'Check'].map(method => (
@@ -172,18 +202,18 @@ const res = await fetch(`${api}/cod/newcod`, {
 
           <Typography variant="h6" mt={3} mb={1}>Car Info</Typography>
           <Grid container spacing={2}>
-            {['year', 'make', 'model', 'trim', 'color'].map(field => (
-              <Grid item xs={12} sm={6} key={field}>
-                <TextField
-                  fullWidth
-                  name={field}
-                  label={field.charAt(0).toUpperCase() + field.slice(1)}
-                  value={form.car[field]}
-                  onChange={handleChange}
-                  disabled={fromDelivery && !!form.car[field]}
-                />
-              </Grid>
-            ))}
+          {['year', 'make', 'model', 'trim', 'color'].map(field => (
+            <Grid item xs={12} sm={6} key={field}>
+              <TextField
+                fullWidth
+                name={field}
+                label={field.charAt(0).toUpperCase() + field.slice(1)}
+                value={form.car[field]}
+                onChange={handleChange}
+                disabled={fromDelivery && !!form.car[field]}
+              />
+            </Grid>
+          ))}
           </Grid>
 
           <Box mt={3}>
