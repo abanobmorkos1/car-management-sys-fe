@@ -30,6 +30,14 @@ const Register = () => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  const sanitizePhoneNumber = (input) => {
+    let digits = input.replace(/\D/g, '');
+    if (digits.length === 10) return `+1${digits}`;
+    if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`;
+    if (digits.startsWith('+') && digits.length >= 11) return digits;
+    return null;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -39,11 +47,22 @@ const Register = () => {
       return;
     }
 
+    const cleanedPhone = sanitizePhoneNumber(form.phoneNumber);
+    if (!cleanedPhone) {
+      setError('Please enter a valid US phone number');
+      return;
+    }
+
+    const payload = {
+      ...form,
+      phoneNumber: cleanedPhone,
+    };
+
     try {
       const res = await fetch(`${api}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
