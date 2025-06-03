@@ -30,10 +30,12 @@ const useDriverDashboardData = (user, navigate) => {
   const [clockRequestPending, setClockRequestPending] = useState(false);
   const [bonusCounts, setBonusCounts] = useState({ review: 0, customer: 0 });
 
-  const loadInitialData = useCallback(async () => {
-    const [deliveries, status, earnings, breakdown] = await Promise.all([
+const loadInitialData = async () => {
+  try {
+    const [deliveries, status, uploads, earnings, breakdown] = await Promise.all([
       fetchTodayDeliveries(),
       fetchDriverStatus(),
+      fetchDriverUploads(),
       fetchWeeklyEarnings(),
       fetchWeeklyBreakdown()
     ]);
@@ -43,23 +45,25 @@ const useDriverDashboardData = (user, navigate) => {
     setWeeklyEarnings(earnings || {});
     setTotalHours(parseFloat(earnings?.totalHours || 0));
     setDailyBreakdown(Array.isArray(breakdown) ? breakdown : []);
+    setCounts(uploads);
 
-    if (Array.isArray(breakdown)) {
-      const review = breakdown.reduce((sum, day) => sum + (day.reviewPhotos || 0), 0);
-      const customer = breakdown.reduce((sum, day) => sum + (day.customerPhotos || 0), 0);
-      setBonusCounts({ review, customer });
-    }
-
+    // 🔧 Clock-in status check (fixes stuck timer)
     if (status?.isClockedIn && status?.clockIn) {
       const clockInDate = new Date(status.clockIn);
       const now = new Date();
       setClockInTime(clockInDate);
       setSecondsWorked(Math.floor((now - clockInDate) / 1000));
+      setIsClockedIn(true);
+    } else {
+      setClockInTime(null);
+      setSecondsWorked(0);
+      setIsClockedIn(false);
     }
 
-    setIsClockedIn(status?.isClockedIn || false);
-    setClockRequestPending(status?.status === 'pending');
-  }, []);
+  } catch (err) {
+    console.error("🔴 Error loading initial driver data:", err);
+  }
+};
 
   useEffect(() => {
     if (user?._id) {
