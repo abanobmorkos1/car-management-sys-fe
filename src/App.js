@@ -1,8 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { blueGrey, indigo } from '@mui/material/colors';
+import { ThemeProvider, CssBaseline } from '@mui/material';
 // Pages
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -19,38 +18,13 @@ import NewDeliveryForm from './pages/Sales/CreateDelivery';
 import ManDashboard from './pages/DriverManagement/Dashboard';
 import PrefilledCODWrapper from './components/PrefilledCODWrapper'; 
 import EditDeliveryForm from './pages/Sales/EditDeliveryForm';
+import theme from './components/Theme/theme';
 
-const theme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: {
-      main: indigo[600],
-      contrastText: '#ffffff'
-    },
-    secondary: {
-      main: blueGrey[500],
-      contrastText: '#ffffff'
-    },
-    background: {
-      default: '#f4f6f8',
-      paper: '#ffffff'
-    },
-    text: {
-      primary: '#1f2937',
-      secondary: '#4b5563'
-    }
-  },
-  typography: {
-    fontFamily: 'Inter, sans-serif',
-    fontSize: 14,
-    allVariants: {
-      color: '#1f2937'
-    }
-  }
-});
 
 function App() {
   return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
     <AuthProvider>
       <Router>
         <Routes>
@@ -73,6 +47,7 @@ function App() {
         </Routes>
       </Router>
     </AuthProvider>
+    </ThemeProvider>
   );
 }
 

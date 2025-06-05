@@ -10,22 +10,31 @@ import BonusGallery from '../components/BonusGallery';
 import { useNavigate } from 'react-router-dom';
 
 const ClockStatusMessage = ({ clockInStatus }) => {
-  if (clockInStatus?.status === 'pending') {
+  if (!clockInStatus?.status) return null;
+  if (clockInStatus.status === 'pending') {
     return (
       <Typography variant="body2" sx={{ mb: 1, color: 'warning.main', fontWeight: 'bold' }}>
         ⏳ Waiting for approval...
       </Typography>
     );
   }
-  if (clockInStatus?.status === 'approved') {
+  if (clockInStatus.status === 'approved') {
     return (
       <Typography variant="body2" sx={{ mb: 1, color: 'success.main', fontWeight: 'bold' }}>
         ✅ You are clocked in
       </Typography>
     );
   }
+  if (clockInStatus.status === 'rejected') {
+    return (
+      <Typography variant="body2" sx={{ mb: 1, color: 'error.main', fontWeight: 'bold' }}>
+        ❌ Clock-in rejected. Contact management.
+      </Typography>
+    );
+  }
   return null;
 };
+
 
 const DriverDashboardLayout = ({
   user,
@@ -72,21 +81,55 @@ const DriverDashboardLayout = ({
   return (
     <>
       <Topbar />
-      <Box sx={{ backgroundColor: '#f9fafb', minHeight: '100vh', py: 3 }}>
-        <Container maxWidth="sm">
+      <Box sx={{ backgroundColor: '#f9fafb', minHeight: '100vh', py: 3 , justifyItems: 'center'}}>
+        <Container maxWidth="sm"  >
           <Typography variant="h5" fontWeight="bold" color="primary" mb={3} textAlign="center">
             Driver Dashboard
           </Typography>
 
-          <Typography variant="h6" fontWeight="medium" color="text.primary" gutterBottom>
+          <Typography variant="h6" fontWeight="medium" color="text.primary" display={'flex'} justifyContent={"center"} gutterBottom>
             Deliveries
           </Typography>
+<Box display="flex" justifyContent="center" gap={2} flexWrap="wrap" mb={2}>
+  <Button
+    variant="contained"
+    color="primary"
+    onClick={() => navigate('/new-car')}
+  >
+    🚗 Post New Car
+  </Button>
+  <Button
+    variant="contained"
+    color="secondary"
+    onClick={() => navigate('/lease/create')}
+  >
+    🔁 Post Lease Return
+  </Button>
+  <Button
+    variant="contained"
+    color="success"
+    onClick={() => navigate('/driver/cod/new')}
+  >
+    💵 Create COD
+  </Button>
+</Box>
+
           <ToggleButtonGroup
             value={filter}
             exclusive
             onChange={(e, val) => val && setFilter(val)}
             fullWidth
-            sx={{ mb: 3, '& .MuiToggleButton-root': { fontWeight: 'bold' } }}
+              sx={{
+                display: 'flex',
+                justifyContent: 'center',
+                mb: 3,
+                '& .MuiToggleButton-root': {
+                  fontWeight: 'bold',
+                  flex: 1, // optional: makes buttons equal width
+                  maxWidth: 200 // optional: limits max width
+                }
+              }}
+
           >
                 <Button
             onClick={() => setFilter('assigned')}
@@ -148,17 +191,16 @@ const DriverDashboardLayout = ({
                     variant="contained"
                     fullWidth
                     onClick={handleClockInOut}
-                    disabled={submittingClockIn}
+                    disabled={submittingClockIn || clockInStatus?.status === 'pending'}
                     sx={{
                       mt: 2,
-                      bgcolor:
-                        submittingClockIn
-                          ? 'info.main'
-                          : clockInStatus?.status === 'pending'
-                          ? 'warning.main'
-                          : isClockedIn && clockInStatus?.status === 'approved'
-                          ? 'error.main'
-                          : 'success.main'
+                      bgcolor: submittingClockIn
+                        ? 'info.main'
+                        : isClockedIn && clockInStatus?.status === 'approved'
+                        ? 'error.main'
+                        : clockInStatus?.status === 'pending'
+                        ? 'warning.main'
+                        : 'success.main'
                     }}
                   >
                     {submittingClockIn

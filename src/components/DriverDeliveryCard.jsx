@@ -69,6 +69,23 @@ const handleStatusChange = async (e) => {
       <Typography fontWeight="bold" fontSize="1.1rem" mb={1} color="primary.main">
         {delivery.customerName}
       </Typography>
+      {delivery.leaseReturn?.willReturn && (
+          <Box
+            sx={{
+              display: 'inline-block',
+              bgcolor: 'warning.main',
+              color: 'white',
+              px: 1.5,
+              py: 0.5,
+              borderRadius: 1,
+              fontSize: '0.75rem',
+              fontWeight: 'bold',
+              mb: 1
+            }}
+          >
+            🚗 Lease Return Scheduled
+          </Box>
+        )}
 
       {normalizedStatus === 'delivered' && (
         <Typography variant="body2" color="success.main" fontWeight="bold" mb={1}>

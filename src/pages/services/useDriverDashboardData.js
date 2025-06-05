@@ -12,11 +12,13 @@ const useDriverDashboardData = (user, navigate) => {
   const [showGallery, setShowGallery] = useState(false);
   const [allDeliveries, setAllDeliveries] = useState([]);
   const [filter, setFilter] = useState('all');
+
   const [isClockedIn, setIsClockedIn] = useState(false);
-  const [totalHours, setTotalHours] = useState(0);
-  const [secondsWorked, setSecondsWorked] = useState(0);
   const [clockInTime, setClockInTime] = useState(null);
-  const [clockInStatus, setClockInStatus] = useState(null);
+  const [clockInStatus, setClockInStatus] = useState(null); // whole object (pending/approved/rejected)
+  const [secondsWorked, setSecondsWorked] = useState(0);
+  const [totalHours, setTotalHours] = useState(0);
+
   const [weeklyEarnings, setWeeklyEarnings] = useState({
     baseEarnings: 0,
     bonus: 0,
@@ -27,43 +29,28 @@ const useDriverDashboardData = (user, navigate) => {
   });
   const [dailyBreakdown, setDailyBreakdown] = useState([]);
   const [lastSessionEarnings, setLastSessionEarnings] = useState(null);
-  const [clockRequestPending, setClockRequestPending] = useState(false);
-  const [bonusCounts, setBonusCounts] = useState({ review: 0, customer: 0 });
+  const [submittingClockIn, setSubmittingClockIn] = useState(false);
 
-const loadInitialData = async () => {
-  try {
-    const [deliveries, status, uploads, earnings, breakdown] = await Promise.all([
-      fetchTodayDeliveries(),
-      fetchDriverStatus(),
-      fetchDriverUploads(),
-      fetchWeeklyEarnings(),
-      fetchWeeklyBreakdown()
-    ]);
+  const loadInitialData = useCallback(async () => {
+    try {
+      const [deliveries, status, earnings, breakdown] = await Promise.all([
+        fetchTodayDeliveries(),
+        fetchDriverStatus(),
+        fetchWeeklyEarnings(),
+        fetchWeeklyBreakdown()
+      ]);
 
-    setAllDeliveries(Array.isArray(deliveries) ? deliveries : []);
-    setClockInStatus(status);
-    setWeeklyEarnings(earnings || {});
-    setTotalHours(parseFloat(earnings?.totalHours || 0));
-    setDailyBreakdown(Array.isArray(breakdown) ? breakdown : []);
-    setCounts(uploads);
-
-    // 🔧 Clock-in status check (fixes stuck timer)
-    if (status?.isClockedIn && status?.clockIn) {
-      const clockInDate = new Date(status.clockIn);
-      const now = new Date();
-      setClockInTime(clockInDate);
-      setSecondsWorked(Math.floor((now - clockInDate) / 1000));
-      setIsClockedIn(true);
-    } else {
-      setClockInTime(null);
-      setSecondsWorked(0);
-      setIsClockedIn(false);
+      setAllDeliveries(Array.isArray(deliveries) ? deliveries : []);
+      setIsClockedIn(status?.isClockedIn || false);
+      setClockInTime(status?.clockIn ? new Date(status.clockIn) : null);
+      setClockInStatus(status); // save full object
+      setWeeklyEarnings(earnings || {});
+      setTotalHours(parseFloat(earnings?.totalHours || 0));
+      setDailyBreakdown(Array.isArray(breakdown) ? breakdown : []);
+    } catch (err) {
+      console.error('🔴 Error loading driver dashboard data:', err);
     }
-
-  } catch (err) {
-    console.error("🔴 Error loading initial driver data:", err);
-  }
-};
+  }, []);
 
   useEffect(() => {
     if (user?._id) {
@@ -79,32 +66,67 @@ const loadInitialData = async () => {
         const diff = Math.floor((now - clockInTime) / 1000);
         setSecondsWorked(diff);
       }, 1000);
+    } else {
+      console.log('⛔ Timer NOT started:', { isClockedIn, clockInTime });
     }
     return () => clearInterval(interval);
   }, [isClockedIn, clockInTime]);
 
-  const handleClockInOut = async () => {
-    if (!isClockedIn) {
-      const res = await requestClockIn();
-      if (res?.status === 'pending') {
-        setClockRequestPending(true);
-      }
+const handleClockInOut = async () => {
+  setSubmittingClockIn(true);
+  try {
+    if (isClockedIn) {
+      console.log('🔘 Attempting clock-out...');
+      const res = await clockOut();
+      console.log('✅ Clocked out:', res);
+      await loadInitialData(); // safe to load immediately on clock-out
     } else {
-      const result = await clockOut();
-      if (result?.earnings) {
-        setLastSessionEarnings(result.earnings);
-      }
-      setIsClockedIn(false);
-      setClockInTime(null);
+      console.log('🔘 Requesting clock-in...');
+      const res = await requestClockIn();
+      console.log('🕒 Clock-in requested:', res);
+      
+      // Show pending status immediately in UI
+      setClockInStatus({ status: 'pending' });
+      setIsClockedIn(true); // so the UI starts the timer if needed
+      setClockInTime(new Date());
+
+      // Delay fetching fresh data from backend to avoid overwrite
+      setTimeout(() => {
+        loadInitialData();
+      }, 3000); // give backend 3 seconds to update
     }
+  } catch (err) {
+    console.error('❌ Error in clock-in/out logic:', err);
+  } finally {
+    setSubmittingClockIn(false);
+  }
+};
 
-    await loadInitialData();
-  };
 
-  const handleStatusChange = async () => {
-    const updatedDeliveries = await fetchTodayDeliveries();
-    setAllDeliveries(Array.isArray(updatedDeliveries) ? updatedDeliveries : []);
-  };
+const handleStatusChange = async (deliveryId, newStatus) => {
+  try {
+    const res = await fetch(`${process.env.REACT_APP_API_URL}/api/delivery/update-status/${deliveryId}`, {
+      method: 'PUT',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ status: newStatus }),
+    });
+
+    const data = await res.json();
+    console.log('✅ Status updated:', data);
+
+    if (data?.redirect) {
+      navigate(data.redirect);
+    } else {
+      const updatedDeliveries = await fetchTodayDeliveries();
+      setAllDeliveries(Array.isArray(updatedDeliveries) ? updatedDeliveries : []);
+    }
+  } catch (err) {
+    console.error('❌ Failed to update delivery status:', err);
+  }
+};
 
   const filteredDeliveries = allDeliveries.filter(del =>
     filter === 'assigned'
@@ -115,7 +137,6 @@ const loadInitialData = async () => {
   return {
     showGallery,
     setShowGallery,
-    allDeliveries,
     deliveries: filteredDeliveries,
     filter,
     setFilter,
@@ -128,8 +149,7 @@ const loadInitialData = async () => {
     handleClockInOut,
     handleStatusChange,
     lastSessionEarnings,
-    clockRequestPending,
-    bonusCounts
+    submittingClockIn
   };
 };
 

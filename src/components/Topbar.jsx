@@ -96,9 +96,10 @@ const Topbar = ({ onRefresh }) => {
               <Button color="inherit" startIcon={<Inventory2Icon />} onClick={() => handleNav('/allcods')}>
                 CODs
               </Button>
-              <Button color="inherit" startIcon={<RefreshIcon />} onClick={handleRefresh}>
+              <Button color="inherit" startIcon={<RefreshIcon />} onClick={() => window.location.reload()}>
                 Refresh
               </Button>
+
               <Button
                 startIcon={<LogoutIcon />}
                 onClick={handleLogout}

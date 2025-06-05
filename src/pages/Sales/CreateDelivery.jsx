@@ -1,7 +1,8 @@
 import React, { useState, useContext } from 'react';
 import {
   TextField, MenuItem, Button, Container, Typography,
-  CircularProgress, Snackbar, Alert
+  CircularProgress, Snackbar, Alert,
+  Box
 } from '@mui/material';
 import { AuthContext } from '../../contexts/AuthContext';
 
@@ -10,43 +11,57 @@ const api = process.env.REACT_APP_API_URL;
 const NewDeliveryForm = () => {
   const { user } = useContext(AuthContext);
   const [form, setForm] = useState({
-    customerName: '',
-    phoneNumber: '',
-    address: '',
-    pickupFrom: '',
-    deliveryDate: '',
-    codAmount: '',
-    codCollected: false,
-    codMethod: '',
-    codCollectionDate: '',
-    notes: '',
-    vin: '',
-    make: '',
-    model: '',
-    trim: '',
-    color: '',
-    year: '',
-  });
+  customerName: '',
+  phoneNumber: '',
+  address: '',
+  pickupFrom: '',
+  deliveryDate: '',
+  codAmount: '',
+  codCollected: false,
+  codMethod: '',
+  codCollectionDate: '',
+  notes: '',
+  vin: '',
+  make: '',
+  model: '',
+  trim: '',
+  color: '',
+  year: '',
+  leaseReturn: {
+    willReturn: false,
+    carYear: '',
+    carMake: '',
+    carModel: ''
+  }
+});
 
   const [loading, setLoading] = useState(false);
   const [snack, setSnack] = useState({ open: false, msg: '', severity: 'success' });
 
 const handleChange = (e) => {
   const { name, value, type, checked } = e.target;
-  setForm(prev => ({
-    ...prev,
-    [name]: type === 'checkbox' ? checked : value
-  }));
+
+  if (name.startsWith('leaseReturn.')) {
+    const field = name.split('.')[1];
+    setForm(prev => ({
+      ...prev,
+      leaseReturn: {
+        ...(prev.leaseReturn || {}),
+        [field]: type === 'checkbox' ? checked : value
+      }
+    }));
+  } else {
+    setForm(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  }
 
   if (name === 'vin' && value.length >= 17) {
     fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/${value}?format=json`)
       .then(res => res.json())
       .then(data => {
-        if (!Array.isArray(data.Results)) {
-          console.warn('🔧 VIN decoding temporarily unavailable.');
-          return;
-        }
-
+        if (!Array.isArray(data.Results)) return;
         const get = (label) => data.Results.find(r => r.Variable === label)?.Value?.trim() || '';
         setForm(prev => ({
           ...prev,
@@ -55,11 +70,7 @@ const handleChange = (e) => {
           trim: get('Trim'),
           year: get('Model Year')
         }));
-      })
-      .catch(err => {
-        console.error('❌ VIN decode error:', err.message);
-        // Optional: show a toast/snackbar to notify user
-      });
+      }).catch(err => console.error('❌ VIN decode error:', err.message));
   }
 };
 
@@ -156,7 +167,58 @@ const handleChange = (e) => {
           </>
         )}
 
-        <TextField fullWidth name="vin" label="VIN (optional)" value={form.vin} onChange={handleChange} margin="normal" />
+<Typography variant="h6" sx={{ mt: 3 }}>Lease Return</Typography>
+
+<TextField
+  select
+  fullWidth
+  name="leaseReturn.willReturn"
+  label="Will there be a lease return?"
+  value={form.leaseReturn?.willReturn ? 'true' : 'false'}
+  onChange={(e) =>
+    handleChange({
+      target: {
+        name: 'leaseReturn.willReturn',
+        value: e.target.value === 'true'
+      }
+    })
+  }
+>
+  <MenuItem value="false">No</MenuItem>
+  <MenuItem value="true">Yes</MenuItem>
+</TextField>
+    {form.leaseReturn?.willReturn && (
+      <Box sx={{ mt: 2 }}>
+        <TextField
+          fullWidth
+          name="leaseReturn.carYear"
+          label="Lease Return Year"
+          value={form.leaseReturn.carYear}
+          onChange={handleChange}
+          margin="dense"
+        />
+        <TextField
+          fullWidth
+          name="leaseReturn.carMake"
+          label="Lease Return Make"
+          value={form.leaseReturn.carMake}
+          onChange={handleChange}
+          margin="dense"
+        />
+        <TextField
+          fullWidth
+          name="leaseReturn.carModel"
+          label="Lease Return Model"
+          value={form.leaseReturn.carModel}
+          onChange={handleChange}
+          margin="dense"
+        />
+      </Box>
+    )}
+
+
+
+        <TextField fullWidth name="vin" label="VIN" value={form.vin} onChange={handleChange} margin="normal"  required/>
         <TextField fullWidth name="make" label="Make" value={form.make} onChange={handleChange} margin="dense" />
         <TextField fullWidth name="model" label="Model" value={form.model} onChange={handleChange} margin="dense" />
         <TextField fullWidth name="trim" label="Trim" value={form.trim} onChange={handleChange} margin="dense" />
