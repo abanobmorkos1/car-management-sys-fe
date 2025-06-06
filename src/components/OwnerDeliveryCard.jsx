@@ -1,97 +1,91 @@
+import React from 'react';
 import {
-  Grid,
-  Typography,
-  Box,
   Card,
   CardContent,
+  Typography,
+  Box,
   Chip,
   Divider,
-  Stack
+  Stack,
+  Grid
 } from '@mui/material';
 
-const getProgressStatus = (delivery) => {
-  if (!delivery.driver) return 'Pending';
-  if (delivery.status === 'Delivered' || delivery.codCollected) return 'Delivered';
-  return 'Assigned';
+const statusColorMap = {
+  'Delivered': 'success',
+  'Heading to Customer': 'info',
+  'Waiting for Paperwork': 'warning',
+  'In Route for Pick Up': 'default',
+  'Pending': 'default',
 };
 
-const getProgressColor = (status) => {
-  switch (status) {
-    case 'Pending':
-      return 'default';
-    case 'Assigned':
-      return 'info';
-    case 'Delivered':
-      return 'success';
-    default:
-      return 'default';
-  }
-};
+const OwnerDeliveryCard = ({ delivery, onClick }) => {
+  if (!delivery) return null;
 
-const OwnerDeliveryCard = ({ delivery }) => {
-  const progress = getProgressStatus(delivery);
-  const driverName = delivery.driver?.name || delivery.driver?.email || 'Unassigned';
-  const carInfo = [delivery.year, delivery.make, delivery.model, delivery.trim, delivery.color]
-    .filter(Boolean)
-    .join(' ');
+  const statusColor = statusColorMap[delivery.status] || 'primary';
 
   return (
     <Card
-      elevation={2}
-      sx={{
-        borderRadius: 2,
-        // bgcolor: progress === 'Delivered' ? '#e8f5e9' : 'white',
-        mb: 2
-      }}
+      elevation={4}
+      sx={{ borderRadius: 4, mb: 3, px: 2, py: 2, cursor: 'pointer', transition: '0.3s', '&:hover': { boxShadow: 6 } }}
+      onClick={() => onClick(delivery)}
     >
       <CardContent>
         {/* Header */}
-        <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
-          <Typography variant="subtitle1" fontWeight="bold">
-            Delivery ID: {delivery._id?.slice(-6) || 'Unknown'}
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+          <Typography variant="h6" fontWeight={600} color="primary">
+            {delivery.customerName || 'Unnamed Customer'}
           </Typography>
-          <Chip label={progress} color={getProgressColor(progress)} />
-        </Stack>
+          <Chip
+            label={delivery.status || 'No Status'}
+            color={statusColor}
+            size="small"
+            sx={{ fontWeight: 'bold' }}
+          />
+        </Box>
 
-        <Divider sx={{ mb: 2 }} />
+        <Divider sx={{ my: 1 }} />
 
-        {/* Delivery Details */}
-        <Grid container spacing={2} sx={{ fontSize: '0.95rem', lineHeight: 2.2 }}>
-          <Grid item xs={12} sm={4}>
-            <Typography variant="subtitle2" color="text.secondary">Phone</Typography>
-            <Typography>{delivery.phoneNumber || 'N/A'}</Typography>
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6}>
+            <Stack spacing={1}>
+              <Typography variant="subtitle2" color="text.secondary">Delivery Info</Typography>
+              <Typography variant="body2"><strong>Address:</strong> {delivery.address}</Typography>
+              <Typography variant="body2"><strong>Date:</strong> {new Date(delivery.deliveryDate).toLocaleString()}</Typography>
+              {delivery.driver?.name && (
+                <Typography variant="body2"><strong>Driver:</strong> {delivery.driver.name}</Typography>
+              )}
+              {delivery.salesperson?.name && (
+                <Typography variant="body2"><strong>Sales:</strong> {delivery.salesperson.name}</Typography>
+              )}
+            </Stack>
           </Grid>
-          <Grid item xs={12} sm={4}>
-            <Typography variant="subtitle2" color="text.secondary">Address</Typography>
-            <Typography>{delivery.address || 'N/A'}</Typography>
+
+          <Grid item xs={12} sm={6}>
+            <Stack spacing={1}>
+              <Typography variant="subtitle2" color="text.secondary">Vehicle Info</Typography>
+              <Typography variant="body2">
+                {delivery.year} {delivery.make} {delivery.model} {delivery.trim} — {delivery.color}
+              </Typography>
+              <Typography variant="body2"><strong>VIN:</strong> {delivery.vin}</Typography>
+            </Stack>
           </Grid>
-          <Grid item xs={12} sm={4}>
-            <Typography variant="subtitle2" color="text.secondary">Salesperson</Typography>
-            <Typography>{delivery.salesperson?.name || 'N/A'}</Typography>
+
+          <Grid item xs={12} sm={6}>
+            <Stack spacing={1}>
+              <Typography variant="subtitle2" color="text.secondary">COD Info</Typography>
+              <Typography variant="body2"><strong>Amount:</strong> ${delivery.codAmount || 0}</Typography>
+              <Typography variant="body2"><strong>Collected:</strong> {delivery.codCollected ? 'Yes' : 'No'}</Typography>
+              {delivery.codCollected && delivery.codMethod && (
+                <Typography variant="body2"><strong>Method:</strong> {delivery.codMethod}</Typography>
+              )}
+            </Stack>
           </Grid>
-          <Grid item xs={12} sm={4}>
-            <Typography variant="subtitle2" color="text.secondary">Driver</Typography>
-            <Typography>{driverName}</Typography>
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <Typography variant="subtitle2" color="text.secondary">Delivery Date</Typography>
-            <Typography>
-              {delivery.deliveryDate
-                ? new Date(delivery.deliveryDate).toLocaleString()
-                : 'N/A'}
-            </Typography>
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <Typography variant="subtitle2" color="text.secondary">COD</Typography>
-            <Typography>
-              ${delivery.codAmount ?? 0}{' '}
-              {delivery.codCollected ? `(${delivery.codMethod})` : '(Pending)'}
-            </Typography>
-          </Grid>
-          <Grid item xs={12}>
-            <Typography variant="subtitle2" color="text.secondary">Car Info</Typography>
-            <Typography>{carInfo || 'N/A'}</Typography>
-          </Grid>
+
+          {delivery.leaseReturn?.willReturn && (
+            <Grid item xs={12}>
+              <Chip label="Lease Return Expected" color="warning" size="small" />
+            </Grid>
+          )}
         </Grid>
       </CardContent>
     </Card>

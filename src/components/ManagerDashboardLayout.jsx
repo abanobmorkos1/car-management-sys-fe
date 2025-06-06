@@ -26,7 +26,7 @@ const ManagerDashboardLayout = ({
   triggerInitialBonusFetch
 }) => {
   const [page, setPage] = useState(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 4;
 
   const [bonusCounts, setBonusCounts] = useState({ review: 0, customer: 0 });
 
@@ -69,9 +69,6 @@ const ManagerDashboardLayout = ({
       <Topbar />
       <Box sx={{ backgroundColor: '#f9fafb', minHeight: '100vh', py: 3 }}>
         <Container maxWidth="sm">
-          <Typography variant="h5" fontWeight="bold" color="primary" mb={3} textAlign="center">
-            Manager Dashboard
-          </Typography>
 
           {paginatedDeliveries.length > 0 ? (
             paginatedDeliveries.map(del => (
