@@ -1,11 +1,10 @@
 import React, { useState, useContext, useEffect } from 'react';
 import {
   Box, Button, Container, Typography, TextField,
-  Paper, MenuItem, CircularProgress, Snackbar, Alert
+  Paper, MenuItem, CircularProgress, Snackbar, Alert , FormControlLabel , Checkbox ,
 } from '@mui/material';
-import { AuthContext } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-
+import { useParams } from 'react-router-dom';
 const api = process.env.REACT_APP_API_URL;
 
 const uploadToS3 = async (file, category, customerName) => {
@@ -32,15 +31,17 @@ const uploadToS3 = async (file, category, customerName) => {
   return key;
 };
 
-const NewLeaseForm = () => {
+const NewLeaseForm = ({ prefill, fromDelivery = false }) => {
   const navigate = useNavigate();
+  const { id } = useParams();
 
   const [form, setForm] = useState({
     vin: '', miles: '', bank: '', customerName: '', address: '',
-    city: '', state: '', zip: '', salesPerson: '', driver: '',
+    city: '', state: '', zip: '', salesperson: '', driver: '',
     damageReport: '', hasTitle: false, odometer: null, title: null,
     leaseReturnMedia: [],
-    year: '', make: '', model: '', trim: '', engine: '', driveType: '', fuelType: '', bodyStyle: ''
+    year: '', make: '', model: '', trim: '', engine: '', driveType: '', fuelType: '', bodyStyle: '' , leftPlates: false,
+  plateNumber: ''
   });
 
   const [salespeople, setSalespeople] = useState([]);
@@ -48,23 +49,71 @@ const NewLeaseForm = () => {
   const [loading, setLoading] = useState(false);
   const [snack, setSnack] = useState({ open: false, msg: '', severity: 'success' });
 
-  useEffect(() => {
+    useEffect(() => {
     const fetchUsers = async () => {
-      const [salesRes, driverRes] = await Promise.all([
-        fetch(`${api}/api/users/salespeople`, {
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include'
-        }),
-        fetch(`${api}/api/users/drivers`, {
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include'
-        })
-      ]);
-      setSalespeople(await salesRes.json());
-      setDrivers(await driverRes.json());
+      try {
+        const [salesRes, driverRes] = await Promise.all([
+          fetch(`${api}/api/users/salespeople`, { credentials: 'include' }),
+          fetch(`${api}/api/users/drivers`, { credentials: 'include' })
+        ]);
+
+        if (salesRes.ok) setSalespeople(await salesRes.json());
+        if (driverRes.ok) setDrivers(await driverRes.json());
+      } catch (err) {
+        console.error('❌ Failed to fetch users:', err);
+      }
     };
+
     fetchUsers();
   }, []);
+
+  useEffect(() => {
+  if (fromDelivery && prefill) {
+    setForm(prev => ({
+      ...prev,
+      year: prefill.year || '',
+      make: prefill.make || '',
+      model: prefill.model || '',
+      trim: prefill.trim || '',
+      customerName: prefill.customerName || '',
+      address: prefill.address || '',
+      salesPerson: prefill.salesPerson?._id || prefill.salesPerson || '',
+      driver: prefill.driver?._id || prefill.driver,
+      leftPlates: false,
+      plateNumber: '',
+    }));
+  }
+}, [prefill, fromDelivery]);
+
+// Fetch salespeople, drivers, and delivery data (if any)
+useEffect(() => {
+  const fetchDeliveryAndPrefill = async () => {
+    try {
+      const res = await fetch(`${api}/api/delivery/by-delivery/${id}`, {
+        credentials: 'include',
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to fetch delivery');
+
+      if (data.leaseReturn?.willReturn) {
+  setForm(prev => ({
+    ...prev,
+    customerName: data.customerName || '',
+    address: data.address || '',
+    salesperson: data.salesperson?._id || data.salesperson || '',
+    driver: data.driver?._id || data.driver || '',
+    leftPlates: false,
+    plateNumber: ''
+  }));
+}
+    } catch (err) {
+      console.error('❌ Failed to prefill lease return:', err);
+    }
+  };
+
+  if (id) fetchDeliveryAndPrefill();
+}, [id]);
 
   const handleChange = async (e) => {
     const { name, value, type, checked } = e.target;
@@ -185,7 +234,7 @@ const NewLeaseForm = () => {
           <TextField fullWidth name="state" label="State" value={form.state} onChange={handleChange} margin="normal" required />
           <TextField fullWidth name="zip" label="Zip Code" value={form.zip} onChange={handleChange} margin="normal" required />
 
-          <TextField fullWidth select name="salesPerson" label="Salesperson" value={form.salesPerson} onChange={handleChange} margin="normal" required>
+          <TextField fullWidth select name="salesPerson" label="salesperson" value={form.salespeople} onChange={handleChange} margin="normal" required>
             {salespeople.map(sp => (
               <MenuItem key={sp._id} value={sp._id}>{sp.name}</MenuItem>
             ))}
@@ -202,6 +251,31 @@ const NewLeaseForm = () => {
           <Box mt={2}><Typography variant="body1">Upload Odometer Picture *</Typography><input type="file" name="odometer" accept="image/*" onChange={handleFile} required /></Box>
           <Box mt={2}><Typography variant="body1">Upload Title Picture (optional)</Typography><input type="file" name="title" accept="image/*" onChange={handleFile} /></Box>
           <Box mt={2}><Typography>Upload Lease Return Pictures/Videos</Typography><input type="file" name="leaseReturnMedia" accept="image/*,video/*" multiple onChange={handleFile} /></Box>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={form.leftPlates}
+                onChange={(e) =>
+                  setForm(prev => ({ ...prev, leftPlates: e.target.checked }))
+                }
+              />
+            }
+            label="Customer left plates"
+          />
+
+          {form.leftPlates && (
+            <TextField
+              fullWidth
+              name="plateNumber"
+              label="Plate Number"
+              value={form.plateNumber}
+              onChange={(e) =>
+                setForm(prev => ({ ...prev, plateNumber: e.target.value }))
+              }
+              margin="normal"
+              required
+            />
+          )}
 
           <Button type="submit" variant="contained" fullWidth sx={{ mt: 3 }} disabled={loading}>
             {loading ? <CircularProgress size={24} /> : 'Submit'}

@@ -93,54 +93,81 @@ const NewCOD = ({ prefill = null, fromDelivery = false }) => {
     );
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-    setLoading(true);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError('');
+  setSuccess('');
+  setLoading(true);
 
-    try {
-      if (!contractPicture) throw new Error('Contract picture is required');
+  try {
+    if (!contractPicture) throw new Error('Contract picture is required');
 
-      const contractKey = await uploadToS3(contractPicture, 'cod', form.customerName);
-      const checkKey = form.method === 'Check' && checkPicture
-        ? await uploadToS3(checkPicture, 'cod', form.customerName)
-        : null;
+    const contractKey = await uploadToS3(contractPicture, 'cod', form.customerName);
+    const checkKey = form.method === 'Check' && checkPicture
+      ? await uploadToS3(checkPicture, 'cod', form.customerName)
+      : null;
 
-const res = await fetch(`${api}/cod/newcod`, {
-  method: 'POST',
-  credentials: 'include',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    customerName: form.customerName,
-    phoneNumber: form.phoneNumber,
-    address: form.address,
-    amount: Number(form.amount || 0),
-    method: form.method,
-    contractKey,
-    checkKey,
-    salesperson: form.salesperson,
-    driver: form.driver,
-    delivery: form.delivery,
-    car: form.car
-  })
-});
+    const res = await fetch(`${api}/cod/newcod`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customerName: form.customerName,
+        phoneNumber: form.phoneNumber,
+        address: form.address,
+        amount: Number(form.amount || 0),
+        method: form.method,
+        contractKey,
+        checkKey,
+        salesperson: form.salesperson,
+        driver: form.driver,
+        delivery: form.delivery,
+        car: form.car
+      })
+    });
 
-      const data = await res.json();
-      if (res.ok) {
-        setSuccess('COD created successfully!');
-        setTimeout(() => navigate('/allcods'), 2000);
-      } else {
-        throw new Error(data.message || 'Failed to create COD');
+    const data = await res.json();
+if (res.ok) {
+  setSuccess('COD created successfully!');
+
+  // ✅ Update delivery to reflect COD collection
+  if (form.delivery) {
+    await fetch(`${api}/api/delivery/cod-info/${form.delivery}`, {
+      method: 'PUT',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        codCollected: true,
+        codMethod: form.method,
+        status: 'Delivered'
+      })
+    });
+
+    // ✅ Fetch delivery info to check if lease return is expected
+    const deliveryRes = await fetch(`${api}/api/delivery/${form.delivery}`, {
+      credentials: 'include',
+    });
+
+    if (deliveryRes.ok) {
+      const deliveryData = await deliveryRes.json();
+      if (deliveryData?.leaseReturn?.willReturn) {
+        return navigate(`/driver/lease-return/from-delivery/${form.delivery}`);
       }
-    } catch (err) {
-      console.error('❌ COD submission error:', err);
-      setError(err.message || 'Server error');
-    } finally {
-      setLoading(false);
     }
-  };
+  }
 
+  // No lease return → go to all CODs
+  setTimeout(() => navigate('/allcods'), 2000);
+} else {
+      throw new Error(data.message || 'Failed to create COD');
+    }
+  } catch (err) {
+    console.error('❌ COD submission error:', err);
+    setError(err.message || 'Server error');
+  } finally {
+    setLoading(false);
+  }
+};
   return (
     <Container maxWidth="sm" sx={{ mt: 5 }}>
       <Paper sx={{ p: 4, borderRadius: 3 }}>

@@ -18,6 +18,7 @@ import NewDeliveryForm from './pages/Sales/CreateDelivery';
 import ManDashboard from './pages/DriverManagement/Dashboard';
 import PrefilledCODWrapper from './components/PrefilledCODWrapper'; 
 import EditDeliveryForm from './pages/Sales/EditDeliveryForm';
+import PrefilledLeaseReturnWrapper from './components/PrefilledLeaseReturnWrapper'
 import theme from './components/Theme/theme';
 
 
@@ -44,6 +45,7 @@ function App() {
           <Route path="/management/dashboard" element={<ManDashboard />} />
           <Route path="/driver/cod/from-delivery/:id" element={<PrefilledCODWrapper />}  />
           <Route path="/sales/edit-delivery/:id" element={<EditDeliveryForm />} />
+          <Route path="/driver/lease-return/from-delivery/:id" element={<PrefilledLeaseReturnWrapper />} />
         </Routes>
       </Router>
     </AuthProvider>
