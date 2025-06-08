@@ -182,7 +182,7 @@ const CarGallery = () => {
     (page - 1) * itemsPerPage,
     page * itemsPerPage
   );
-
+  console.log({ selectedCar });
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
       <Topbar />
@@ -450,7 +450,7 @@ const CarGallery = () => {
                         <Speed sx={{ fontSize: 16, color: 'text.secondary' }} />
                         <Typography variant="body2" color="text.secondary">
                           {car.mileage
-                            ? `${car.mileage.toLocaleString()} miles`
+                            ? `${car} miles`
                             : 'Mileage not specified'}
                         </Typography>
                       </Box>
@@ -569,42 +569,6 @@ const CarGallery = () => {
 
                 {/* Status and Info Cards */}
                 <Grid container spacing={2} sx={{ mt: 2 }}>
-                  <Grid item xs={12} sm={6} md={3}>
-                    <Paper
-                      sx={{
-                        p: 2,
-                        textAlign: 'center',
-                        bgcolor: 'background.paper',
-                      }}
-                    >
-                      <Typography variant="subtitle2" color="text.secondary">
-                        Status
-                      </Typography>
-                      <Chip
-                        label={selectedCar.status}
-                        color={
-                          selectedCar.status === 'Available'
-                            ? 'success'
-                            : 'warning'
-                        }
-                        sx={{ mt: 1, fontWeight: 600 }}
-                      />
-                    </Paper>
-                  </Grid>
-
-                  <Grid item xs={12} sm={6} md={3}>
-                    <Paper sx={{ p: 2, textAlign: 'center' }}>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        Mileage
-                      </Typography>
-                      <Typography variant="h6" sx={{ mt: 1 }}>
-                        {selectedCar.mileage
-                          ? `${selectedCar.mileage.toLocaleString()}`
-                          : 'N/A'}
-                      </Typography>
-                    </Paper>
-                  </Grid>
-
                   <Grid item xs={12} md={6}>
                     <Paper sx={{ p: 2, textAlign: 'center' }}>
                       <Typography variant="subtitle2" color="text.secondary">
