@@ -37,6 +37,8 @@ const NewCarForm = () => {
     msg: '',
     severity: 'success',
   });
+  const [vinExists, setVinExists] = useState(false);
+  const [vinChecking, setVinChecking] = useState(false);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -54,26 +56,59 @@ const NewCarForm = () => {
     fetchUsers();
   }, []);
 
+  const allowVIN = async (vin) => {
+    setVinChecking(true);
+    if (vin.length < 17) {
+      setVinExists(false);
+      setVinChecking(false);
+      return false;
+    }
+
+    try {
+      const res = await fetch(`${api}/api/car/check-vin?vin=${vin}`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+      const data = await res.json();
+
+      setVinExists(data.exists);
+      setVinChecking(false);
+      console.log({ returning: !data.exists });
+      return !data.exists;
+    } catch (err) {
+      console.error('Error checking VIN:', err);
+      setVinExists(false);
+      setVinChecking(false);
+      console.log({ returningE: false });
+      return false;
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
 
-    if (name === 'vin' && value.length >= 17) {
-      fetch(
-        `https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/${value}?format=json`
-      )
-        .then((res) => res.json())
-        .then((data) => {
-          const get = (label) =>
-            data.Results.find((r) => r.Variable === label)?.Value?.trim() || '';
-          setForm((prev) => ({
-            ...prev,
-            make: get('Make'),
-            model: get('Model'),
-            trim: get('Trim'),
-            year: get('Model Year'),
-          }));
-        });
+    if (name === 'vin') {
+      setVinChecking(false);
+      setVinExists(false);
+      if (value.length >= 17) {
+        fetch(
+          `https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/${value}?format=json`
+        )
+          .then((res) => res.json())
+          .then((data) => {
+            const get = (label) =>
+              data.Results.find((r) => r.Variable === label)?.Value?.trim() ||
+              '';
+            setForm((prev) => ({
+              ...prev,
+              make: get('Make'),
+              model: get('Model'),
+              trim: get('Trim'),
+              year: get('Model Year'),
+            }));
+          });
+      }
     }
   };
 
@@ -87,35 +122,58 @@ const NewCarForm = () => {
   };
 
   const uploadToS3 = async (file, category, customerName) => {
-    const res = await fetch(`${api}/api/s3/generate-url`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({
-        fileName: file.name,
-        fileType: file.type,
-        uploadCategory: category,
-        meta: {
-          year: form.year,
-          make: form.make,
-          salesPerson: form.salesPersonid,
-          customerName,
-        },
-      }),
-    });
+    let allowVin = await allowVIN(form.vin);
+    console.log('Allow VIN 1:', allowVin);
+    if (allowVin) {
+      const res = await fetch(`${api}/api/s3/generate-url`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          fileName: file.name,
+          fileType: file.type,
+          uploadCategory: category,
+          meta: {
+            year: form.year,
+            make: form.make,
+            salesPerson: form.salesPersonid,
+            customerName,
+          },
+        }),
+      });
 
-    const { uploadUrl, key } = await res.json();
-    await fetch(uploadUrl, {
-      method: 'PUT',
-      headers: { 'Content-Type': file.type },
-      body: file,
-    });
+      const { uploadUrl, key } = await res.json();
+      await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type },
+        body: file,
+      });
 
-    return key;
+      return key;
+    } else {
+      setSnack({
+        open: true,
+        msg: 'This Vin Already Exists. Please change the VIN before uploading files.',
+        severity: 'error',
+      });
+      return null;
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    let allowVin = await allowVIN(form.vin);
+
+    console.log('Allow VIN 2:', allowVin);
+    if (!allowVin) {
+      setSnack({
+        open: true,
+        msg: 'This VIN already exists. Please change the VIN before submitting.',
+        severity: 'error',
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -198,6 +256,14 @@ const NewCarForm = () => {
             value={form.vin}
             onChange={handleChange}
             margin="normal"
+            error={vinExists}
+            helperText={
+              vinChecking
+                ? 'Checking VIN...'
+                : vinExists
+                  ? 'This VIN already exists. Please enter a different VIN.'
+                  : ''
+            }
           />
           <TextField
             fullWidth
@@ -280,6 +346,7 @@ const NewCarForm = () => {
               name="pictureFiles"
               accept="image/*"
               multiple
+              required
               onChange={handleFileChange}
             />
           </Box>
@@ -309,7 +376,7 @@ const NewCarForm = () => {
             variant="contained"
             fullWidth
             sx={{ mt: 3 }}
-            disabled={loading}
+            disabled={loading || vinExists || vinChecking}
           >
             {loading ? <CircularProgress size={24} /> : 'Submit'}
           </Button>
@@ -320,7 +387,17 @@ const NewCarForm = () => {
           autoHideDuration={3000}
           onClose={() => setSnack({ ...snack, open: false })}
         >
-          <Alert severity={snack.severity}>{snack.msg}</Alert>
+          <Alert
+            severity={snack.severity}
+            sx={{
+              color: snack.severity === 'error' ? '#d32f2f' : 'inherit',
+              '& .MuiAlert-message': {
+                color: snack.severity === 'error' ? '#d32f2f' : 'inherit',
+              },
+            }}
+          >
+            {snack.msg}
+          </Alert>
         </Snackbar>
       </Container>
     </Container>

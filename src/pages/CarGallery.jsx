@@ -375,24 +375,6 @@ const CarGallery = () => {
                     </Box>
                   )}
 
-                  {/* Status Badge */}
-                  <Box sx={{ position: 'absolute', top: 12, right: 12 }}>
-                    <Chip
-                      label={car.status}
-                      color={car.status === 'Available' ? 'success' : 'warning'}
-                      size="small"
-                      sx={{
-                        fontWeight: 600,
-                        backdropFilter: 'blur(10px)',
-                        backgroundColor:
-                          car.status === 'Available'
-                            ? 'rgba(76, 175, 80, 0.9)'
-                            : 'rgba(255, 152, 0, 0.9)',
-                        color: 'white',
-                      }}
-                    />
-                  </Box>
-
                   {/* Image Count Badge */}
                   {car.signedUrls && car.signedUrls.length > 1 && (
                     <Box sx={{ position: 'absolute', bottom: 12, left: 12 }}>

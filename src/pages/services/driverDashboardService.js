@@ -64,13 +64,27 @@ export const clockOut = async () => {
 };
 
 export const fetchWeeklyEarnings = async () => {
-  const res = await fetchWithSession(`${api}/api/hours/driver/weekly-earnings`);
+  const lastFriday = new Date();
+  lastFriday.setDate(lastFriday.getDate() - ((lastFriday.getDay() + 2) % 7));
+  lastFriday.setHours(0, 0, 0, 0);
+  const lastFridayISO = lastFriday.toISOString();
+  const res = await fetchWithSession(
+    `${api}/api/hours/driver/weekly-earnings?startDate=${lastFridayISO}&timeZone=${
+      Intl.DateTimeFormat().resolvedOptions().timeZone
+    }`
+  );
   return res || { totalHours: 0, bonus: 0, totalEarnings: 0 };
 };
 
 export const fetchWeeklyBreakdown = async () => {
+  const lastFriday = new Date();
+  lastFriday.setDate(lastFriday.getDate() - ((lastFriday.getDay() + 2) % 7));
+  lastFriday.setHours(0, 0, 0, 0);
+  const lastFridayISO = lastFriday.toISOString();
   const res = await fetchWithSession(
-    `${api}/api/hours/driver/weekly-breakdown`
+    `${api}/api/hours/driver/weekly-breakdown?startDate=${lastFridayISO}&timeZone=${
+      Intl.DateTimeFormat().resolvedOptions().timeZone
+    }`
   );
   return Array.isArray(res) ? res : [];
 };

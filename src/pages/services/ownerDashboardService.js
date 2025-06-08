@@ -22,6 +22,7 @@ export const fetchDeliveriesByDate = async (startDate, endDate) => {
 
   if (startDate && endDate) {
     const from = new Date(startDate);
+    from.setHours(0, 0, 0, 0);
     const to = new Date(endDate);
     to.setHours(23, 59, 59, 999);
     url += `?start=${from.toISOString()}&end=${to.toISOString()}`;
@@ -38,10 +39,14 @@ export const fetchDeliveriesByDate = async (startDate, endDate) => {
 };
 
 // Fetch today's or specific date clock sessions
-export const fetchClockSessionsByDate = async (date) => {
-  const isoDate = new Date(date).toISOString().split('T')[0];
+export const fetchClockSessionsByDate = async () => {
+  const lastFriday = new Date();
+  const today = new Date().toISOString();
+  lastFriday.setDate(lastFriday.getDate() - ((lastFriday.getDay() + 2) % 7));
+  lastFriday.setHours(0, 0, 0, 0);
+  const lastFridayISO = lastFriday.toISOString();
   const res = await fetch(
-    `${api}/api/hours/manager-owner/sessions-by-date?date=${isoDate}`,
+    `${api}/api/hours/manager-owner/sessions-by-date?today=${today}&weekStart=${lastFridayISO}`,
     {
       credentials: 'include',
     }

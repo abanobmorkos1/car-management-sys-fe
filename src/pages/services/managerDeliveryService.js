@@ -30,9 +30,13 @@ export const fetchDrivers = async () => {
 };
 
 export const fetchClockSessions = async (date) => {
-  const isoDate = new Date(date).toISOString().split('T')[0];
+  const lastFriday = new Date();
+  const today = new Date().toISOString();
+  lastFriday.setDate(lastFriday.getDate() - ((lastFriday.getDay() + 2) % 7));
+  lastFriday.setHours(0, 0, 0, 0);
+  const lastFridayISO = lastFriday.toISOString();
   return await fetchWithSession(
-    `${api}/api/hours/manager-owner/sessions-by-date?date=${isoDate}`
+    `${api}/api/hours/manager-owner/sessions-by-date?today=${today}&weekStart=${lastFridayISO}`
   );
 };
 

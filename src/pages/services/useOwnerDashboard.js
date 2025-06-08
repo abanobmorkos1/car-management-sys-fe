@@ -3,8 +3,9 @@ import {
   fetchDeliveriesByDate,
   fetchClockSessionsByDate,
   fetchPendingClockInRequests,
-  handleClockApproval
+  handleClockApproval,
 } from './ownerDashboardService';
+import { isValid } from 'date-fns';
 
 const useOwnerDashboardData = () => {
   const [deliveries, setDeliveries] = useState([]);
@@ -14,19 +15,15 @@ const useOwnerDashboardData = () => {
 
   useEffect(() => {
     const loadInitialData = async () => {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const today = isValid(selectedDate) ? selectedDate : null;
 
       try {
         const [deliveryData, clockData, pendingData] = await Promise.all([
           fetchDeliveriesByDate(today, today),
           fetchClockSessionsByDate(today),
-          fetchPendingClockInRequests()
+          fetchPendingClockInRequests(),
         ]);
-
-        console.log('📦 Deliveries:', deliveryData);
-        console.log('🕒 Clock Sessions:', clockData);
-        console.log('📝 Pending Requests:', pendingData);
+        console.log({ loadedfor: { today } });
 
         setDeliveries(Array.isArray(deliveryData) ? deliveryData : []);
         setClockSessions(Array.isArray(clockData) ? clockData : []);
@@ -37,7 +34,7 @@ const useOwnerDashboardData = () => {
     };
 
     loadInitialData();
-  }, []);
+  }, [selectedDate]);
 
   const approveOrRejectClock = async (id, approve = true) => {
     try {
@@ -45,12 +42,14 @@ const useOwnerDashboardData = () => {
       const updated = await fetchPendingClockInRequests();
       setPendingRequests(Array.isArray(updated) ? updated : []);
     } catch (err) {
-      console.error(`❌ Error during ${approve ? 'approval' : 'rejection'}:`, err);
+      console.error(
+        `❌ Error during ${approve ? 'approval' : 'rejection'}:`,
+        err
+      );
     }
   };
 
   const updateDateAndFetchSessions = async (date) => {
-    setSelectedDate(date);
     try {
       const sessions = await fetchClockSessionsByDate(date);
       setClockSessions(Array.isArray(sessions) ? sessions : []);
@@ -75,7 +74,8 @@ const useOwnerDashboardData = () => {
     selectedDate,
     updateDateAndFetchSessions,
     updateDeliveriesByRange,
-    approveOrRejectClock
+    approveOrRejectClock,
+    setSelectedDate,
   };
 };
 

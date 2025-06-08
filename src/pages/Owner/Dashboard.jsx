@@ -16,23 +16,25 @@ const OwnerDashboard = () => {
     selectedDate,
     updateDateAndFetchSessions,
     updateDeliveriesByRange,
-    approveOrRejectClock
+    approveOrRejectClock,
+    setSelectedDate,
   } = useOwnerDashboardData();
 
   return (
-<OwnerDashboardLayout
-  user={user}
-  navigate={navigate}
-  deliveries={deliveries}
-  clockSessions={clockSessions}
-  pendingRequests={pendingRequests}
-  selectedDate={selectedDate}
-  updateDateAndFetchSessions={updateDateAndFetchSessions}
-  updateDeliveriesByRange={updateDeliveriesByRange}
-  onApprove={(id) => approveOrRejectClock(id, true)}
-  onReject={(id) => approveOrRejectClock(id, false)} // ✅ FIXED!
-/>
-);
+    <OwnerDashboardLayout
+      user={user}
+      navigate={navigate}
+      deliveries={deliveries}
+      clockSessions={clockSessions}
+      pendingRequests={pendingRequests}
+      selectedDate={selectedDate}
+      updateDateAndFetchSessions={updateDateAndFetchSessions}
+      updateDeliveriesByRange={updateDeliveriesByRange}
+      onApprove={(id) => approveOrRejectClock(id, true)}
+      onReject={(id) => approveOrRejectClock(id, false)}
+      setSelectedDate={setSelectedDate}
+    />
+  );
 };
 
 export default OwnerDashboard;

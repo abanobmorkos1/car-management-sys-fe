@@ -1,7 +1,15 @@
 // components/ClockSessionItem.jsx
 import { Box, Typography, Grid } from '@mui/material';
+import { format } from 'date-fns';
 
-const ClockSessionItem = ({ driver, weeklyTotal }) => {
+const ClockSessionItem = ({
+  driver,
+  sessions,
+  totalHours,
+  weeklyTotalHours,
+  todaysDate,
+  weekRange,
+}) => {
   return (
     <Box
       mb={3}
@@ -10,46 +18,56 @@ const ClockSessionItem = ({ driver, weeklyTotal }) => {
       borderRadius={2}
       bgcolor="#ffffff"
     >
-      <Typography
-        fontWeight="bold"
-        color="primary"
-        fontSize="1.2rem"
-        mb={1}
-      >
-        {driver.driver?.name || 'Unknown Driver'}
+      <Typography fontWeight="bold" color="primary" fontSize="1.2rem" mb={1}>
+        {driver?.name || 'Unknown Driver'}
       </Typography>
 
       <Grid container spacing={2} mb={1}>
         <Grid item xs={12} sm={6}>
           <Typography variant="subtitle2" color="text.secondary">
-            Today’s Hours:
+            Today’s Hours ({format(new Date(todaysDate), 'MMM dd')}):
           </Typography>
           <Typography variant="body1">
-            {(driver.totalHours ?? 0).toFixed(2)} hrs
+            {(Number(totalHours) || 0).toFixed(2)} hrs
           </Typography>
         </Grid>
 
         <Grid item xs={12} sm={6}>
           <Typography variant="subtitle2" color="text.secondary">
-            Weekly Hours:
+            Weekly Hours (Starting from{' '}
+            {weekRange ? `${format(new Date(weekRange), 'MMM dd')}` : 'N/A'}):
           </Typography>
           <Typography variant="body1">
-            {(weeklyTotal?.total ?? 0).toFixed(2)} hrs
+            {(Number(weeklyTotalHours) || 0).toFixed(2)} hrs
           </Typography>
         </Grid>
       </Grid>
 
-      {Array.isArray(driver.sessions) && driver.sessions.length > 0 ? (
-        driver.sessions.map((sesh, idx) => {
-          const clockIn = new Date(sesh.clockIn).toLocaleTimeString();
+      {Array.isArray(sessions) && sessions.length > 0 ? (
+        sessions.map((sesh, idx) => {
+          const clockIn = new Date(sesh.clockIn).toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true,
+          });
           const clockOut = sesh.clockOut
-            ? new Date(sesh.clockOut).toLocaleTimeString()
+            ? new Date(sesh.clockOut).toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true,
+              })
             : null;
 
           const duration = sesh.clockOut
-            ? ((new Date(sesh.clockOut) - new Date(sesh.clockIn)) / 3600000).toFixed(2)
+            ? (
+                (new Date(sesh.clockOut) - new Date(sesh.clockIn)) /
+                3600000
+              ).toFixed(2)
             : null;
-
+          const dayMonth = new Date(sesh.clockIn).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+          });
           return (
             <Typography
               key={idx}
@@ -57,7 +75,10 @@ const ClockSessionItem = ({ driver, weeklyTotal }) => {
               color="text.secondary"
               mt={0.5}
             >
-              ⏱ {clockIn} – {clockOut ? `${clockOut} (${duration} hrs)` : 'In progress'}
+              ⏱{dayMonth}, {clockIn} –{' '}
+              {clockOut
+                ? `${dayMonth}, ${clockOut} (${duration} hrs)`
+                : 'In progress'}
             </Typography>
           );
         })

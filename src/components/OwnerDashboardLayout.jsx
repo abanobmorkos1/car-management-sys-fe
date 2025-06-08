@@ -11,18 +11,19 @@ import {
   TextField,
   Pagination,
 } from '@mui/material';
-import dayjs from 'dayjs';
 import OwnerDeliveryCard from './OwnerDeliveryCard';
 import ClockSessionItem from './ClockSessionItem';
 import ClockApprovalCard from './ClockApprovalCard';
 import Topbar from './Topbar';
-
+import { format, isValid } from 'date-fns';
 const OwnerDashboardLayout = ({
   deliveries = [],
   clockSessions = [],
   pendingRequests = [],
   onApprove = () => {},
   onReject = () => {},
+  setSelectedDate = () => {},
+  selectedDate = new Date(),
 }) => {
   const [loadingId, setLoadingId] = useState(null);
   const [snack, setSnack] = useState({
@@ -33,7 +34,6 @@ const OwnerDashboardLayout = ({
 
   const [page, setPage] = useState(1);
   const itemsPerPage = 3;
-  const [filterDate, setFilterDate] = useState('');
 
   const handleApprove = async (id) => {
     try {
@@ -75,27 +75,12 @@ const OwnerDashboardLayout = ({
     }
   };
 
-  // Handle date filtering and pagination
-  const filteredDeliveries = deliveries.filter((del) => {
-    const deliveryDate = dayjs(del.deliveryDate).format('YYYY-MM-DD');
-    const match = !filterDate || deliveryDate === filterDate;
-    console.log(
-      '📦 Delivery:',
-      deliveryDate,
-      '| Filter:',
-      filterDate,
-      '| Match:',
-      match
-    );
-    return match;
-  });
-
-  const paginatedDeliveries = filteredDeliveries.slice(
+  const paginatedDeliveries = deliveries.slice(
     (page - 1) * itemsPerPage,
     page * itemsPerPage
   );
-  const pageCount = Math.ceil(filteredDeliveries.length / itemsPerPage);
-
+  const pageCount = Math.ceil(deliveries.length / itemsPerPage);
+  console.log({ clockSessions });
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
       <Topbar />
@@ -115,7 +100,7 @@ const OwnerDashboardLayout = ({
           <Card sx={{ mb: 4 }}>
             <CardContent>
               <Typography variant="h6" fontWeight="bold" gutterBottom>
-                🚗 Deliveries ({filteredDeliveries.length})
+                🚗 Deliveries ({deliveries.length})
               </Typography>
 
               <TextField
@@ -123,17 +108,15 @@ const OwnerDashboardLayout = ({
                 label="Filter by Date"
                 variant="outlined"
                 size="small"
-                value={filterDate}
+                value={
+                  isValid(selectedDate)
+                    ? format(selectedDate, 'yyyy-MM-dd')
+                    : ''
+                }
                 onChange={(e) => {
-                  const rawValue = e.target.value;
-                  const formatted = dayjs(rawValue).format('YYYY-MM-DD');
-                  console.log(
-                    '📅 Date Input Raw:',
-                    rawValue,
-                    '| Formatted:',
-                    formatted
-                  );
-                  setFilterDate(formatted);
+                  const rawValue = new Date(e.target.value);
+                  rawValue.setHours(0, 0, 0, 0); // Normalize to start of day
+                  setSelectedDate(rawValue);
                   setPage(1);
                 }}
                 sx={{ mb: 2 }}
@@ -172,16 +155,28 @@ const OwnerDashboardLayout = ({
                 ⏱ Clock Sessions ({clockSessions?.length || 0})
               </Typography>
               {Array.isArray(clockSessions) && clockSessions.length > 0 ? (
-                clockSessions.map((driver) => {
-                  const weekly = driver?.weeklyEarnings || { total: 0 };
-                  return (
-                    <ClockSessionItem
-                      key={driver.driver._id}
-                      driver={driver}
-                      weeklyTotal={weekly}
-                    />
-                  );
-                })
+                clockSessions.map(
+                  ({
+                    driver,
+                    sessions,
+                    totalHours,
+                    weeklyTotalHours,
+                    todaysDate,
+                    weekRange,
+                  }) => {
+                    return (
+                      <ClockSessionItem
+                        key={driver._id}
+                        todaysDate={todaysDate}
+                        weekRange={weekRange}
+                        driver={driver}
+                        sessions={sessions}
+                        totalHours={totalHours}
+                        weeklyTotalHours={weeklyTotalHours}
+                      />
+                    );
+                  }
+                )
               ) : (
                 <Typography variant="body2" color="text.secondary">
                   No clock-in sessions found.
