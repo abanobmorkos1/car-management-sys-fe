@@ -5,7 +5,7 @@ import {
   requestClockIn,
   clockOut,
   fetchWeeklyEarnings,
-  fetchWeeklyBreakdown
+  fetchWeeklyBreakdown,
 } from '../services/driverDashboardService';
 
 const useDriverDashboardData = (user, navigate) => {
@@ -25,7 +25,7 @@ const useDriverDashboardData = (user, navigate) => {
     totalEarnings: 0,
     reviewPhotos: 0,
     customerPhotos: 0,
-    totalHours: 0
+    totalHours: 0,
   });
   const [dailyBreakdown, setDailyBreakdown] = useState([]);
   const [lastSessionEarnings, setLastSessionEarnings] = useState(null);
@@ -37,7 +37,7 @@ const useDriverDashboardData = (user, navigate) => {
         fetchTodayDeliveries(),
         fetchDriverStatus(),
         fetchWeeklyEarnings(),
-        fetchWeeklyBreakdown()
+        fetchWeeklyBreakdown(),
       ]);
 
       setAllDeliveries(Array.isArray(deliveries) ? deliveries : []);
@@ -72,67 +72,72 @@ const useDriverDashboardData = (user, navigate) => {
     return () => clearInterval(interval);
   }, [isClockedIn, clockInTime]);
 
-const handleClockInOut = async () => {
-  setSubmittingClockIn(true);
-  try {
-    if (isClockedIn) {
-      console.log('🔘 Attempting clock-out...');
-      const res = await clockOut();
-      console.log('✅ Clocked out:', res);
-      await loadInitialData(); // safe to load immediately on clock-out
-    } else {
-      console.log('🔘 Requesting clock-in...');
-      const res = await requestClockIn();
-      console.log('🕒 Clock-in requested:', res);
-      
-      // Show pending status immediately in UI
-      setClockInStatus({ status: 'pending' });
-      setIsClockedIn(true); // so the UI starts the timer if needed
-      setClockInTime(new Date());
+  const handleClockInOut = async () => {
+    setSubmittingClockIn(true);
+    try {
+      if (isClockedIn) {
+        const res = await clockOut();
+        await loadInitialData(); // safe to load immediately on clock-out
+      } else {
+        const res = await requestClockIn();
 
-      // Delay fetching fresh data from backend to avoid overwrite
-      setTimeout(() => {
-        loadInitialData();
-      }, 3000); // give backend 3 seconds to update
+        // Show pending status immediately in UI
+        setClockInStatus({ status: 'pending' });
+        setIsClockedIn(true); // so the UI starts the timer if needed
+        setClockInTime(new Date());
+
+        // Delay fetching fresh data from backend to avoid overwrite
+        setTimeout(() => {
+          loadInitialData();
+        }, 3000); // give backend 3 seconds to update
+      }
+    } catch (err) {
+      console.error('❌ Error in clock-in/out logic:', err);
+    } finally {
+      setSubmittingClockIn(false);
     }
-  } catch (err) {
-    console.error('❌ Error in clock-in/out logic:', err);
-  } finally {
-    setSubmittingClockIn(false);
-  }
-};
+  };
 
+  const handleStatusChange = async (deliveryId, newStatus) => {
+    try {
+      const res = await fetch(
+        `${process.env.REACT_APP_API_URL}/api/delivery/update-status/${deliveryId}`,
+        {
+          method: 'PUT',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ status: newStatus }),
+        }
+      );
 
-const handleStatusChange = async (deliveryId, newStatus) => {
-  try {
-    const res = await fetch(`${process.env.REACT_APP_API_URL}/api/delivery/update-status/${deliveryId}`, {
-      method: 'PUT',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ status: newStatus }),
-    });
+      const data = await res.json();
+      console.log('✅ Status updated:', data);
 
-    const data = await res.json();
-    console.log('✅ Status updated:', data);
-
-    if (data?.redirect) {
-      navigate(data.redirect);
-    } else {
-      const updatedDeliveries = await fetchTodayDeliveries();
-      setAllDeliveries(Array.isArray(updatedDeliveries) ? updatedDeliveries : []);
+      if (data?.redirect) {
+        navigate(data.redirect);
+      } else {
+        const updatedDeliveries = await fetchTodayDeliveries();
+        setAllDeliveries(
+          Array.isArray(updatedDeliveries) ? updatedDeliveries : []
+        );
+      }
+    } catch (err) {
+      console.error('❌ Failed to update delivery status:', err);
     }
-  } catch (err) {
-    console.error('❌ Failed to update delivery status:', err);
-  }
-};
+  };
 
-  const filteredDeliveries = allDeliveries.filter(del =>
+  const filteredDeliveries = allDeliveries.filter((del) =>
     filter === 'assigned'
       ? del.driver === user?._id || del.driver?._id === user?._id
       : true
   );
+  filteredDeliveries.sort((a, b) => {
+    const dateA = new Date(a.deliveryDate);
+    const dateB = new Date(b.deliveryDate);
+    return dateB - dateA;
+  });
 
   return {
     showGallery,
@@ -149,7 +154,7 @@ const handleStatusChange = async (deliveryId, newStatus) => {
     handleClockInOut,
     handleStatusChange,
     lastSessionEarnings,
-    submittingClockIn
+    submittingClockIn,
   };
 };
 

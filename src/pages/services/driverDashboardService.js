@@ -8,8 +8,8 @@ const fetchWithSession = async (url, options = {}) => {
       headers: {
         ...(options.headers || {}),
         'Cache-Control': 'no-cache',
-        Pragma: 'no-cache'
-      }
+        Pragma: 'no-cache',
+      },
     });
 
     if (!res.ok) {
@@ -25,18 +25,17 @@ const fetchWithSession = async (url, options = {}) => {
 };
 
 export const fetchTodayDeliveries = async () => {
-  const data = await fetchWithSession(`${api}/api/delivery/deliveries`);
+  let url = `${api}/api/delivery/deliveries`;
+  const now = new Date();
+  const from = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const to = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  to.setHours(23, 59, 59, 999);
+  url += `?start=${from.toISOString()}&end=${to.toISOString()}`;
+
+  const data = await fetchWithSession(url);
   if (!Array.isArray(data)) return [];
 
-  const today = new Date();
-  return data.filter(del => {
-    const deliveryDate = new Date(del.deliveryDate);
-    return (
-      deliveryDate.getDate() === today.getDate() &&
-      deliveryDate.getMonth() === today.getMonth() &&
-      deliveryDate.getFullYear() === today.getFullYear()
-    );
-  });
+  return data;
 };
 
 export const fetchDriverStatus = async () => {
@@ -50,8 +49,8 @@ export const requestClockIn = async () => {
     headers: {
       'Content-Type': 'application/json',
       'Cache-Control': 'no-cache',
-      Pragma: 'no-cache'
-    }
+      Pragma: 'no-cache',
+    },
   });
 
   if (!res.ok) throw new Error(await res.text());
@@ -60,7 +59,7 @@ export const requestClockIn = async () => {
 
 export const clockOut = async () => {
   return await fetchWithSession(`${api}/api/hours/driver/clock-out`, {
-    method: 'POST'
+    method: 'POST',
   });
 };
 
@@ -70,14 +69,19 @@ export const fetchWeeklyEarnings = async () => {
 };
 
 export const fetchWeeklyBreakdown = async () => {
-  const res = await fetchWithSession(`${api}/api/hours/driver/weekly-breakdown`);
+  const res = await fetchWithSession(
+    `${api}/api/hours/driver/weekly-breakdown`
+  );
   return Array.isArray(res) ? res : [];
 };
 
 export async function fetchBonusCounts() {
-  const res = await fetch(`${process.env.REACT_APP_API_URL}/api/bonus/uploads`, {
-    credentials: 'include',
-  });
+  const res = await fetch(
+    `${process.env.REACT_APP_API_URL}/api/bonus/uploads`,
+    {
+      credentials: 'include',
+    }
+  );
   if (!res.ok) throw new Error('Failed to fetch bonus counts');
   return await res.json(); // Expected format: { review: number, customer: number }
 }
