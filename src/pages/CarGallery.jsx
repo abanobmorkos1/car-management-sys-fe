@@ -20,9 +20,21 @@ import {
   Stack,
   Skeleton,
   Chip,
+  Divider,
+  Paper,
+  Avatar,
 } from '@mui/material';
-import { Visibility, DirectionsCar } from '@mui/icons-material';
+import {
+  Visibility,
+  DirectionsCar,
+  Person,
+  CalendarToday,
+  Speed,
+  ConfirmationNumber,
+  Search,
+} from '@mui/icons-material';
 import { fetchWithSession } from '../utils/fetchWithSession';
+import Topbar from '../components/Topbar';
 
 const api = process.env.REACT_APP_API_URL;
 
@@ -172,115 +184,229 @@ const CarGallery = () => {
   );
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4 }}>
-      <Typography variant="h4" mb={3} fontWeight="bold" textAlign="center">
-        New Cars Posted
-      </Typography>
-
-      <Stack spacing={2} direction="column" mb={4}>
-        <Box
+    <Container maxWidth="xl" sx={{ py: 4 }}>
+      <Topbar />
+      <Box sx={{ textAlign: 'center', mb: 6 }}>
+        <Typography
+          variant="h3"
           sx={{
-            display: 'flex',
-            flexDirection: { xs: 'column', sm: 'row' },
-            gap: 2,
+            fontWeight: 700,
+            background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            mb: 2,
           }}
         >
-          <TextField
-            fullWidth
-            label={
-              searchField === 'All'
-                ? 'Search Make, Model, or Trim'
-                : `Search by ${searchField}`
-            }
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            variant="outlined"
-          />
-          <TextField
-            select
-            label="Filter Field"
-            value={searchField}
-            onChange={(e) => setSearchField(e.target.value)}
-            variant="outlined"
-            sx={{ minWidth: 150 }}
+          Car Gallery
+        </Typography>
+        <Typography variant="h6" color="text.secondary" sx={{ mb: 4 }}>
+          Discover our collection of premium vehicles
+        </Typography>
+      </Box>
+
+      {/* Enhanced Search and Filter Section */}
+      <Paper
+        elevation={2}
+        sx={{
+          p: 3,
+          mb: 4,
+          borderRadius: 3,
+          background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+        }}
+      >
+        <Stack spacing={3}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+            <Search color="primary" />
+            <Typography variant="h6" fontWeight={600}>
+              Search & Filter
+            </Typography>
+          </Box>
+
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', md: 'row' },
+              gap: 2,
+            }}
           >
-            <MenuItem value="All">All</MenuItem>
-            <MenuItem value="Make">Make</MenuItem>
-            <MenuItem value="Model">Model</MenuItem>
-          </TextField>
-          <TextField
-            select
-            label="Driver"
-            value={selectedDriver}
-            onChange={(e) => setSelectedDriver(e.target.value)}
-            variant="outlined"
-            sx={{ minWidth: 150 }}
+            <TextField
+              fullWidth
+              label={
+                searchField === 'All'
+                  ? 'Search Make, Model, or Trim'
+                  : `Search by ${searchField}`
+              }
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              variant="outlined"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: 'white',
+                  borderRadius: 2,
+                },
+              }}
+            />
+            <TextField
+              select
+              label="Filter Field"
+              value={searchField}
+              onChange={(e) => setSearchField(e.target.value)}
+              variant="outlined"
+              sx={{
+                minWidth: 180,
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: 'white',
+                  borderRadius: 2,
+                },
+              }}
+            >
+              <MenuItem value="All">All Fields</MenuItem>
+              <MenuItem value="Make">Make</MenuItem>
+              <MenuItem value="Model">Model</MenuItem>
+            </TextField>
+            <TextField
+              select
+              label="Driver"
+              value={selectedDriver}
+              onChange={(e) => setSelectedDriver(e.target.value)}
+              variant="outlined"
+              sx={{
+                minWidth: 180,
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: 'white',
+                  borderRadius: 2,
+                },
+              }}
+            >
+              <MenuItem value="all">All Drivers</MenuItem>
+              {drivers.map((d) => (
+                <MenuItem key={d.id} value={d.id}>
+                  {d.label}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Box>
+
+          {/* Results Counter */}
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
           >
-            <MenuItem value="all">All Drivers</MenuItem>
-            {drivers.map((d) => (
-              <MenuItem key={d.id} value={d.id}>
-                {d.label}
-              </MenuItem>
-            ))}
-          </TextField>
-        </Box>
-      </Stack>
+            <Typography variant="body2" color="text.secondary">
+              Showing {filteredCars.length} of {cars.length} cars
+            </Typography>
+          </Box>
+        </Stack>
+      </Paper>
 
       {loading ? (
         <Box display="flex" justifyContent="center" mt={6}>
-          <CircularProgress />
+          <Stack alignItems="center" spacing={2}>
+            <CircularProgress size={60} />
+            <Typography variant="h6" color="text.secondary">
+              Loading cars...
+            </Typography>
+          </Stack>
         </Box>
+      ) : filteredCars.length === 0 ? (
+        <Paper sx={{ p: 6, textAlign: 'center', mt: 4 }}>
+          <DirectionsCar
+            sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }}
+          />
+          <Typography variant="h5" color="text.secondary" gutterBottom>
+            No cars found
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Try adjusting your search criteria
+          </Typography>
+        </Paper>
       ) : (
-        <Grid container spacing={3} justifyContent="center">
+        <Grid container spacing={4} justifyContent="center">
           {paginatedCars.map((car) => (
-            <Grid item xs={12} sm={6} md={4} key={car._id}>
+            <Grid item xs={12} sm={6} lg={4} key={car._id}>
               <Card
                 sx={{
-                  height: 450,
+                  height: 480,
                   display: 'flex',
                   flexDirection: 'column',
-                  borderRadius: 3,
-                  boxShadow: 3,
-                  transition: 'transform 0.2s, box-shadow 0.2s',
+                  borderRadius: 4,
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  overflow: 'hidden',
                   '&:hover': {
-                    transform: 'scale(1.02)',
-                    boxShadow: '0 8px 25px rgba(0,0,0,0.15)',
+                    transform: 'translateY(-8px)',
+                    boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
                   },
                 }}
               >
-                <Box sx={{ height: 220, position: 'relative' }}>
-                  {loading ? (
-                    <Skeleton variant="rectangular" width="100%" height={220} />
-                  ) : car.signedUrls && car.signedUrls.length > 0 ? (
+                <Box
+                  sx={{ height: 240, position: 'relative', overflow: 'hidden' }}
+                >
+                  {car.signedUrls && car.signedUrls.length > 0 ? (
                     <CardMedia
                       component="img"
-                      height="220"
+                      height="240"
                       image={car.signedUrls[0]}
                       alt={`${car.year} ${car.make} ${car.model}`}
-                      sx={{ objectFit: 'cover' }}
+                      sx={{
+                        objectFit: 'cover',
+                        transition: 'transform 0.3s ease',
+                        '&:hover': {
+                          transform: 'scale(1.05)',
+                        },
+                      }}
                     />
                   ) : (
                     <Box
                       sx={{
-                        height: 220,
+                        height: 240,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        backgroundColor: '#f5f5f5',
-                        color: '#bdbdbd',
+                        background:
+                          'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        color: 'white',
                       }}
                     >
-                      <DirectionsCar sx={{ fontSize: 60 }} />
+                      <DirectionsCar sx={{ fontSize: 80 }} />
                     </Box>
                   )}
-                  <Box sx={{ position: 'absolute', top: 8, right: 8 }}>
+
+                  {/* Status Badge */}
+                  <Box sx={{ position: 'absolute', top: 12, right: 12 }}>
                     <Chip
                       label={car.status}
                       color={car.status === 'Available' ? 'success' : 'warning'}
                       size="small"
-                      sx={{ fontWeight: 'medium' }}
+                      sx={{
+                        fontWeight: 600,
+                        backdropFilter: 'blur(10px)',
+                        backgroundColor:
+                          car.status === 'Available'
+                            ? 'rgba(76, 175, 80, 0.9)'
+                            : 'rgba(255, 152, 0, 0.9)',
+                        color: 'white',
+                      }}
                     />
                   </Box>
+
+                  {/* Image Count Badge */}
+                  {car.signedUrls && car.signedUrls.length > 1 && (
+                    <Box sx={{ position: 'absolute', bottom: 12, left: 12 }}>
+                      <Chip
+                        label={`${car.signedUrls.length} photos`}
+                        size="small"
+                        sx={{
+                          backgroundColor: 'rgba(0,0,0,0.7)',
+                          color: 'white',
+                          fontWeight: 500,
+                        }}
+                      />
+                    </Box>
+                  )}
                 </Box>
 
                 <CardContent
@@ -288,42 +414,96 @@ const CarGallery = () => {
                     flexGrow: 1,
                     display: 'flex',
                     flexDirection: 'column',
-                    justifyContent: 'space-between',
-                    p: 2,
+                    p: 3,
                   }}
                 >
-                  <Box>
-                    <Typography variant="h6" fontWeight="bold" sx={{ mb: 1 }}>
-                      {car.year} {car.make} {car.model}
-                    </Typography>
+                  <Box sx={{ flexGrow: 1 }}>
                     <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ mb: 1 }}
+                      variant="h6"
+                      fontWeight="bold"
+                      sx={{
+                        mb: 1,
+                        fontSize: '1.1rem',
+                        lineHeight: 1.3,
+                      }}
                     >
-                      {car.trim && `${car.trim} • `}
-                      {car.mileage
-                        ? `${car.mileage.toLocaleString()} miles`
-                        : 'Mileage not specified'}
+                      {highlightText(
+                        `${car.year} ${car.make} ${car.model}`,
+                        search
+                      )}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      VIN: {car.vin || 'Not specified'}
-                    </Typography>
+
+                    {car.trim && (
+                      <Typography
+                        variant="body2"
+                        color="primary.main"
+                        sx={{ mb: 2, fontWeight: 500 }}
+                      >
+                        {highlightText(car.trim, search)}
+                      </Typography>
+                    )}
+
+                    <Stack spacing={1.5}>
+                      <Box
+                        sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                      >
+                        <Speed sx={{ fontSize: 16, color: 'text.secondary' }} />
+                        <Typography variant="body2" color="text.secondary">
+                          {car.mileage
+                            ? `${car.mileage.toLocaleString()} miles`
+                            : 'Mileage not specified'}
+                        </Typography>
+                      </Box>
+
+                      <Box
+                        sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                      >
+                        <ConfirmationNumber
+                          sx={{ fontSize: 16, color: 'text.secondary' }}
+                        />
+                        <Typography variant="body2" color="text.secondary">
+                          VIN: {car.vin || 'Not specified'}
+                        </Typography>
+                      </Box>
+
+                      {car.driver && (
+                        <Box
+                          sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                        >
+                          <Person
+                            sx={{ fontSize: 16, color: 'text.secondary' }}
+                          />
+                          <Typography variant="body2" color="text.secondary">
+                            {users[car.driver._id] ||
+                              users[car.driver] ||
+                              'Unknown Driver'}
+                          </Typography>
+                        </Box>
+                      )}
+                    </Stack>
                   </Box>
 
                   <Box
-                    sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}
+                    sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}
                   >
-                    <IconButton
+                    <Button
                       onClick={() => setSelectedCar(car)}
+                      variant="contained"
+                      startIcon={<Visibility />}
                       sx={{
-                        bgcolor: 'primary.main',
-                        color: 'white',
-                        '&:hover': { bgcolor: 'primary.dark' },
+                        borderRadius: 3,
+                        px: 3,
+                        py: 1,
+                        background:
+                          'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
+                        '&:hover': {
+                          background:
+                            'linear-gradient(45deg, #1565c0 30%, #1976d2 90%)',
+                        },
                       }}
                     >
-                      <Visibility />
-                    </IconButton>
+                      View Details
+                    </Button>
                   </Box>
                 </CardContent>
               </Card>
@@ -332,85 +512,262 @@ const CarGallery = () => {
         </Grid>
       )}
 
+      {/* Enhanced Pagination */}
       {filteredCars.length > itemsPerPage && (
-        <Box mt={4} display="flex" justifyContent="center">
-          <Pagination
-            count={Math.ceil(filteredCars.length / itemsPerPage)}
-            page={page}
-            onChange={(e, value) => setPage(value)}
-            color="primary"
-          />
+        <Box mt={6} display="flex" justifyContent="center">
+          <Paper elevation={2} sx={{ p: 2, borderRadius: 3 }}>
+            <Pagination
+              count={Math.ceil(filteredCars.length / itemsPerPage)}
+              page={page}
+              onChange={(e, value) => setPage(value)}
+              color="primary"
+              size="large"
+              showFirstButton
+              showLastButton
+            />
+          </Paper>
         </Box>
       )}
 
+      {/* Enhanced Dialog */}
       <Dialog
         open={!!selectedCar}
         onClose={() => setSelectedCar(null)}
-        maxWidth="md"
+        maxWidth="lg"
         fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 4,
+            maxHeight: '90vh',
+          },
+        }}
       >
-        <DialogTitle sx={{ fontWeight: 700 }}>Car Details</DialogTitle>
-        <DialogContent dividers sx={{ maxHeight: '80vh', overflowY: 'auto' }}>
+        <DialogTitle
+          sx={{
+            fontWeight: 700,
+            fontSize: '1.5rem',
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            color: 'white',
+            textAlign: 'center',
+          }}
+        >
+          Car Details
+        </DialogTitle>
+        <DialogContent dividers sx={{ p: 0 }}>
           {selectedCar && (
-            <Box display="flex" flexDirection="column" gap={2}>
-              <Typography variant="subtitle2" color="text.secondary">
-                Year / Make / Model
-              </Typography>
-              <Typography>
-                {selectedCar.year} {selectedCar.make} {selectedCar.model}
-              </Typography>
-
-              <Typography variant="subtitle2" color="text.secondary">
-                Driver
-              </Typography>
-              <Typography>{users[selectedCar.driver] || 'N/A'}</Typography>
-
-              <Typography variant="subtitle2" color="text.secondary">
-                Salesperson
-              </Typography>
-              <Typography>{users[selectedCar.salesPerson] || 'N/A'}</Typography>
-
-              <Typography variant="subtitle2" color="text.secondary">
-                Date
-              </Typography>
-              <Typography>
-                {new Date(selectedCar.createdAt).toLocaleString()}
-              </Typography>
-
-              {selectedCar.signedUrls?.length > 0 && (
-                <>
-                  <Typography variant="subtitle2" color="text.secondary" mt={2}>
-                    Photos
+            <Box>
+              {/* Hero Section */}
+              <Box sx={{ p: 4, bgcolor: 'grey.50' }}>
+                <Typography variant="h4" fontWeight="bold" gutterBottom>
+                  {selectedCar.year} {selectedCar.make} {selectedCar.model}
+                </Typography>
+                {selectedCar.trim && (
+                  <Typography variant="h6" color="primary.main" gutterBottom>
+                    {selectedCar.trim}
                   </Typography>
-                  <Grid container spacing={2}>
-                    {selectedCar.signedUrls.map((url, i) => (
-                      <Grid item xs={12} sm={6} key={i}>
-                        <img
-                          src={url}
-                          alt={`car-${i}`}
-                          style={{ width: '100%', borderRadius: 8 }}
-                        />
-                      </Grid>
-                    ))}
+                )}
+
+                {/* Status and Info Cards */}
+                <Grid container spacing={2} sx={{ mt: 2 }}>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Paper
+                      sx={{
+                        p: 2,
+                        textAlign: 'center',
+                        bgcolor: 'background.paper',
+                      }}
+                    >
+                      <Typography variant="subtitle2" color="text.secondary">
+                        Status
+                      </Typography>
+                      <Chip
+                        label={selectedCar.status}
+                        color={
+                          selectedCar.status === 'Available'
+                            ? 'success'
+                            : 'warning'
+                        }
+                        sx={{ mt: 1, fontWeight: 600 }}
+                      />
+                    </Paper>
                   </Grid>
-                </>
-              )}
 
-              {selectedCar.videoUrl && (
-                <Box mt={2}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Video
-                  </Typography>
-                  <video controls style={{ width: '100%', borderRadius: 8 }}>
-                    <source src={selectedCar.videoUrl} type="video/mp4" />
-                  </video>
-                </Box>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Paper sx={{ p: 2, textAlign: 'center' }}>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        Mileage
+                      </Typography>
+                      <Typography variant="h6" sx={{ mt: 1 }}>
+                        {selectedCar.mileage
+                          ? `${selectedCar.mileage.toLocaleString()}`
+                          : 'N/A'}
+                      </Typography>
+                    </Paper>
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <Paper sx={{ p: 2, textAlign: 'center' }}>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        VIN
+                      </Typography>
+                      <Typography
+                        variant="body1"
+                        sx={{ mt: 1, fontFamily: 'monospace' }}
+                      >
+                        {selectedCar.vin || 'Not specified'}
+                      </Typography>
+                    </Paper>
+                  </Grid>
+                </Grid>
+              </Box>
+
+              <Divider />
+
+              {/* Details Section */}
+              <Box sx={{ p: 4 }}>
+                <Grid container spacing={4}>
+                  <Grid item xs={12} md={6}>
+                    <Stack spacing={3}>
+                      <Box>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                            mb: 2,
+                          }}
+                        >
+                          <Person color="primary" />
+                          <Typography variant="h6" fontWeight={600}>
+                            Driver Information
+                          </Typography>
+                        </Box>
+                        <Paper sx={{ p: 3, bgcolor: 'grey.50' }}>
+                          <Typography variant="body1">
+                            {users[selectedCar.driver?._id] ||
+                              users[selectedCar.driver] ||
+                              'Not assigned'}
+                          </Typography>
+                        </Paper>
+                      </Box>
+
+                      <Box>
+                        <Typography variant="h6" fontWeight={600} gutterBottom>
+                          Salesperson
+                        </Typography>
+                        <Paper sx={{ p: 3, bgcolor: 'grey.50' }}>
+                          <Typography variant="body1">
+                            {users[selectedCar.salesPerson] || 'Not assigned'}
+                          </Typography>
+                        </Paper>
+                      </Box>
+                    </Stack>
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <Box>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1,
+                        }}
+                      >
+                        <CalendarToday color="primary" />
+                        <Typography variant="h6" fontWeight={600}>
+                          Date Added
+                        </Typography>
+                      </Box>
+                      <Paper sx={{ p: 3, bgcolor: 'grey.50' }}>
+                        <Typography variant="body1">
+                          {new Date(selectedCar.createdAt).toLocaleString()}
+                        </Typography>
+                      </Paper>
+                    </Box>
+                  </Grid>
+                </Grid>
+              </Box>
+
+              {/* Media Section */}
+              {(selectedCar.signedUrls?.length > 0 || selectedCar.videoUrl) && (
+                <>
+                  <Divider />
+                  <Box sx={{ p: 4 }}>
+                    {selectedCar.signedUrls?.length > 0 && (
+                      <Box sx={{ mb: 4 }}>
+                        <Typography variant="h6" fontWeight={600} gutterBottom>
+                          Photos ({selectedCar.signedUrls.length})
+                        </Typography>
+                        <Grid container spacing={2}>
+                          {selectedCar.signedUrls.map((url, i) => (
+                            <Grid item xs={12} sm={6} md={4} key={i}>
+                              <Paper
+                                elevation={2}
+                                sx={{
+                                  borderRadius: 2,
+                                  overflow: 'hidden',
+                                  transition: 'transform 0.2s',
+                                  '&:hover': {
+                                    transform: 'scale(1.02)',
+                                  },
+                                }}
+                              >
+                                <img
+                                  src={url}
+                                  alt={`Car photo ${i + 1}`}
+                                  style={{
+                                    width: '100%',
+                                    height: '200px',
+                                    objectFit: 'cover',
+                                  }}
+                                />
+                              </Paper>
+                            </Grid>
+                          ))}
+                        </Grid>
+                      </Box>
+                    )}
+
+                    {selectedCar.videoUrl && (
+                      <Box>
+                        <Typography variant="h6" fontWeight={600} gutterBottom>
+                          Video
+                        </Typography>
+                        <Paper
+                          elevation={2}
+                          sx={{ borderRadius: 2, overflow: 'hidden' }}
+                        >
+                          <video
+                            controls
+                            style={{
+                              width: '100%',
+                              maxHeight: '400px',
+                            }}
+                          >
+                            <source
+                              src={selectedCar.videoUrl}
+                              type="video/mp4"
+                            />
+                          </video>
+                        </Paper>
+                      </Box>
+                    )}
+                  </Box>
+                </>
               )}
             </Box>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setSelectedCar(null)} variant="outlined">
+        <DialogActions sx={{ p: 3, bgcolor: 'grey.50' }}>
+          <Button
+            onClick={() => setSelectedCar(null)}
+            variant="contained"
+            sx={{
+              borderRadius: 3,
+              px: 4,
+              py: 1,
+            }}
+          >
             Close
           </Button>
         </DialogActions>

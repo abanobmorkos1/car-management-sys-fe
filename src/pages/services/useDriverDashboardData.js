@@ -9,6 +9,7 @@ import {
 } from '../services/driverDashboardService';
 
 const useDriverDashboardData = (user, navigate) => {
+  const [counts, setCounts] = useState({ assigned: 0, total: 0 });
   const [showGallery, setShowGallery] = useState(false);
   const [allDeliveries, setAllDeliveries] = useState([]);
   const [filter, setFilter] = useState('all');
@@ -39,7 +40,11 @@ const useDriverDashboardData = (user, navigate) => {
         fetchWeeklyEarnings(),
         fetchWeeklyBreakdown(),
       ]);
-
+      setCounts({
+        assigned: deliveries.filter((del) => del.driver?._id === user?._id)
+          .length,
+        total: deliveries.length,
+      });
       setAllDeliveries(Array.isArray(deliveries) ? deliveries : []);
       setIsClockedIn(status?.isClockedIn || false);
       setClockInTime(status?.clockIn ? new Date(status.clockIn) : null);
@@ -155,6 +160,7 @@ const useDriverDashboardData = (user, navigate) => {
     handleStatusChange,
     lastSessionEarnings,
     submittingClockIn,
+    counts,
   };
 };
 

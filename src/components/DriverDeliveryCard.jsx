@@ -52,166 +52,154 @@ const DriverDeliveryCard = ({
 
   return (
     <Box
-      p={2}
-      border="1px solid #e0e0e0"
-      borderRadius={2}
-      bgcolor={
-        normalizedStatus === 'delivered'
-          ? '#f3f4f6'
-          : theme.palette.background.paper
-      }
-      boxShadow={2}
-      sx={{ opacity: normalizedStatus === 'delivered' ? 0.6 : 1 }}
+      sx={{
+        p: 3,
+        border: `2px solid #e0e0e0`,
+        borderRadius: 3,
+        backgroundColor: theme.palette.background.paper,
+        boxShadow: 2,
+        transition: 'all 0.3s ease',
+        minHeight: '280px', // Add consistent minimum height
+        display: 'flex',
+        flexDirection: 'column',
+        '&:hover': {
+          boxShadow: 4,
+          transform: 'translateY(-2px)',
+        },
+      }}
     >
-      <Typography
-        fontWeight="bold"
-        fontSize="1.1rem"
-        mb={1}
-        color="primary.main"
-      >
-        {delivery.customerName}
-      </Typography>
-      {delivery.leaseReturn?.willReturn && (
+      {/* Header section with consistent height */}
+      <Box sx={{ minHeight: '60px', mb: 2 }}>
+        <Typography variant="h6" fontWeight="bold" color="primary" mb={1}>
+          {delivery.customerName || 'Customer'}
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Order #{delivery._id?.slice(-6)}
+        </Typography>
+      </Box>
+
+      {/* Content section that grows to fill space */}
+      <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+        {/* Delivery details */}
+        <Box sx={{ mb: 2 }}>
+          <Typography
+            variant="body2"
+            color="blue"
+            display="flex"
+            alignItems="center"
+            gap={1}
+          >
+            <PhoneIcon fontSize="small" /> {delivery.phoneNumber}
+          </Typography>
+          <Typography
+            variant="body2"
+            color="blue"
+            display="flex"
+            alignItems="center"
+            gap={1}
+          >
+            <LocationOnIcon fontSize="small" /> {delivery.address}
+          </Typography>
+          <Typography
+            variant="body2"
+            color="blue"
+            display="flex"
+            alignItems="center"
+            gap={1}
+          >
+            <AccessTimeIcon fontSize="small" />{' '}
+            {new Date(delivery.deliveryDate).toLocaleString()}
+          </Typography>
+          <Typography
+            variant="body2"
+            color="blue"
+            display="flex"
+            alignItems="center"
+            gap={1}
+          >
+            <LocalAtmIcon fontSize="small" />${delivery.codAmount}{' '}
+            {delivery.codCollected
+              ? `(via ${delivery.codMethod})`
+              : '(Pending)'}
+          </Typography>
+          <Typography
+            variant="body2"
+            color="blue"
+            display="flex"
+            alignItems="center"
+            gap={1}
+          >
+            <DirectionsCarIcon fontSize="small" />
+            {delivery.year} {delivery.make} {delivery.model} {delivery.trim} -{' '}
+            {delivery.color}
+          </Typography>
+          {delivery.notes && (
+            <Typography
+              variant="body2"
+              color="blue"
+              display="flex"
+              alignItems="center"
+              gap={1}
+            >
+              <NotesIcon fontSize="small" /> {delivery.notes}
+            </Typography>
+          )}
+        </Box>
+
+        {/* Status/Assignment section with consistent height */}
         <Box
           sx={{
-            display: 'inline-block',
-            bgcolor: 'warning.main',
-            color: 'white',
-            px: 1.5,
-            py: 0.5,
-            borderRadius: 1,
-            fontSize: '0.75rem',
-            fontWeight: 'bold',
-            mb: 1,
+            mt: 'auto',
+            minHeight: '60px',
+            display: 'flex',
+            alignItems: 'center',
           }}
         >
-          🚗 Lease Return Scheduled
-        </Box>
-      )}
-
-      {normalizedStatus === 'delivered' && (
-        <Typography
-          variant="body2"
-          color="success.main"
-          fontWeight="bold"
-          mb={1}
-        >
-          ✅ Delivery Completed
-        </Typography>
-      )}
-
-      <Typography
-        variant="body2"
-        color="blue"
-        display="flex"
-        alignItems="center"
-        gap={1}
-      >
-        <PhoneIcon fontSize="small" /> {delivery.phoneNumber}
-      </Typography>
-      <Typography
-        variant="body2"
-        color="blue"
-        display="flex"
-        alignItems="center"
-        gap={1}
-      >
-        <LocationOnIcon fontSize="small" /> {delivery.address}
-      </Typography>
-      <Typography
-        variant="body2"
-        color="blue"
-        display="flex"
-        alignItems="center"
-        gap={1}
-      >
-        <AccessTimeIcon fontSize="small" />{' '}
-        {new Date(delivery.deliveryDate).toLocaleString()}
-      </Typography>
-      <Typography
-        variant="body2"
-        color="blue"
-        display="flex"
-        alignItems="center"
-        gap={1}
-      >
-        <LocalAtmIcon fontSize="small" />${delivery.codAmount}{' '}
-        {delivery.codCollected ? `(via ${delivery.codMethod})` : '(Pending)'}
-      </Typography>
-      <Typography
-        variant="body2"
-        color="blue"
-        display="flex"
-        alignItems="center"
-        gap={1}
-      >
-        <DirectionsCarIcon fontSize="small" />
-        {delivery.year} {delivery.make} {delivery.model} {delivery.trim} -{' '}
-        {delivery.color}
-      </Typography>
-      {delivery.notes && (
-        <Typography
-          variant="body2"
-          color="blue"
-          display="flex"
-          alignItems="center"
-          gap={1}
-        >
-          <NotesIcon fontSize="small" /> {delivery.notes}
-        </Typography>
-      )}
-
-      <Divider sx={{ my: 2 }} />
-
-      {isAssigned ? (
-        <>
-          <Typography variant="body2" fontWeight="bold" gutterBottom>
-            Status
-          </Typography>
-          <Select
-            size="small"
-            fullWidth
-            value={delivery.status}
-            onChange={handleStatusChange}
-          >
-            <MenuItem value="In Route for Pick Up">
-              In route for pick up
-            </MenuItem>
-            <MenuItem value="Waiting for Paperwork">
-              Waiting for paperwork
-            </MenuItem>
-            <MenuItem value="Heading to Customer">Heading to customer</MenuItem>
-            <MenuItem value="Delivered">Delivered</MenuItem>
-          </Select>
-        </>
-      ) : availableDrivers ? (
-        <>
-          <Typography variant="body2" fontWeight="bold" gutterBottom>
-            Assign Driver
-          </Typography>
-          <Select
-            size="small"
-            fullWidth
-            value={
-              typeof delivery.driver === 'object'
-                ? delivery.driver._id
-                : delivery.driver || ''
-            }
-            onChange={handleAssignDriver}
-          >
-            <MenuItem value="">Unassigned</MenuItem>
-            {availableDrivers.map((d) => (
-              <MenuItem key={d._id} value={d._id}>
-                {d.name}
+          {!isAssigned ? (
+            <Typography
+              variant="body2"
+              sx={{
+                color: 'error.main',
+                fontWeight: 'bold',
+                textAlign: 'center',
+                width: '100%',
+                p: 2,
+                bgcolor: 'error.light',
+                borderRadius: 1,
+              }}
+            >
+              ⚠️ You are not assigned to this delivery
+            </Typography>
+          ) : (
+            <Select
+              value={normalizedStatus}
+              onChange={handleStatusChange}
+              size="small"
+              fullWidth
+              sx={{
+                '& .MuiSelect-select': {
+                  fontWeight: 'bold',
+                  color:
+                    normalizedStatus === 'delivered'
+                      ? 'success.main'
+                      : 'text.primary',
+                },
+              }}
+            >
+              <MenuItem value="In Route for Pick Up">
+                In route for pick up
               </MenuItem>
-            ))}
-          </Select>
-        </>
-      ) : (
-        <Typography color="error" mt={1}>
-          You are not assigned to this delivery.
-        </Typography>
-      )}
+              <MenuItem value="Waiting for Paperwork">
+                Waiting for paperwork
+              </MenuItem>
+              <MenuItem value="Heading to Customer">
+                Heading to customer
+              </MenuItem>
+              <MenuItem value="Delivered">Delivered</MenuItem>
+            </Select>
+          )}
+        </Box>
+      </Box>
     </Box>
   );
 };

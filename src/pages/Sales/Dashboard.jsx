@@ -129,7 +129,7 @@ const SalesDashboard = () => {
   );
 
   return (
-    <>
+    <Container maxWidth="xl" sx={{ py: 4 }}>
       <Topbar />
       <Container maxWidth="lg" sx={{ py: 5 }}>
         <Typography variant="h4" fontWeight="bold" gutterBottom align="center">
@@ -322,7 +322,7 @@ const SalesDashboard = () => {
           />
         </Dialog>
       </Container>
-    </>
+    </Container>
   );
 };
 

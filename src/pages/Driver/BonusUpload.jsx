@@ -56,9 +56,18 @@ const BonusUpload = ({ onCountUpdate }) => {
 
   const fetchAndUpdateCounts = async () => {
     try {
-      const res = await fetch(`${api}/api/driver/my-uploads`, {
-        credentials: 'include',
-      });
+      const lastFriday = new Date();
+      lastFriday.setDate(
+        lastFriday.getDate() - ((lastFriday.getDay() + 2) % 7)
+      );
+      lastFriday.setHours(0, 0, 0, 0);
+      const lastFridayISO = lastFriday.toISOString();
+      const res = await fetch(
+        `${process.env.REACT_APP_API_URL}/api/driver/my-uploads?startDate=${lastFridayISO}`,
+        {
+          credentials: 'include',
+        }
+      );
 
       if (!res.ok) return;
 
@@ -129,42 +138,43 @@ const BonusUpload = ({ onCountUpdate }) => {
   };
 
   return (
-    <Box>
-      <Typography variant="h6" mb={1}>
-        Upload Bonus Image
-      </Typography>
+    <>
+      <Box>
+        <Typography variant="h6" mb={1}>
+          Upload Bonus Image
+        </Typography>
 
-      <FormControl fullWidth sx={{ mb: 2 }}>
-        <InputLabel>Type</InputLabel>
-        <Select
-          value={type}
-          label="Type"
-          onChange={(e) => setType(e.target.value)}
+        <FormControl fullWidth sx={{ mb: 2 }}>
+          <InputLabel>Type</InputLabel>
+          <Select
+            value={type}
+            label="Type"
+            onChange={(e) => setType(e.target.value)}
+          >
+            <MenuItem value="review">Review Photo ($25)</MenuItem>
+            <MenuItem value="customer">Customer Photo ($5)</MenuItem>
+          </Select>
+        </FormControl>
+
+        <input type="file" accept="image/*" onChange={handleFileChange} />
+        {previewUrl && (
+          <img
+            src={previewUrl}
+            alt="preview"
+            style={{ width: '100%', marginTop: 10, borderRadius: 8 }}
+          />
+        )}
+
+        <Button
+          fullWidth
+          variant="contained"
+          sx={{ mt: 2 }}
+          onClick={handleUpload}
+          disabled={!file}
         >
-          <MenuItem value="review">Review Photo ($25)</MenuItem>
-          <MenuItem value="customer">Customer Photo ($5)</MenuItem>
-        </Select>
-      </FormControl>
-
-      <input type="file" accept="image/*" onChange={handleFileChange} />
-      {previewUrl && (
-        <img
-          src={previewUrl}
-          alt="preview"
-          style={{ width: '100%', marginTop: 10, borderRadius: 8 }}
-        />
-      )}
-
-      <Button
-        fullWidth
-        variant="contained"
-        sx={{ mt: 2 }}
-        onClick={handleUpload}
-        disabled={!file}
-      >
-        Upload
-      </Button>
-
+          Upload
+        </Button>
+      </Box>
       <Snackbar
         open={snack.open}
         autoHideDuration={3000}
@@ -172,7 +182,7 @@ const BonusUpload = ({ onCountUpdate }) => {
       >
         <Alert severity={snack.severity}>{snack.msg}</Alert>
       </Snackbar>
-    </Box>
+    </>
   );
 };
 

@@ -11,6 +11,7 @@ import {
   Alert,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import Topbar from '../../components/Topbar';
 const api = process.env.REACT_APP_API_URL;
 
 const NewCarForm = () => {
@@ -183,142 +184,145 @@ const NewCarForm = () => {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ mt: 4 }}>
-      <Typography variant="h5" mb={3}>
-        New Car Post
-      </Typography>
-      <form onSubmit={handleSubmit}>
-        <TextField
-          fullWidth
-          name="vin"
-          label="VIN"
-          value={form.vin}
-          onChange={handleChange}
-          margin="normal"
-        />
-        <TextField
-          fullWidth
-          label="Make"
-          value={form.make}
-          disabled
-          margin="dense"
-        />
-        <TextField
-          fullWidth
-          label="Model"
-          value={form.model}
-          disabled
-          margin="dense"
-        />
-        <TextField
-          fullWidth
-          label="Trim"
-          value={form.trim}
-          disabled
-          margin="dense"
-        />
-        <TextField
-          fullWidth
-          label="Year"
-          value={form.year}
-          disabled
-          margin="dense"
-        />
-
-        <TextField
-          select
-          fullWidth
-          name="salesPersonid"
-          label="Salesperson"
-          value={form.salesPersonid}
-          onChange={handleChange}
-          margin="normal"
-          required
-        >
-          {salespeople.map((sp) => (
-            <MenuItem key={sp._id} value={sp._id}>
-              {sp.name}
-            </MenuItem>
-          ))}
-        </TextField>
-
-        <TextField
-          select
-          fullWidth
-          name="driver"
-          label="Driver"
-          value={form.driver}
-          onChange={handleChange}
-          margin="normal"
-          required
-        >
-          {drivers.map((d) => (
-            <MenuItem key={d._id} value={d._id}>
-              {d.name}
-            </MenuItem>
-          ))}
-        </TextField>
-
-        <TextField
-          fullWidth
-          name="damageReport"
-          label="Damage Report"
-          value={form.damageReport}
-          onChange={handleChange}
-          margin="normal"
-          multiline
-          rows={3}
-        />
-
-        <Box mt={2}>
-          <Typography>Upload Car Pictures</Typography>
-          <input
-            type="file"
-            name="pictureFiles"
-            accept="image/*"
-            multiple
-            onChange={handleFileChange}
+    <Container maxWidth="xl" sx={{ py: 4 }}>
+      <Topbar />
+      <Container maxWidth="sm" sx={{ mt: 4 }}>
+        <Typography variant="h5" mb={3}>
+          New Car Post
+        </Typography>
+        <form onSubmit={handleSubmit}>
+          <TextField
+            fullWidth
+            name="vin"
+            label="VIN"
+            value={form.vin}
+            onChange={handleChange}
+            margin="normal"
           />
-        </Box>
-
-        <Box mt={2}>
-          <Typography>Upload Car Video</Typography>
-          <input
-            type="file"
-            name="videoFile"
-            accept="video/*"
-            onChange={handleFileChange}
+          <TextField
+            fullWidth
+            label="Make"
+            value={form.make}
+            disabled
+            margin="dense"
           />
-        </Box>
-
-        <Box mt={2}>
-          <Typography>Upload Driver ID</Typography>
-          <input
-            type="file"
-            name="driverIdPictureFile"
-            accept="image/*"
-            onChange={handleFileChange}
+          <TextField
+            fullWidth
+            label="Model"
+            value={form.model}
+            disabled
+            margin="dense"
           />
-        </Box>
+          <TextField
+            fullWidth
+            label="Trim"
+            value={form.trim}
+            disabled
+            margin="dense"
+          />
+          <TextField
+            fullWidth
+            label="Year"
+            value={form.year}
+            disabled
+            margin="dense"
+          />
 
-        <Button
-          type="submit"
-          variant="contained"
-          fullWidth
-          sx={{ mt: 3 }}
-          disabled={loading}
+          <TextField
+            select
+            fullWidth
+            name="salesPersonid"
+            label="Salesperson"
+            value={form.salesPersonid}
+            onChange={handleChange}
+            margin="normal"
+            required
+          >
+            {salespeople.map((sp) => (
+              <MenuItem key={sp._id} value={sp._id}>
+                {sp.name}
+              </MenuItem>
+            ))}
+          </TextField>
+
+          <TextField
+            select
+            fullWidth
+            name="driver"
+            label="Driver"
+            value={form.driver}
+            onChange={handleChange}
+            margin="normal"
+            required
+          >
+            {drivers.map((d) => (
+              <MenuItem key={d._id} value={d._id}>
+                {d.name}
+              </MenuItem>
+            ))}
+          </TextField>
+
+          <TextField
+            fullWidth
+            name="damageReport"
+            label="Damage Report"
+            value={form.damageReport}
+            onChange={handleChange}
+            margin="normal"
+            multiline
+            rows={3}
+          />
+
+          <Box mt={2}>
+            <Typography>Upload Car Pictures</Typography>
+            <input
+              type="file"
+              name="pictureFiles"
+              accept="image/*"
+              multiple
+              onChange={handleFileChange}
+            />
+          </Box>
+
+          <Box mt={2}>
+            <Typography>Upload Car Video</Typography>
+            <input
+              type="file"
+              name="videoFile"
+              accept="video/*"
+              onChange={handleFileChange}
+            />
+          </Box>
+
+          <Box mt={2}>
+            <Typography>Upload Driver ID</Typography>
+            <input
+              type="file"
+              name="driverIdPictureFile"
+              accept="image/*"
+              onChange={handleFileChange}
+            />
+          </Box>
+
+          <Button
+            type="submit"
+            variant="contained"
+            fullWidth
+            sx={{ mt: 3 }}
+            disabled={loading}
+          >
+            {loading ? <CircularProgress size={24} /> : 'Submit'}
+          </Button>
+        </form>
+
+        <Snackbar
+          open={snack.open}
+          autoHideDuration={3000}
+          onClose={() => setSnack({ ...snack, open: false })}
         >
-          {loading ? <CircularProgress size={24} /> : 'Submit'}
-        </Button>
-      </form>
-
-      <Snackbar
-        open={snack.open}
-        autoHideDuration={3000}
-        onClose={() => setSnack({ ...snack, open: false })}
-      >
-        <Alert severity={snack.severity}>{snack.msg}</Alert>
-      </Snackbar>
+          <Alert severity={snack.severity}>{snack.msg}</Alert>
+        </Snackbar>
+      </Container>
     </Container>
   );
 };

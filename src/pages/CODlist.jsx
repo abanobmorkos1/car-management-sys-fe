@@ -126,7 +126,7 @@ const CODList = () => {
   const handleClose = () => setSelectedCOD(null);
 
   return (
-    <>
+    <Container maxWidth="xl" sx={{ py: 4 }}>
       <Topbar />
       <Container maxWidth="lg" sx={{ mt: 4 }}>
         <Typography
@@ -487,7 +487,7 @@ const CODList = () => {
           </DialogActions>
         </Dialog>
       </Container>
-    </>
+    </Container>
   );
 };
 
