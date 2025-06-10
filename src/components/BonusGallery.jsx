@@ -1,8 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Box, Typography, Grid, Card, CardMedia, Chip, CardActions,
-  Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle
+  Box,
+  Typography,
+  Grid,
+  Card,
+  CardMedia,
+  Chip,
+  CardActions,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Skeleton,
+  Paper,
+  CardContent,
 } from '@mui/material';
+import { Image, Delete } from '@mui/icons-material';
 
 const api = process.env.REACT_APP_API_URL;
 
@@ -18,9 +33,18 @@ const BonusGallery = () => {
 
   const fetchUploads = async () => {
     try {
-      const res = await fetch(`${api}/api/driver/my-uploads`, {
-        credentials: 'include'
-      });
+      const lastFriday = new Date();
+      lastFriday.setDate(
+        lastFriday.getDate() - ((lastFriday.getDay() + 2) % 7)
+      );
+      lastFriday.setHours(0, 0, 0, 0);
+      const lastFridayISO = lastFriday.toISOString();
+      const res = await fetch(
+        `${api}/api/driver/my-uploads?startDate=${lastFridayISO}`,
+        {
+          credentials: 'include',
+        }
+      );
 
       if (res.ok) {
         const data = await res.json();
@@ -43,13 +67,16 @@ const BonusGallery = () => {
 
   const fetchSignedUrl = async (key, id) => {
     try {
-      const res = await fetch(`${api}/api/get-image-url?key=${encodeURIComponent(key)}`, {
-        credentials: 'include'
-      });
+      const res = await fetch(
+        `${api}/api/get-image-url?key=${encodeURIComponent(key)}`,
+        {
+          credentials: 'include',
+        }
+      );
 
       if (res.ok) {
         const { url } = await res.json();
-        setSignedUrls(prev => ({ ...prev, [id]: url }));
+        setSignedUrls((prev) => ({ ...prev, [id]: url }));
       } else {
         console.error(`❌ Failed to get signed URL for: ${key}`);
       }
@@ -67,12 +94,14 @@ const BonusGallery = () => {
     try {
       const res = await fetch(`${api}/api/driver/delete-upload/${selectedId}`, {
         method: 'DELETE',
-        credentials: 'include'
+        credentials: 'include',
       });
 
       if (res.ok) {
-        setUploads(prev => prev.filter(upload => upload._id !== selectedId));
-        setSignedUrls(prev => {
+        setUploads((prev) =>
+          prev.filter((upload) => upload._id !== selectedId)
+        );
+        setSignedUrls((prev) => {
           const updated = { ...prev };
           delete updated[selectedId];
           return updated;
@@ -93,59 +122,150 @@ const BonusGallery = () => {
         Your Uploaded Bonus Pictures
       </Typography>
 
-      <Grid container spacing={2}>
-        {uploads.map(upload => (
+      <Grid container spacing={3}>
+        {uploads.map((upload) => (
           <Grid item key={upload._id} xs={12} sm={6} md={4}>
-            <Card>
-              {signedUrls[upload._id] ? (
-                <CardMedia
-                  component="img"
-                  height="180"
-                  image={signedUrls[upload._id]}
-                  alt={upload.type}
-                  onError={(e) => {
-                    console.error(`❌ Image failed to load for ID: ${upload._id}, key: ${upload.key}`);
-                    e.target.src = '/fallback-image.png';
-                  }}
-                />
-              ) : (
-                <Box height={180} display="flex" alignItems="center" justifyContent="center">
-                  <Typography variant="body2" color="textSecondary">Loading image...</Typography>
-                </Box>
-              )}
+            <Card
+              sx={{
+                height: 320, // Fixed height for consistency
+                display: 'flex',
+                flexDirection: 'column',
+                borderRadius: 3,
+                boxShadow: 3,
+                transition: 'transform 0.2s, box-shadow 0.2s',
+                '&:hover': {
+                  transform: 'scale(1.02)',
+                  boxShadow: '0 8px 25px rgba(0,0,0,0.15)',
+                },
+              }}
+            >
+              {/* Always render image container with fixed height */}
+              <Box sx={{ height: 200, position: 'relative' }}>
+                {signedUrls[upload._id] ? (
+                  <CardMedia
+                    component="img"
+                    height="200"
+                    image={signedUrls[upload._id]}
+                    alt={upload.type}
+                    sx={{ objectFit: 'cover' }}
+                    onError={(e) => {
+                      console.error(
+                        `❌ Image failed to load for ID: ${upload._id}, key: ${upload.key}`
+                      );
+                      e.target.src = '/fallback-image.png';
+                    }}
+                  />
+                ) : (
+                  <Box
+                    sx={{
+                      height: 200,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: '#f5f5f5',
+                      color: '#bdbdbd',
+                    }}
+                  >
+                    <Image sx={{ fontSize: 60 }} />
+                  </Box>
+                )}
 
-              <Box p={1}>
-                <Chip
-                  label={upload.type.toUpperCase()}
-                  size="small"
-                  color={upload.type === 'review' ? 'success' : 'primary'}
-                />
+                {/* Type badge */}
+                <Box sx={{ position: 'absolute', top: 8, right: 8 }}>
+                  <Chip
+                    label={upload.type.toUpperCase()}
+                    color={upload.type === 'review' ? 'success' : 'primary'}
+                    size="small"
+                    sx={{ fontWeight: 'medium' }}
+                  />
+                </Box>
               </Box>
 
-              <CardActions>
+              <CardContent
+                sx={{
+                  flexGrow: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  p: 2,
+                }}
+              >
+                <Box>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    align="center"
+                  >
+                    {upload.type === 'review'
+                      ? 'Customer Review'
+                      : 'Bonus Picture'}
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    align="center"
+                    display="block"
+                    sx={{ mt: 1 }}
+                  >
+                    {new Date(upload.createdAt).toLocaleDateString()}
+                  </Typography>
+                </Box>
+
                 <Button
                   size="small"
                   color="error"
+                  variant="outlined"
                   onClick={() => confirmDelete(upload._id)}
+                  startIcon={<Delete />}
+                  sx={{
+                    mt: 2,
+                    borderRadius: 2,
+                    textTransform: 'none',
+                  }}
                 >
                   Delete
                 </Button>
-              </CardActions>
+              </CardContent>
             </Card>
           </Grid>
         ))}
       </Grid>
 
-      <Dialog open={openConfirm} onClose={() => setOpenConfirm(false)}>
-        <DialogTitle>Confirm Deletion</DialogTitle>
+      <Dialog
+        open={openConfirm}
+        onClose={() => setOpenConfirm(false)}
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
+          },
+        }}
+      >
+        <DialogTitle sx={{ textAlign: 'center', fontWeight: 'bold' }}>
+          Confirm Deletion
+        </DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            Are you sure you want to delete this bonus image? This action cannot be undone.
+          <DialogContentText sx={{ textAlign: 'center' }}>
+            Are you sure you want to delete this upload? This action cannot be
+            undone.
           </DialogContentText>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenConfirm(false)}>Cancel</Button>
-          <Button onClick={handleDelete} color="error">Delete</Button>
+        <DialogActions sx={{ p: 3, justifyContent: 'center', gap: 2 }}>
+          <Button
+            onClick={() => setOpenConfirm(false)}
+            variant="outlined"
+            sx={{ borderRadius: 2, textTransform: 'none' }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDelete}
+            color="error"
+            variant="contained"
+            sx={{ borderRadius: 2, textTransform: 'none' }}
+          >
+            Delete
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

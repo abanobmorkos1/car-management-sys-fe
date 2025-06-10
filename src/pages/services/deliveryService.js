@@ -6,7 +6,13 @@ export const fetchDeliveriesByDate = async (startDate, endDate) => {
     const from = new Date(startDate);
     const to = new Date(endDate);
     to.setHours(23, 59, 59, 999);
-    url += `?from=${from.toISOString()}&to=${to.toISOString()}`;
+    url += `?start=${from.toISOString()}&end=${to.toISOString()}`;
+  } else {
+    const now = new Date();
+    const from = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const to = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    to.setHours(23, 59, 59, 999);
+    url += `?start=${from.toISOString()}&end=${to.toISOString()}`;
   }
 
   const res = await fetch(url, {

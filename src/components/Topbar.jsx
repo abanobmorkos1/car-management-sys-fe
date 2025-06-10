@@ -13,7 +13,7 @@ import {
   ListItemText,
   ListItemIcon,
   useMediaQuery,
-  useTheme
+  useTheme,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
@@ -49,28 +49,81 @@ const Topbar = ({ onRefresh }) => {
     {
       text: 'Lease Returns',
       path: '/driver/lease-returns',
-      icon: <AssignmentReturnIcon />
+      icon: <AssignmentReturnIcon />,
     },
     {
       text: 'New Cars',
       path: '/cars',
-      icon: <DirectionsCarIcon />
+      icon: <DirectionsCarIcon />,
     },
     {
       text: 'CODs',
       path: '/allcods',
-      icon: <Inventory2Icon />
+      icon: <Inventory2Icon />,
     },
     {
       text: 'Refresh',
       action: handleRefresh,
-      icon: <RefreshIcon />
+      icon: <RefreshIcon />,
     },
     {
       text: 'Logout',
       action: handleLogout,
-      icon: <LogoutIcon />
+      icon: <LogoutIcon />,
+    },
+  ];
+
+  const handleGoToDashboard = () => {
+    switch (user?.role) {
+      case 'Driver':
+        navigate('/driver/dashboard');
+        break;
+      case 'Sales':
+        navigate('/sales/dashboard');
+        break;
+      case 'Owner':
+        navigate('/owner/dashboard');
+        break;
+      case 'Management':
+        navigate('/management/dashboard');
+        break;
+      default:
+        navigate('/');
     }
+    setOpen(false);
+  };
+
+  const updatedDrawerItems = [
+    {
+      text: 'Dashboard',
+      action: handleGoToDashboard,
+      icon: <DirectionsCarIcon />,
+    },
+    {
+      text: 'Lease Returns',
+      path: '/driver/lease-returns',
+      icon: <AssignmentReturnIcon />,
+    },
+    {
+      text: 'New Cars',
+      path: '/cars',
+      icon: <DirectionsCarIcon />,
+    },
+    {
+      text: 'CODs',
+      path: '/allcods',
+      icon: <Inventory2Icon />,
+    },
+    {
+      text: 'Refresh',
+      action: handleRefresh,
+      icon: <RefreshIcon />,
+    },
+    {
+      text: 'Logout',
+      action: handleLogout,
+      icon: <LogoutIcon />,
+    },
   ];
 
   return (
@@ -87,16 +140,39 @@ const Topbar = ({ onRefresh }) => {
             </IconButton>
           ) : (
             <Box display="flex" gap={1}>
-              <Button color="inherit" startIcon={<AssignmentReturnIcon />} onClick={() => handleNav('/driver/lease-returns')}>
+              <Button
+                color="inherit"
+                startIcon={<DirectionsCarIcon />}
+                onClick={handleGoToDashboard}
+              >
+                Dashboard
+              </Button>
+              <Button
+                color="inherit"
+                startIcon={<AssignmentReturnIcon />}
+                onClick={() => handleNav('/driver/lease-returns')}
+              >
                 Lease Returns
               </Button>
-              <Button color="inherit" startIcon={<DirectionsCarIcon />} onClick={() => handleNav('/cars')}>
+              <Button
+                color="inherit"
+                startIcon={<DirectionsCarIcon />}
+                onClick={() => handleNav('/cars')}
+              >
                 New Cars
               </Button>
-              <Button color="inherit" startIcon={<Inventory2Icon />} onClick={() => handleNav('/allcods')}>
+              <Button
+                color="inherit"
+                startIcon={<Inventory2Icon />}
+                onClick={() => handleNav('/allcods')}
+              >
                 CODs
               </Button>
-              <Button color="inherit" startIcon={<RefreshIcon />} onClick={() => window.location.reload()}>
+              <Button
+                color="inherit"
+                startIcon={<RefreshIcon />}
+                onClick={() => window.location.reload()}
+              >
                 Refresh
               </Button>
 
@@ -106,7 +182,7 @@ const Topbar = ({ onRefresh }) => {
                 sx={{
                   color: '#fff',
                   backgroundColor: '#ef4444',
-                  '&:hover': { backgroundColor: '#dc2626' }
+                  '&:hover': { backgroundColor: '#dc2626' },
                 }}
               >
                 Logout
@@ -119,17 +195,25 @@ const Topbar = ({ onRefresh }) => {
       <Drawer anchor="right" open={open} onClose={() => setOpen(false)}>
         <Box sx={{ width: 250 }} role="presentation">
           <List>
-            {drawerItems.map((item, idx) => (
+            {updatedDrawerItems.map((item, idx) => (
               <ListItem key={idx} disablePadding>
                 <ListItemButton
-                  onClick={() => (item.action ? item.action() : handleNav(item.path))}
-                  sx={item.text === 'Logout' ? {
-                    color: 'white',
-                    backgroundColor: '#ef4444',
-                    '&:hover': { backgroundColor: '#dc2626' }
-                  } : {}}
+                  onClick={() =>
+                    item.action ? item.action() : handleNav(item.path)
+                  }
+                  sx={
+                    item.text === 'Logout'
+                      ? {
+                          color: 'white',
+                          backgroundColor: '#ef4444',
+                          '&:hover': { backgroundColor: '#dc2626' },
+                        }
+                      : {}
+                  }
                 >
-                  <ListItemIcon sx={item.text === 'Logout' ? { color: 'white' } : {}}>
+                  <ListItemIcon
+                    sx={item.text === 'Logout' ? { color: 'white' } : {}}
+                  >
                     {item.icon}
                   </ListItemIcon>
                   <ListItemText primary={item.text} />

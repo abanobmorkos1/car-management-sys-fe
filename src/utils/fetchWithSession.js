@@ -5,8 +5,8 @@ export const fetchWithSession = async (url, options = {}) => {
       credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
-        ...(options.headers || {})
-      }
+        ...(options.headers || {}),
+      },
     });
 
     if (!res.ok) throw new Error(await res.text());
