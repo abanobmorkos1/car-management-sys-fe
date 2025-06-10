@@ -554,7 +554,6 @@ const CODList = () => {
                       </Paper>
                     </Grid>
 
-                    {/* Delivery Section */}
                     <Grid item xs={12} md={6}>
                       <Box display="flex" alignItems="center" gap={2} mb={2}>
                         <LocalShipping color="primary" />
@@ -590,6 +589,34 @@ const CODList = () => {
                               {selectedCOD.car?.year || '-'}{' '}
                               {selectedCOD.car?.make || ''}{' '}
                               {selectedCOD.car?.model || ''}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </Paper>
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <Box display="flex" alignItems="center" gap={2} mb={2}>
+                        <Person color="primary" />
+                        <Typography variant="h6" fontWeight="bold">
+                          Customer Details
+                        </Typography>
+                      </Box>
+                      <Paper elevation={1} sx={{ p: 2, borderRadius: 2 }}>
+                        <Box display="flex" flexDirection="column" gap={1.5}>
+                          <Box>
+                            <Typography variant="body2" color="text.secondary">
+                              Name
+                            </Typography>
+                            <Typography variant="body1" fontWeight="medium">
+                              {selectedCOD.customerName || 'Not assigned'}
+                            </Typography>
+                          </Box>
+                          <Box>
+                            <Typography variant="body2" color="text.secondary">
+                              Phone
+                            </Typography>
+                            <Typography variant="body1">
+                              {selectedCOD.phoneNumber || 'Not available'}
                             </Typography>
                           </Box>
                         </Box>

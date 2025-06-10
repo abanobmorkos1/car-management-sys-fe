@@ -116,8 +116,14 @@ const ManagerDashboardLayout = ({
     if (triggerInitialBonusFetch && typeof handleBonusUpdate === 'function') {
       const fetchInitialCounts = async () => {
         try {
+          const lastFriday = new Date();
+          lastFriday.setDate(
+            lastFriday.getDate() - ((lastFriday.getDay() + 2) % 7)
+          );
+          lastFriday.setHours(0, 0, 0, 0);
+          const lastFridayISO = lastFriday.toISOString();
           const res = await fetch(
-            `${process.env.REACT_APP_API_URL}/api/driver/my-uploads`,
+            `${process.env.REACT_APP_API_URL}/api/driver/my-uploads?startDate=${lastFridayISO}`,
             {
               credentials: 'include',
             }
@@ -204,18 +210,6 @@ const ManagerDashboardLayout = ({
                 value: drivers.length,
                 icon: <DirectionsCar />,
                 color: theme.gradients?.success,
-              },
-              {
-                title: 'Reviews',
-                value: bonusCounts.review,
-                icon: <ReviewsOutlined />,
-                color: theme.gradients?.warning,
-              },
-              {
-                title: 'Customer Bonuses',
-                value: bonusCounts.customer,
-                icon: <PhotoCamera />,
-                color: theme.gradients?.purple,
               },
             ].map((stat, index) => (
               <Grid item xs={12} sm={6} md={3} key={index}>

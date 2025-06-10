@@ -33,9 +33,18 @@ const BonusGallery = () => {
 
   const fetchUploads = async () => {
     try {
-      const res = await fetch(`${api}/api/driver/my-uploads`, {
-        credentials: 'include',
-      });
+      const lastFriday = new Date();
+      lastFriday.setDate(
+        lastFriday.getDate() - ((lastFriday.getDay() + 2) % 7)
+      );
+      lastFriday.setHours(0, 0, 0, 0);
+      const lastFridayISO = lastFriday.toISOString();
+      const res = await fetch(
+        `${api}/api/driver/my-uploads?startDate=${lastFridayISO}`,
+        {
+          credentials: 'include',
+        }
+      );
 
       if (res.ok) {
         const data = await res.json();

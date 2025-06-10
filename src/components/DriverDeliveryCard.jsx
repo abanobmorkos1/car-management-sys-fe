@@ -16,13 +16,7 @@ import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import NotesIcon from '@mui/icons-material/Notes';
 import { useNavigate } from 'react-router-dom';
 
-const DriverDeliveryCard = ({
-  delivery,
-  onStatusChange,
-  onAssignDriver,
-  userId,
-  availableDrivers,
-}) => {
+const DriverDeliveryCard = ({ delivery, onStatusChange, userId }) => {
   const theme = useTheme();
   const navigate = useNavigate();
 
@@ -30,23 +24,12 @@ const DriverDeliveryCard = ({
     (typeof delivery.driver === 'string' && delivery.driver === userId) ||
     (typeof delivery.driver === 'object' && delivery.driver?._id === userId);
 
-  const normalizedStatus = delivery.status?.toLowerCase();
-
   const handleStatusChange = async (e) => {
     const newStatus = e.target.value;
     await onStatusChange(delivery._id, newStatus);
 
     if (newStatus === 'Delivered') {
       navigate(`/driver/cod/from-delivery/${delivery._id}`);
-    }
-  };
-
-  const handleAssignDriver = async (e) => {
-    const newDriverId = e.target.value;
-    try {
-      await onAssignDriver(delivery._id, newDriverId);
-    } catch (err) {
-      console.error('❌ Failed to assign driver:', err.message);
     }
   };
 
@@ -112,12 +95,10 @@ const DriverDeliveryCard = ({
           </Typography>
           <Typography
             variant="body2"
-            color="blue"
-            display="flex"
-            alignItems="center"
-            gap={1}
+            fontWeight={600}
+            color={delivery.codCollected ? 'success.main' : 'error.main'}
           >
-            <LocalAtmIcon fontSize="small" />${delivery.codAmount}{' '}
+            COD: ${delivery.codAmount}{' '}
             {delivery.codCollected
               ? `(via ${delivery.codMethod})`
               : '(Pending)'}
@@ -172,7 +153,7 @@ const DriverDeliveryCard = ({
             </Typography>
           ) : (
             <Select
-              value={normalizedStatus}
+              value={delivery.status}
               onChange={handleStatusChange}
               size="small"
               fullWidth
@@ -180,7 +161,7 @@ const DriverDeliveryCard = ({
                 '& .MuiSelect-select': {
                   fontWeight: 'bold',
                   color:
-                    normalizedStatus === 'delivered'
+                    delivery.status === 'delivered'
                       ? 'success.main'
                       : 'text.primary',
                 },

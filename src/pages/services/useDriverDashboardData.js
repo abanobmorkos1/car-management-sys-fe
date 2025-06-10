@@ -175,9 +175,17 @@ const useDriverDashboardData = (user, navigate) => {
       if (data?.redirect) {
         navigate(data.redirect);
       } else {
-        const updatedDeliveries = await fetchTodayDeliveries();
-        setAllDeliveries(
-          Array.isArray(updatedDeliveries) ? updatedDeliveries : []
+        const deliveries = await fetchTodayDeliveries();
+        setCounts({
+          assigned: deliveries.assigned,
+          total: deliveries.total,
+        });
+        setAllDeliveries(deliveries.deliveries);
+        setTotalPages(
+          Math.ceil(
+            (filter === 'assigned' ? data.assigned : data.total || 0) /
+              itemsPerPage
+          )
         );
       }
     } catch (err) {
