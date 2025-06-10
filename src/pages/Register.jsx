@@ -1,6 +1,17 @@
 import React, { useState } from 'react';
 import {
-  Container, Paper, TextField, Button, Typography, Box, Alert, FormControl, InputLabel, MenuItem, Select, Snackbar
+  Container,
+  Paper,
+  TextField,
+  Button,
+  Typography,
+  Box,
+  Alert,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  Snackbar,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import MuiAlert from '@mui/material/Alert';
@@ -76,7 +87,7 @@ const Register = () => {
       setSnackMsg(data.message || 'Registration successful!');
       setSnackType('success');
       setSnackOpen(true);
-      setTimeout(() => navigate('/'), 1500);
+      navigate('/');
     } catch (err) {
       setSnackMsg('Server error. Try again later.');
       setSnackType('error');
@@ -85,23 +96,93 @@ const Register = () => {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 2 }}>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        p: 2,
+      }}
+    >
       <Container maxWidth="sm">
         <Paper sx={{ p: 4, borderRadius: 3 }}>
-          <Typography variant="h5" mb={2}>Register</Typography>
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+          <Typography variant="h5" mb={2}>
+            Register
+          </Typography>
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
 
           <form onSubmit={handleSubmit}>
-            <TextField fullWidth label="Name" name="name" value={form.name} onChange={handleChange} margin="normal" required />
-            <TextField fullWidth label="Email" name="email" type="email" value={form.email} onChange={handleChange} margin="normal" required />
-            <TextField fullWidth label="Phone Number" name="phoneNumber" value={form.phoneNumber} onChange={handleChange} margin="normal" required />
-            <TextField fullWidth label="Password" name="password" type="password" value={form.password} onChange={handleChange} margin="normal" required />
-            <TextField fullWidth label="Confirm Password" name="confirmPassword" type="password" value={form.confirmPassword} onChange={handleChange} margin="normal" required />
-            <TextField fullWidth label="Invite Code" name="inviteCode" value={form.inviteCode} onChange={handleChange} margin="normal" required />
+            <TextField
+              fullWidth
+              label="Name"
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+              margin="normal"
+              required
+            />
+            <TextField
+              fullWidth
+              label="Email"
+              name="email"
+              type="email"
+              value={form.email}
+              onChange={handleChange}
+              margin="normal"
+              required
+            />
+            <TextField
+              fullWidth
+              label="Phone Number"
+              name="phoneNumber"
+              value={form.phoneNumber}
+              onChange={handleChange}
+              margin="normal"
+              required
+            />
+            <TextField
+              fullWidth
+              label="Password"
+              name="password"
+              type="password"
+              value={form.password}
+              onChange={handleChange}
+              margin="normal"
+              required
+            />
+            <TextField
+              fullWidth
+              label="Confirm Password"
+              name="confirmPassword"
+              type="password"
+              value={form.confirmPassword}
+              onChange={handleChange}
+              margin="normal"
+              required
+            />
+            <TextField
+              fullWidth
+              label="Invite Code"
+              name="inviteCode"
+              value={form.inviteCode}
+              onChange={handleChange}
+              margin="normal"
+              required
+            />
 
             <FormControl fullWidth margin="normal" required>
               <InputLabel>Role</InputLabel>
-              <Select name="role" value={form.role} label="Role" onChange={handleChange}>
+              <Select
+                name="role"
+                value={form.role}
+                label="Role"
+                onChange={handleChange}
+              >
                 <MenuItem value="Driver">Driver</MenuItem>
                 <MenuItem value="Sales">Sales</MenuItem>
                 <MenuItem value="Owner">Owner</MenuItem>
@@ -116,8 +197,19 @@ const Register = () => {
         </Paper>
       </Container>
 
-      <Snackbar open={snackOpen} autoHideDuration={3000} onClose={() => setSnackOpen(false)} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
-        <MuiAlert onClose={() => setSnackOpen(false)} severity={snackType} sx={{ width: '100%' }} elevation={6} variant="filled">
+      <Snackbar
+        open={snackOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackOpen(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <MuiAlert
+          onClose={() => setSnackOpen(false)}
+          severity={snackType}
+          sx={{ width: '100%' }}
+          elevation={6}
+          variant="filled"
+        >
           {snackMsg}
         </MuiAlert>
       </Snackbar>

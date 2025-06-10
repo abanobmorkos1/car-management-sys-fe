@@ -137,7 +137,7 @@ const DriverDashboardLayout = ({
     };
     fetchBonusCounts();
   }, []);
-
+  console.log({ clockInStatus });
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
       <Topbar />
@@ -435,43 +435,40 @@ const DriverDashboardLayout = ({
                       <strong>${lastSessionEarnings.toFixed(2)}</strong>
                     </Typography>
                   )}
-
-                  <Button
-                    variant="contained"
-                    fullWidth
-                    size="large"
-                    onClick={handleClockInOut}
-                    disabled={
-                      submittingClockIn || clockInStatus?.status === 'pending'
-                    }
-                    sx={{
-                      py: 2,
-                      borderRadius: 2,
-                      fontWeight: 'bold',
-                      bgcolor: submittingClockIn
-                        ? 'grey.400'
-                        : isClockedIn && clockInStatus?.status === 'approved'
-                          ? 'error.main'
-                          : clockInStatus?.status === 'pending'
-                            ? 'warning.main'
-                            : 'success.main',
-                      '&:hover': {
-                        transform: submittingClockIn
-                          ? 'none'
-                          : 'translateY(-2px)',
-                        boxShadow: submittingClockIn ? 'none' : 4,
-                      },
-                      transition: 'all 0.3s ease',
-                    }}
-                  >
-                    {submittingClockIn
-                      ? 'Submitting Request...'
-                      : clockInStatus?.status === 'pending'
-                        ? 'Awaiting Approval...'
-                        : isClockedIn && clockInStatus?.status === 'approved'
-                          ? 'Clock Out'
-                          : 'Clock In'}
-                  </Button>
+                  {clockInStatus?.status !== 'pending' && (
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      size="large"
+                      onClick={handleClockInOut}
+                      disabled={
+                        submittingClockIn || clockInStatus?.status === 'pending'
+                      }
+                      sx={{
+                        py: 2,
+                        borderRadius: 2,
+                        fontWeight: 'bold',
+                        bgcolor: submittingClockIn
+                          ? 'grey.400'
+                          : isClockedIn && clockInStatus?.status === 'approved'
+                            ? 'error.main'
+                            : clockInStatus?.status === 'pending'
+                              ? 'warning.main'
+                              : 'success.main',
+                        '&:hover': {
+                          transform: submittingClockIn
+                            ? 'none'
+                            : 'translateY(-2px)',
+                          boxShadow: submittingClockIn ? 'none' : 4,
+                        },
+                        transition: 'all 0.3s ease',
+                      }}
+                    >
+                      {isClockedIn && clockInStatus?.status === 'approved'
+                        ? 'Clock Out'
+                        : 'Clock In'}
+                    </Button>
+                  )}
 
                   <ClockStatusMessage clockInStatus={clockInStatus} />
                 </CardContent>

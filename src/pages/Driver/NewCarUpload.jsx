@@ -24,9 +24,11 @@ const NewCarForm = () => {
     salesPersonid: '',
     driver: '',
     damageReport: '',
+    customerName: '',
+    customerPhone: '',
+    customerAddress: '',
     pictureFiles: [],
     videoFile: null,
-    driverIdPictureFile: null,
   });
   const navigate = useNavigate();
   const [salespeople, setSalespeople] = useState([]);
@@ -187,10 +189,6 @@ const NewCarForm = () => {
         ? await uploadToS3(form.videoFile, 'new-car', form.driver)
         : null;
 
-      const driverIdPicture = form.driverIdPictureFile
-        ? await uploadToS3(form.driverIdPictureFile, 'new-car', form.driver)
-        : null;
-
       const res = await fetch(`${api}/api/car`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -204,9 +202,11 @@ const NewCarForm = () => {
           salesPerson: form.salesPersonid,
           driver: form.driver,
           damageReport: form.damageReport,
+          customerName: form.customerName,
+          customerPhone: form.customerPhone,
+          customerAddress: form.customerAddress,
           pictureUrls,
           videoUrl,
-          driverIdPicture,
         }),
       });
 
@@ -225,9 +225,11 @@ const NewCarForm = () => {
           salesPersonid: '',
           driver: '',
           damageReport: '',
+          customerName: '',
+          customerPhone: '',
+          customerAddress: '',
           pictureFiles: [],
           videoFile: null,
-          driverIdPictureFile: null,
         });
         navigate('/driver/dashboard');
       } else {
@@ -330,6 +332,38 @@ const NewCarForm = () => {
 
           <TextField
             fullWidth
+            name="customerName"
+            label="Customer Name"
+            value={form.customerName}
+            onChange={handleChange}
+            margin="normal"
+            required
+          />
+
+          <TextField
+            fullWidth
+            name="customerPhone"
+            label="Customer Phone"
+            value={form.customerPhone}
+            onChange={handleChange}
+            margin="normal"
+            required
+          />
+
+          <TextField
+            fullWidth
+            name="customerAddress"
+            label="Customer Address"
+            value={form.customerAddress}
+            onChange={handleChange}
+            margin="normal"
+            multiline
+            rows={2}
+            required
+          />
+
+          <TextField
+            fullWidth
             name="damageReport"
             label="Damage Report"
             value={form.damageReport}
@@ -357,16 +391,6 @@ const NewCarForm = () => {
               type="file"
               name="videoFile"
               accept="video/*"
-              onChange={handleFileChange}
-            />
-          </Box>
-
-          <Box mt={2}>
-            <Typography>Upload Driver ID</Typography>
-            <input
-              type="file"
-              name="driverIdPictureFile"
-              accept="image/*"
               onChange={handleFileChange}
             />
           </Box>

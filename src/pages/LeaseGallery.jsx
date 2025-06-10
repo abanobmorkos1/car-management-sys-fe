@@ -17,13 +17,19 @@ import {
   DialogContent,
   Skeleton,
   Stack,
+  IconButton,
+  Paper,
+  Chip,
 } from '@mui/material';
-import { Chip } from '@mui/material';
 import {
   Visibility,
   Person,
   CalendarToday,
   DirectionsCar,
+  ArrowBackIos,
+  ArrowForwardIos,
+  PlayCircleOutline,
+  Image as ImageIcon,
 } from '@mui/icons-material';
 import { AuthContext } from '../contexts/AuthContext';
 import Topbar from '../components/Topbar';
@@ -62,6 +68,7 @@ const LeaseReturnsList = () => {
   const [groundingStatus, setGroundingStatus] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [groundingNote, setGroundingNote] = useState('');
+  const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -148,21 +155,25 @@ const LeaseReturnsList = () => {
           lease.odometerKey &&
           /\.(jpg|jpeg|png|webp)$/i.test(lease.odometerKey)
         ) {
-          thumbs[lease._id] = await fetchSignedUrl(lease.odometerKey);
+          thumbs[lease._id] =
+            `${api}/api/s3/signed-url?key=${encodeURIComponent(
+              lease.odometerKey
+            )}`;
           continue;
         } else if (
           lease.titleKey &&
           /\.(jpg|jpeg|png|webp)$/i.test(lease.titleKey)
         ) {
-          thumbs[lease._id] = await fetchSignedUrl(lease.titleKey);
+          thumbs[lease._id] =
+            `${api}/api/s3/signed-url?key=${encodeURIComponent(
+              lease.titleKey
+            )}`;
           continue;
         }
       }
       if (key) {
         try {
-          console.log({ lease });
-          const url = await fetchSignedUrl(key);
-          console.log('Thumbnail URL:', url);
+          const url = `${api}/api/s3/signed-url?key=${encodeURIComponent(key)}`;
           thumbs[lease._id] = url;
         } catch (err) {
           console.warn('Failed to load thumbnail:', err);
@@ -223,39 +234,22 @@ const LeaseReturnsList = () => {
     setPaginatedLeases(filteredLeases.slice(startIndex, endIndex));
   }, [page, filteredLeases]);
 
-  const fetchSignedUrl = async (key) => {
-    if (!key) return null;
-    try {
-      const res = await fetch(
-        `${api}/api/get-image-url?key=${encodeURIComponent(key)}`,
-        {
-          credentials: 'include',
-        }
-      );
-
-      if (res.ok) {
-        const blob = await res.blob();
-        return URL.createObjectURL(blob);
-      }
-      return null;
-    } catch (err) {
-      console.error('Failed to fetch signed URL:', err);
-      return null;
-    }
-  };
-
   const handleViewLease = async (lease) => {
-    const odometerUrl = await fetchSignedUrl(lease.odometerKey);
+    const odometerUrl = `${api}/api/s3/signed-url?key=${encodeURIComponent(
+      lease.odometerKey
+    )}`;
     const titleUrl = lease.hasTitle
-      ? await fetchSignedUrl(lease.titleKey)
+      ? `${api}/api/s3/signed-url?key=${encodeURIComponent(lease.titleKey)}`
       : null;
     const odometerStatementUrl = lease.odometerStatementKey
-      ? await fetchSignedUrl(lease.odometerStatementKey)
+      ? `${api}/api/s3/signed-url?key=${encodeURIComponent(
+          lease.odometerStatementKey
+        )}`
       : null;
     const mediaKeys = lease.leaseReturnMediaKeys || [];
     const mediaFiles = await Promise.all(
       mediaKeys.map(async (key) => {
-        const url = await fetchSignedUrl(key);
+        const url = `${api}/api/s3/signed-url?key=${encodeURIComponent(key)}`;
         return { key, url };
       })
     );
@@ -349,7 +343,19 @@ const LeaseReturnsList = () => {
     }
   };
 
-  console.log({ paginatedLeases, page });
+  const getPlatesLeftProps = (leftPlates, plateNumber) => {
+    if (leftPlates) {
+      return {
+        label: `${plateNumber}`,
+        sx: { backgroundColor: '#4caf50', color: '#fff' },
+      };
+    }
+    return {
+      label: 'No Plates',
+      sx: { backgroundColor: '#f44336', color: '#fff' },
+    };
+  };
+
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
       <Topbar />
@@ -468,27 +474,32 @@ const LeaseReturnsList = () => {
                         component="img"
                         height="200"
                         src={thumbnails[lease._id]}
-                        alt="Car thumbnail"
+                        alt={`${lease.year || ''} ${lease.make || ''} ${
+                          lease.model || ''
+                        }`}
                         sx={{
                           objectFit: 'cover',
                           transition: 'transform 0.3s ease',
                           '&:hover': { transform: 'scale(1.05)' },
                         }}
-                      />
-                    ) : (
-                      <Box
-                        sx={{
-                          height: '200',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          backgroundColor: '#f5f5f5',
-                          color: 'text.secondary',
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
                         }}
-                      >
-                        <DirectionsCar sx={{ fontSize: 48 }} />
-                      </Box>
-                    )}
+                      />
+                    ) : null}
+                    <Box
+                      sx={{
+                        height: 200,
+                        display: thumbnails[lease._id] ? 'none' : 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: '#f5f5f5',
+                        color: 'text.secondary',
+                      }}
+                    >
+                      <DirectionsCar sx={{ fontSize: 48 }} />
+                    </Box>
                     <Box
                       sx={{
                         position: 'absolute',
@@ -711,6 +722,24 @@ const LeaseReturnsList = () => {
                           }}
                         />
                       </Grid>
+                      <Grid item xs={12} md={4}>
+                        <Typography variant="subtitle2" color="text.secondary">
+                          Customer Plates
+                        </Typography>
+                        <Chip
+                          {...getPlatesLeftProps(
+                            selectedLease.leftPlates,
+                            selectedLease.plateNumber
+                          )}
+                          sx={{
+                            fontWeight: 600,
+                            ...getPlatesLeftProps(
+                              selectedLease.leftPlates,
+                              selectedLease.plateNumber
+                            ).sx,
+                          }}
+                        />
+                      </Grid>
                     </Grid>
 
                     {selectedLease.updatedBy && (
@@ -871,124 +900,307 @@ const LeaseReturnsList = () => {
                   )}
                 </Card>
 
-                {/* Odometer Statement */}
-                {selectedLease?.odometerStatementUrl && (
+                {/* Photos and Videos Combined Section */}
+                {(selectedLease?.damagePictures?.length > 0 ||
+                  selectedLease?.damageVideos?.length > 0) && (
                   <Card sx={{ mb: 3, borderRadius: 2, boxShadow: 1 }}>
                     <CardContent>
-                      <Typography
-                        variant="h6"
-                        color="primary.main"
-                        gutterBottom
-                        fontWeight="bold"
-                      >
-                        Odometer Statement
-                      </Typography>
-                      <Box
-                        sx={{
-                          width: '100%',
-                          maxWidth: 400,
-                          mx: 'auto',
-                          borderRadius: 2,
-                          overflow: 'hidden',
-                          boxShadow: 2,
-                        }}
-                      >
-                        <img
-                          src={selectedLease.odometerStatementUrl}
-                          alt="Odometer Statement"
-                          style={{
-                            width: '100%',
-                            height: 'auto',
-                            display: 'block',
-                          }}
-                        />
-                      </Box>
-                    </CardContent>
-                  </Card>
-                )}
+                      {(() => {
+                        // Combine images and videos into a single media array
+                        const mediaItems = [];
 
-                {/* Photos Section */}
-                {selectedLease?.damagePictures?.length > 0 && (
-                  <Card sx={{ mb: 3, borderRadius: 2, boxShadow: 1 }}>
-                    <CardContent>
-                      <Typography
-                        variant="h6"
-                        color="primary.main"
-                        gutterBottom
-                        fontWeight="bold"
-                      >
-                        Damage Photos ({selectedLease.damagePictures.length})
-                      </Typography>
-                      <Grid container spacing={2}>
-                        {selectedLease.damagePictures.map((pic, idx) => (
-                          <Grid item xs={12} sm={6} md={4} key={idx}>
-                            <Box
+                        // Add images
+                        if (selectedLease.damagePictures) {
+                          selectedLease.damagePictures.forEach((url, index) => {
+                            mediaItems.push({
+                              type: 'image',
+                              url: url,
+                              id: `image-${index}`,
+                            });
+                          });
+                        }
+
+                        // Add videos
+                        if (selectedLease.damageVideos) {
+                          selectedLease.damageVideos.forEach((url, index) => {
+                            mediaItems.push({
+                              type: 'video',
+                              url: url,
+                              id: `video-${index}`,
+                            });
+                          });
+                        }
+
+                        if (mediaItems.length === 0) return null;
+
+                        return (
+                          <>
+                            <Typography
+                              variant="h6"
+                              color="primary.main"
+                              gutterBottom
+                              fontWeight="bold"
+                              sx={{ mb: 3 }}
+                            >
+                              Media Gallery ({mediaItems.length} items)
+                            </Typography>
+
+                            <Paper
+                              elevation={3}
                               sx={{
-                                width: '100%',
-                                height: 200,
-                                borderRadius: 2,
+                                borderRadius: 3,
                                 overflow: 'hidden',
-                                boxShadow: 1,
-                                cursor: 'pointer',
-                                transition: 'transform 0.2s',
-                                '&:hover': { transform: 'scale(1.02)' },
+                                position: 'relative',
+                                backgroundColor: '#000',
                               }}
                             >
-                              <img
-                                src={pic}
-                                alt={`Damage photo ${idx + 1}`}
-                                style={{
-                                  width: '100%',
-                                  height: '100%',
-                                  objectFit: 'cover',
-                                }}
-                              />
-                            </Box>
-                          </Grid>
-                        ))}
-                      </Grid>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Videos Section */}
-                {selectedLease?.damageVideos?.length > 0 && (
-                  <Card sx={{ mb: 3, borderRadius: 2, boxShadow: 1 }}>
-                    <CardContent>
-                      <Typography
-                        variant="h6"
-                        color="primary.main"
-                        gutterBottom
-                        fontWeight="bold"
-                      >
-                        Car Videos ({selectedLease.damageVideos.length})
-                      </Typography>
-                      <Grid container spacing={2}>
-                        {selectedLease.damageVideos.map((vid, idx) => (
-                          <Grid item xs={12} md={6} key={idx}>
-                            <Box
-                              sx={{
-                                width: '100%',
-                                borderRadius: 2,
-                                overflow: 'hidden',
-                                boxShadow: 1,
-                              }}
-                            >
-                              <video
-                                controls
-                                style={{
-                                  width: '100%',
-                                  height: 'auto',
-                                  display: 'block',
+                              <Box
+                                sx={{
+                                  position: 'relative',
+                                  height: { xs: '300px', md: '500px' },
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
                                 }}
                               >
-                                <source src={vid} type="video/mp4" />
-                                Your browser does not support the video tag.
-                              </video>
-                            </Box>
-                          </Grid>
-                        ))}
-                      </Grid>
+                                {/* Current Media Item */}
+                                {mediaItems[currentMediaIndex]?.type ===
+                                'image' ? (
+                                  <img
+                                    src={mediaItems[currentMediaIndex].url}
+                                    alt={`Media ${currentMediaIndex + 1}`}
+                                    style={{
+                                      width: '100%',
+                                      height: '100%',
+                                      objectFit: 'contain',
+                                      backgroundColor: '#000',
+                                    }}
+                                  />
+                                ) : (
+                                  <video
+                                    controls
+                                    style={{
+                                      width: '100%',
+                                      height: '100%',
+                                      objectFit: 'contain',
+                                    }}
+                                    key={currentMediaIndex} // Force re-render when switching
+                                  >
+                                    <source
+                                      src={mediaItems[currentMediaIndex]?.url}
+                                      type="video/mp4"
+                                    />
+                                    Your browser does not support the video tag.
+                                  </video>
+                                )}
+
+                                {/* Navigation Arrows */}
+                                {mediaItems.length > 1 && (
+                                  <>
+                                    <IconButton
+                                      onClick={() =>
+                                        setCurrentMediaIndex((prev) =>
+                                          prev === 0
+                                            ? mediaItems.length - 1
+                                            : prev - 1
+                                        )
+                                      }
+                                      sx={{
+                                        position: 'absolute',
+                                        left: 16,
+                                        backgroundColor: 'rgba(0,0,0,0.7)',
+                                        color: 'white',
+                                        '&:hover': {
+                                          backgroundColor: 'rgba(0,0,0,0.9)',
+                                        },
+                                        zIndex: 2,
+                                      }}
+                                    >
+                                      <ArrowBackIos />
+                                    </IconButton>
+
+                                    <IconButton
+                                      onClick={() =>
+                                        setCurrentMediaIndex((prev) =>
+                                          prev === mediaItems.length - 1
+                                            ? 0
+                                            : prev + 1
+                                        )
+                                      }
+                                      sx={{
+                                        position: 'absolute',
+                                        right: 16,
+                                        backgroundColor: 'rgba(0,0,0,0.7)',
+                                        color: 'white',
+                                        '&:hover': {
+                                          backgroundColor: 'rgba(0,0,0,0.9)',
+                                        },
+                                        zIndex: 2,
+                                      }}
+                                    >
+                                      <ArrowForwardIos />
+                                    </IconButton>
+                                  </>
+                                )}
+
+                                {/* Media Type Indicator */}
+                                <Box
+                                  sx={{
+                                    position: 'absolute',
+                                    top: 16,
+                                    right: 16,
+                                    zIndex: 2,
+                                  }}
+                                >
+                                  <Chip
+                                    icon={
+                                      mediaItems[currentMediaIndex]?.type ===
+                                      'video' ? (
+                                        <PlayCircleOutline />
+                                      ) : (
+                                        <ImageIcon />
+                                      )
+                                    }
+                                    label={
+                                      mediaItems[currentMediaIndex]?.type ===
+                                      'video'
+                                        ? 'Video'
+                                        : 'Photo'
+                                    }
+                                    size="small"
+                                    sx={{
+                                      backgroundColor: 'rgba(0,0,0,0.7)',
+                                      color: 'white',
+                                      '& .MuiChip-icon': {
+                                        color: 'white',
+                                      },
+                                    }}
+                                  />
+                                </Box>
+
+                                {/* Counter */}
+                                <Box
+                                  sx={{
+                                    position: 'absolute',
+                                    bottom: 16,
+                                    right: 16,
+                                    zIndex: 2,
+                                  }}
+                                >
+                                  <Chip
+                                    label={`${currentMediaIndex + 1} / ${
+                                      mediaItems.length
+                                    }`}
+                                    size="small"
+                                    sx={{
+                                      backgroundColor: 'rgba(0,0,0,0.7)',
+                                      color: 'white',
+                                    }}
+                                  />
+                                </Box>
+                              </Box>
+
+                              {/* Thumbnail Navigation */}
+                              {mediaItems.length > 1 && (
+                                <Box
+                                  sx={{
+                                    p: 2,
+                                    backgroundColor: 'rgba(0,0,0,0.1)',
+                                    display: 'flex',
+                                    gap: 1,
+                                    overflowX: 'auto',
+                                    '&::-webkit-scrollbar': {
+                                      height: 6,
+                                    },
+                                    '&::-webkit-scrollbar-track': {
+                                      backgroundColor: 'rgba(0,0,0,0.1)',
+                                    },
+                                    '&::-webkit-scrollbar-thumb': {
+                                      backgroundColor: 'rgba(0,0,0,0.3)',
+                                      borderRadius: 3,
+                                    },
+                                  }}
+                                >
+                                  {mediaItems.map((item, index) => (
+                                    <Box
+                                      key={`${item.id}-${index}`}
+                                      onClick={() =>
+                                        setCurrentMediaIndex(index)
+                                      }
+                                      sx={{
+                                        minWidth: 80,
+                                        height: 60,
+                                        borderRadius: 1,
+                                        overflow: 'hidden',
+                                        cursor: 'pointer',
+                                        border:
+                                          currentMediaIndex === index
+                                            ? '3px solid #1976d2'
+                                            : '2px solid transparent',
+                                        opacity:
+                                          currentMediaIndex === index ? 1 : 0.7,
+                                        transition: 'all 0.2s',
+                                        position: 'relative',
+                                        '&:hover': {
+                                          opacity: 1,
+                                          transform: 'scale(1.05)',
+                                        },
+                                      }}
+                                    >
+                                      {item.type === 'image' ? (
+                                        <img
+                                          src={item.url}
+                                          alt={`Thumbnail ${index + 1}`}
+                                          style={{
+                                            width: '100%',
+                                            height: '100%',
+                                            objectFit: 'cover',
+                                          }}
+                                        />
+                                      ) : (
+                                        <Box
+                                          sx={{
+                                            width: '100%',
+                                            height: '100%',
+                                            backgroundColor: '#000',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            position: 'relative',
+                                          }}
+                                        >
+                                          <PlayCircleOutline
+                                            sx={{
+                                              color: 'white',
+                                              fontSize: 24,
+                                            }}
+                                          />
+                                          <Typography
+                                            variant="caption"
+                                            sx={{
+                                              position: 'absolute',
+                                              bottom: 2,
+                                              left: 2,
+                                              color: 'white',
+                                              fontSize: '0.6rem',
+                                              backgroundColor:
+                                                'rgba(0,0,0,0.7)',
+                                              px: 0.5,
+                                              borderRadius: 0.5,
+                                            }}
+                                          >
+                                            VIDEO
+                                          </Typography>
+                                        </Box>
+                                      )}
+                                    </Box>
+                                  ))}
+                                </Box>
+                              )}
+                            </Paper>
+                          </>
+                        );
+                      })()}
                     </CardContent>
                   </Card>
                 )}
@@ -998,7 +1210,10 @@ const LeaseReturnsList = () => {
 
           <DialogActions sx={{ p: 3, justifyContent: 'center' }}>
             <Button
-              onClick={() => setSelectedLease(null)}
+              onClick={() => {
+                setSelectedLease(null);
+                setCurrentMediaIndex(0); // Reset carousel when closing
+              }}
               variant="outlined"
               size="large"
               sx={{

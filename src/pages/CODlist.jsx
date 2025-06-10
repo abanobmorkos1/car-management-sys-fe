@@ -67,23 +67,12 @@ const CODList = () => {
       const urls = await Promise.all(
         codList.map(async (cod) => {
           if (cod.contractPicture) {
-            try {
-              const imgRes = await fetch(
-                `${api}/api/s3/signed-url?key=${encodeURIComponent(
-                  cod.contractPicture
-                )}`,
-                {
-                  credentials: 'include',
-                }
-              );
-              if (imgRes.ok) {
-                const blob = await imgRes.blob();
-                const url = URL.createObjectURL(blob);
-                return { id: cod._id, url };
-              }
-            } catch (err) {
-              console.error('Failed to fetch image:', err);
-            }
+            return {
+              id: cod._id,
+              url: `${api}/api/s3/signed-url?key=${encodeURIComponent(
+                cod.contractPicture
+              )}`,
+            };
           }
           return { id: cod._id, url: null };
         })

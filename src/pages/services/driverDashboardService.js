@@ -43,24 +43,36 @@ export const fetchDriverStatus = async () => {
 };
 
 export const requestClockIn = async () => {
-  const res = await fetch(`${api}/api/hours/driver/clock-in-request`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      'Cache-Control': 'no-cache',
-      Pragma: 'no-cache',
-    },
-  });
+  const lastFriday = new Date();
+  lastFriday.setDate(lastFriday.getDate() - ((lastFriday.getDay() + 2) % 7));
+  lastFriday.setHours(0, 0, 0, 0);
+  const lastFridayISO = lastFriday.toISOString();
+  const res = await fetch(
+    `${api}/api/hours/driver/clock-in-request?weekStart=${
+      lastFridayISO.split('T')[0]
+    }&today=${new Date().toISOString()}`,
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache',
+        Pragma: 'no-cache',
+      },
+    }
+  );
 
   if (!res.ok) throw new Error(await res.text());
   return await res.json();
 };
 
 export const clockOut = async () => {
-  return await fetchWithSession(`${api}/api/hours/driver/clock-out`, {
-    method: 'POST',
-  });
+  return await fetchWithSession(
+    `${api}/api/hours/driver/clock-out?&today=${new Date().toISOString()}`,
+    {
+      method: 'POST',
+    }
+  );
 };
 
 export const fetchWeeklyEarnings = async () => {

@@ -181,8 +181,7 @@ const NewCOD = ({ prefill = null, fromDelivery = false }) => {
           }
         }
 
-        // No lease return → go to all CODs
-        setTimeout(() => navigate('/allcods'), 2000);
+        navigate('/allcods');
       } else {
         throw new Error(data.message || 'Failed to create COD');
       }

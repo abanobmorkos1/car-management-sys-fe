@@ -239,7 +239,7 @@ const NewLeaseForm = ({ prefill, fromDelivery = false }) => {
           msg: 'Lease return created successfully!',
           severity: 'success',
         });
-        setTimeout(() => navigate('/driver/dashboard'), 2000);
+        navigate('/driver/dashboard');
       } else {
         setSnack({
           open: true,

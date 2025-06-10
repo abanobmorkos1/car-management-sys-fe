@@ -46,8 +46,13 @@ const useDriverDashboardData = (user, navigate) => {
         total: deliveries.length,
       });
       setAllDeliveries(Array.isArray(deliveries) ? deliveries : []);
-      setIsClockedIn(status?.isClockedIn || false);
-      setClockInTime(status?.clockIn ? new Date(status.clockIn) : null);
+
+      setIsClockedIn(status?.isClockedIn && status.status === 'approved');
+      setClockInTime(
+        status?.clockIn && status?.isClockedIn && status.status === 'approved'
+          ? new Date(status.clockIn)
+          : null
+      );
       setClockInStatus(status); // save full object
       setWeeklyEarnings(earnings || {});
       setTotalHours(parseFloat(earnings?.totalHours || 0));
@@ -84,17 +89,14 @@ const useDriverDashboardData = (user, navigate) => {
         const res = await clockOut();
         await loadInitialData(); // safe to load immediately on clock-out
       } else {
-        const res = await requestClockIn();
+        await requestClockIn();
 
         // Show pending status immediately in UI
         setClockInStatus({ status: 'pending' });
         setIsClockedIn(true); // so the UI starts the timer if needed
         setClockInTime(new Date());
 
-        // Delay fetching fresh data from backend to avoid overwrite
-        setTimeout(() => {
-          loadInitialData();
-        }, 3000); // give backend 3 seconds to update
+        loadInitialData();
       }
     } catch (err) {
       console.error('❌ Error in clock-in/out logic:', err);

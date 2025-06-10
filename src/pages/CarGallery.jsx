@@ -32,6 +32,13 @@ import {
   Speed,
   ConfirmationNumber,
   Search,
+  Phone,
+  Home,
+  PersonOutline,
+  ArrowBackIos,
+  ArrowForwardIos,
+  PlayCircleOutline,
+  Image as ImageIcon,
 } from '@mui/icons-material';
 import { fetchWithSession } from '../utils/fetchWithSession';
 import Topbar from '../components/Topbar';
@@ -63,6 +70,7 @@ const CarGallery = () => {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [selectedCar, setSelectedCar] = useState(null);
+  const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const itemsPerPage = 6;
 
   useEffect(() => {
@@ -94,18 +102,9 @@ const CarGallery = () => {
             const signedUrls = await Promise.all(
               (car.pictureUrls || []).map(async (key) => {
                 try {
-                  const imgRes = await fetch(
-                    `${api}/api/s3/signed-url?key=${encodeURIComponent(key)}`,
-                    {
-                      credentials: 'include',
-                    }
-                  );
-                  if (imgRes.ok) {
-                    const blob = await imgRes.blob();
-                    const url = URL.createObjectURL(blob);
-                    return url;
-                  }
-                  return null;
+                  return `${api}/api/s3/signed-url?key=${encodeURIComponent(
+                    key
+                  )}`;
                 } catch {
                   return null;
                 }
@@ -114,20 +113,9 @@ const CarGallery = () => {
 
             let videoUrl = '';
             if (car.videoUrl) {
-              try {
-                const videoRes = await fetch(
-                  `${api}/api/s3/signed-url?key=${encodeURIComponent(
-                    car.videoUrl
-                  )}`,
-                  {
-                    credentials: 'include',
-                  }
-                );
-                if (videoRes.ok) {
-                  const blob = await videoRes.blob();
-                  videoUrl = URL.createObjectURL(blob);
-                }
-              } catch {}
+              videoUrl = `${api}/api/s3/signed-url?key=${encodeURIComponent(
+                car.videoUrl
+              )}`;
             }
 
             return {
@@ -431,9 +419,7 @@ const CarGallery = () => {
                       >
                         <Speed sx={{ fontSize: 16, color: 'text.secondary' }} />
                         <Typography variant="body2" color="text.secondary">
-                          {car.mileage
-                            ? `${car} miles`
-                            : 'Mileage not specified'}
+                          {car.mileage ? `${car.mileage} miles` : 'Mileage N/A'}
                         </Typography>
                       </Box>
 
@@ -444,7 +430,7 @@ const CarGallery = () => {
                           sx={{ fontSize: 16, color: 'text.secondary' }}
                         />
                         <Typography variant="body2" color="text.secondary">
-                          VIN: {car.vin || 'Not specified'}
+                          VIN: {car.vin || 'N/A'}
                         </Typography>
                       </Box>
 
@@ -551,7 +537,7 @@ const CarGallery = () => {
 
                 {/* Status and Info Cards */}
                 <Grid container spacing={2} sx={{ mt: 2 }}>
-                  <Grid item xs={12} md={6}>
+                  <Grid item xs={12} md={4}>
                     <Paper sx={{ p: 2, textAlign: 'center' }}>
                       <Typography variant="subtitle2" color="text.secondary">
                         VIN
@@ -560,7 +546,17 @@ const CarGallery = () => {
                         variant="body1"
                         sx={{ mt: 1, fontFamily: 'monospace' }}
                       >
-                        {selectedCar.vin || 'Not specified'}
+                        {selectedCar.vin || 'N/A'}
+                      </Typography>
+                    </Paper>
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <Paper sx={{ p: 2, textAlign: 'center' }}>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        Date Added
+                      </Typography>
+                      <Typography variant="body1" sx={{ mt: 1 }}>
+                        {new Date(selectedCar.createdAt).toLocaleDateString()}
                       </Typography>
                     </Paper>
                   </Grid>
@@ -571,67 +567,176 @@ const CarGallery = () => {
 
               {/* Details Section */}
               <Box sx={{ p: 4 }}>
-                <Grid container spacing={4}>
-                  <Grid item xs={12} md={6}>
-                    <Stack spacing={3}>
-                      <Box>
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1,
-                            mb: 2,
-                          }}
-                        >
-                          <Person color="primary" />
-                          <Typography variant="h6" fontWeight={600}>
-                            Driver Information
+                <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+                  {/* Customer Information */}
+                  <Box sx={{ flex: '1 1 300px', minWidth: '300px' }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        mb: 2,
+                        minHeight: '32px',
+                      }}
+                    >
+                      <PersonOutline color="primary" />
+                      <Typography variant="h6" fontWeight={600}>
+                        Customer Information
+                      </Typography>
+                    </Box>
+                    <Paper
+                      sx={{
+                        p: 3,
+                        bgcolor: 'grey.50',
+                        height: '200px',
+                        width: '100%',
+                      }}
+                    >
+                      <Stack spacing={2}>
+                        <Box>
+                          <Typography
+                            variant="subtitle2"
+                            color="text.secondary"
+                          >
+                            Name
+                          </Typography>
+                          <Typography variant="body1">
+                            {selectedCar.customerName || 'N/A'}
                           </Typography>
                         </Box>
-                        <Paper sx={{ p: 3, bgcolor: 'grey.50' }}>
+                        <Box>
+                          <Typography
+                            variant="subtitle2"
+                            color="text.secondary"
+                          >
+                            Phone
+                          </Typography>
                           <Typography variant="body1">
-                            {users[selectedCar.driver?._id] ||
+                            {selectedCar.customerPhone || 'N/A'}
+                          </Typography>
+                        </Box>
+                        <Box>
+                          <Typography
+                            variant="subtitle2"
+                            color="text.secondary"
+                          >
+                            Address
+                          </Typography>
+                          <Typography variant="body1">
+                            {selectedCar.customerAddress || 'N/A'}
+                          </Typography>
+                        </Box>
+                      </Stack>
+                    </Paper>
+                  </Box>
+
+                  {/* Driver Information */}
+                  <Box sx={{ flex: '1 1 300px', minWidth: '300px' }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        mb: 2,
+                        minHeight: '32px',
+                      }}
+                    >
+                      <Person color="primary" />
+                      <Typography variant="h6" fontWeight={600}>
+                        Driver
+                      </Typography>
+                    </Box>
+                    <Paper
+                      sx={{
+                        p: 3,
+                        bgcolor: 'grey.50',
+                        height: '200px',
+                        width: '100%',
+                      }}
+                    >
+                      <Stack spacing={2}>
+                        <Box>
+                          <Typography
+                            variant="subtitle2"
+                            color="text.secondary"
+                          >
+                            Name
+                          </Typography>
+                          <Typography variant="body1">
+                            {selectedCar.driver?.name ||
+                              users[selectedCar.driver?._id] ||
                               users[selectedCar.driver] ||
                               'Not assigned'}
                           </Typography>
-                        </Paper>
-                      </Box>
-
-                      <Box>
-                        <Typography variant="h6" fontWeight={600} gutterBottom>
-                          Salesperson
-                        </Typography>
-                        <Paper sx={{ p: 3, bgcolor: 'grey.50' }}>
-                          <Typography variant="body1">
-                            {users[selectedCar.salesPerson] || 'Not assigned'}
+                        </Box>
+                        <Box>
+                          <Typography
+                            variant="subtitle2"
+                            color="text.secondary"
+                          >
+                            Phone
                           </Typography>
-                        </Paper>
-                      </Box>
-                    </Stack>
-                  </Grid>
+                          <Typography variant="body1">
+                            {selectedCar.driver?.phone || 'N/A'}
+                          </Typography>
+                        </Box>
+                      </Stack>
+                    </Paper>
+                  </Box>
 
-                  <Grid item xs={12} md={6}>
-                    <Box>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 1,
-                        }}
-                      >
-                        <CalendarToday color="primary" />
-                        <Typography variant="h6" fontWeight={600}>
-                          Date Added
-                        </Typography>
-                      </Box>
-                      <Paper sx={{ p: 3, bgcolor: 'grey.50' }}>
-                        <Typography variant="body1">
-                          {new Date(selectedCar.createdAt).toLocaleString()}
-                        </Typography>
-                      </Paper>
+                  {/* Salesperson */}
+                  <Box sx={{ flex: '1 1 300px', minWidth: '300px' }}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        mb: 2,
+                        minHeight: '32px',
+                      }}
+                    >
+                      <Person color="primary" />
+                      <Typography variant="h6" fontWeight={600}>
+                        Salesperson
+                      </Typography>
                     </Box>
-                  </Grid>
-                </Grid>
+                    <Paper
+                      sx={{
+                        p: 3,
+                        bgcolor: 'grey.50',
+                        height: '200px',
+                        width: '100%',
+                      }}
+                    >
+                      <Stack spacing={2}>
+                        <Box>
+                          <Typography
+                            variant="subtitle2"
+                            color="text.secondary"
+                          >
+                            Name
+                          </Typography>
+                          <Typography variant="body1">
+                            {selectedCar.salesPerson?.name ||
+                              users[selectedCar.salesPerson] ||
+                              'Not assigned'}
+                          </Typography>
+                        </Box>
+                        <Box>
+                          <Typography
+                            variant="subtitle2"
+                            color="text.secondary"
+                          >
+                            Phone
+                          </Typography>
+                          <Typography variant="body1">
+                            {selectedCar.salesPerson?.phone || 'N/A'}
+                          </Typography>
+                        </Box>
+                      </Stack>
+                    </Paper>
+                  </Box>
+                </Box>
               </Box>
 
               {/* Media Section */}
@@ -639,65 +744,298 @@ const CarGallery = () => {
                 <>
                   <Divider />
                   <Box sx={{ p: 4 }}>
-                    {selectedCar.signedUrls?.length > 0 && (
-                      <Box sx={{ mb: 4 }}>
-                        <Typography variant="h6" fontWeight={600} gutterBottom>
-                          Photos ({selectedCar.signedUrls.length})
-                        </Typography>
-                        <Grid container spacing={2}>
-                          {selectedCar.signedUrls.map((url, i) => (
-                            <Grid item xs={12} sm={6} md={4} key={i}>
-                              <Paper
-                                elevation={2}
-                                sx={{
-                                  borderRadius: 2,
-                                  overflow: 'hidden',
-                                  transition: 'transform 0.2s',
-                                  '&:hover': {
-                                    transform: 'scale(1.02)',
-                                  },
-                                }}
-                              >
-                                <img
-                                  src={url}
-                                  alt={`Car photo ${i + 1}`}
-                                  style={{
-                                    width: '100%',
-                                    height: '200px',
-                                    objectFit: 'cover',
-                                  }}
-                                />
-                              </Paper>
-                            </Grid>
-                          ))}
-                        </Grid>
-                      </Box>
-                    )}
+                    <Typography
+                      variant="h6"
+                      fontWeight={600}
+                      gutterBottom
+                      sx={{ mb: 3 }}
+                    >
+                      Media Gallery
+                      {(() => {
+                        const totalMedia =
+                          (selectedCar.signedUrls?.length || 0) +
+                          (selectedCar.videoUrl ? 1 : 0);
+                        return totalMedia > 0 ? ` (${totalMedia} items)` : '';
+                      })()}
+                    </Typography>
 
-                    {selectedCar.videoUrl && (
-                      <Box>
-                        <Typography variant="h6" fontWeight={600} gutterBottom>
-                          Video
-                        </Typography>
+                    {(() => {
+                      // Combine images and video into a single media array
+                      const mediaItems = [];
+
+                      // Add images
+                      if (selectedCar.signedUrls) {
+                        selectedCar.signedUrls.forEach((url, index) => {
+                          mediaItems.push({
+                            type: 'image',
+                            url: url,
+                            id: `image-${index}`,
+                          });
+                        });
+                      }
+
+                      // Add video
+                      if (selectedCar.videoUrl) {
+                        mediaItems.push({
+                          type: 'video',
+                          url: selectedCar.videoUrl,
+                          id: 'video',
+                        });
+                      }
+
+                      if (mediaItems.length === 0) return null;
+
+                      return (
                         <Paper
-                          elevation={2}
-                          sx={{ borderRadius: 2, overflow: 'hidden' }}
+                          elevation={3}
+                          sx={{
+                            borderRadius: 3,
+                            overflow: 'hidden',
+                            position: 'relative',
+                            backgroundColor: '#000',
+                          }}
                         >
-                          <video
-                            controls
-                            style={{
-                              width: '100%',
-                              maxHeight: '400px',
+                          <Box
+                            sx={{
+                              position: 'relative',
+                              height: { xs: '300px', md: '500px' },
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
                             }}
                           >
-                            <source
-                              src={selectedCar.videoUrl}
-                              type="video/mp4"
-                            />
-                          </video>
+                            {/* Current Media Item */}
+                            {mediaItems[currentMediaIndex]?.type === 'image' ? (
+                              <img
+                                src={mediaItems[currentMediaIndex].url}
+                                alt={`Car media ${currentMediaIndex + 1}`}
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  objectFit: 'contain',
+                                  backgroundColor: '#000',
+                                }}
+                              />
+                            ) : (
+                              <video
+                                controls
+                                style={{
+                                  width: '100%',
+                                  height: '100%',
+                                  objectFit: 'contain',
+                                }}
+                                key={currentMediaIndex} // Force re-render when switching
+                              >
+                                <source
+                                  src={mediaItems[currentMediaIndex]?.url}
+                                  type="video/mp4"
+                                />
+                              </video>
+                            )}
+
+                            {/* Navigation Arrows */}
+                            {mediaItems.length > 1 && (
+                              <>
+                                <IconButton
+                                  onClick={() =>
+                                    setCurrentMediaIndex((prev) =>
+                                      prev === 0
+                                        ? mediaItems.length - 1
+                                        : prev - 1
+                                    )
+                                  }
+                                  sx={{
+                                    position: 'absolute',
+                                    left: 16,
+                                    backgroundColor: 'rgba(0,0,0,0.7)',
+                                    color: 'white',
+                                    '&:hover': {
+                                      backgroundColor: 'rgba(0,0,0,0.9)',
+                                    },
+                                    zIndex: 2,
+                                  }}
+                                >
+                                  <ArrowBackIos />
+                                </IconButton>
+
+                                <IconButton
+                                  onClick={() =>
+                                    setCurrentMediaIndex((prev) =>
+                                      prev === mediaItems.length - 1
+                                        ? 0
+                                        : prev + 1
+                                    )
+                                  }
+                                  sx={{
+                                    position: 'absolute',
+                                    right: 16,
+                                    backgroundColor: 'rgba(0,0,0,0.7)',
+                                    color: 'white',
+                                    '&:hover': {
+                                      backgroundColor: 'rgba(0,0,0,0.9)',
+                                    },
+                                    zIndex: 2,
+                                  }}
+                                >
+                                  <ArrowForwardIos />
+                                </IconButton>
+                              </>
+                            )}
+
+                            {/* Media Type Indicator */}
+                            <Box
+                              sx={{
+                                position: 'absolute',
+                                top: 16,
+                                right: 16,
+                                zIndex: 2,
+                              }}
+                            >
+                              <Chip
+                                icon={
+                                  mediaItems[currentMediaIndex]?.type ===
+                                  'video' ? (
+                                    <PlayCircleOutline />
+                                  ) : (
+                                    <ImageIcon />
+                                  )
+                                }
+                                label={
+                                  mediaItems[currentMediaIndex]?.type ===
+                                  'video'
+                                    ? 'Video'
+                                    : 'Photo'
+                                }
+                                size="small"
+                                sx={{
+                                  backgroundColor: 'rgba(0,0,0,0.7)',
+                                  color: 'white',
+                                  '& .MuiChip-icon': {
+                                    color: 'white',
+                                  },
+                                }}
+                              />
+                            </Box>
+
+                            {/* Counter */}
+                            <Box
+                              sx={{
+                                position: 'absolute',
+                                bottom: 16,
+                                right: 16,
+                                zIndex: 2,
+                              }}
+                            >
+                              <Chip
+                                label={`${currentMediaIndex + 1} / ${
+                                  mediaItems.length
+                                }`}
+                                size="small"
+                                sx={{
+                                  backgroundColor: 'rgba(0,0,0,0.7)',
+                                  color: 'white',
+                                }}
+                              />
+                            </Box>
+                          </Box>
+
+                          {/* Thumbnail Navigation */}
+                          {mediaItems.length > 1 && (
+                            <Box
+                              sx={{
+                                p: 2,
+                                backgroundColor: 'rgba(0,0,0,0.1)',
+                                display: 'flex',
+                                gap: 1,
+                                overflowX: 'auto',
+                                '&::-webkit-scrollbar': {
+                                  height: 6,
+                                },
+                                '&::-webkit-scrollbar-track': {
+                                  backgroundColor: 'rgba(0,0,0,0.1)',
+                                },
+                                '&::-webkit-scrollbar-thumb': {
+                                  backgroundColor: 'rgba(0,0,0,0.3)',
+                                  borderRadius: 3,
+                                },
+                              }}
+                            >
+                              {mediaItems.map((item, index) => (
+                                <Box
+                                  key={`${item.id}-${index}`}
+                                  onClick={() => setCurrentMediaIndex(index)}
+                                  sx={{
+                                    minWidth: 80,
+                                    height: 60,
+                                    borderRadius: 1,
+                                    overflow: 'hidden',
+                                    cursor: 'pointer',
+                                    border:
+                                      currentMediaIndex === index
+                                        ? '3px solid #1976d2'
+                                        : '2px solid transparent',
+                                    opacity:
+                                      currentMediaIndex === index ? 1 : 0.7,
+                                    transition: 'all 0.2s',
+                                    position: 'relative',
+                                    '&:hover': {
+                                      opacity: 1,
+                                      transform: 'scale(1.05)',
+                                    },
+                                  }}
+                                >
+                                  {item.type === 'image' ? (
+                                    <img
+                                      src={item.url}
+                                      alt={`Thumbnail ${index + 1}`}
+                                      style={{
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'cover',
+                                      }}
+                                    />
+                                  ) : (
+                                    <Box
+                                      sx={{
+                                        width: '100%',
+                                        height: '100%',
+                                        backgroundColor: '#000',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        position: 'relative',
+                                      }}
+                                    >
+                                      <PlayCircleOutline
+                                        sx={{
+                                          color: 'white',
+                                          fontSize: 24,
+                                        }}
+                                      />
+                                      <Typography
+                                        variant="caption"
+                                        sx={{
+                                          position: 'absolute',
+                                          bottom: 2,
+                                          left: 2,
+                                          color: 'white',
+                                          fontSize: '0.6rem',
+                                          backgroundColor: 'rgba(0,0,0,0.7)',
+                                          px: 0.5,
+                                          borderRadius: 0.5,
+                                        }}
+                                      >
+                                        VIDEO
+                                      </Typography>
+                                    </Box>
+                                  )}
+                                </Box>
+                              ))}
+                            </Box>
+                          )}
                         </Paper>
-                      </Box>
-                    )}
+                      );
+                    })()}
                   </Box>
                 </>
               )}
@@ -706,7 +1044,10 @@ const CarGallery = () => {
         </DialogContent>
         <DialogActions sx={{ p: 3, bgcolor: 'grey.50' }}>
           <Button
-            onClick={() => setSelectedCar(null)}
+            onClick={() => {
+              setSelectedCar(null);
+              setCurrentMediaIndex(0); // Reset carousel when closing
+            }}
             variant="contained"
             sx={{
               borderRadius: 3,
