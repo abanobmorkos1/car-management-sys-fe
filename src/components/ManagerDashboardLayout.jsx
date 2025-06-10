@@ -3,7 +3,6 @@ import {
   Box,
   Container,
   Typography,
-  Divider,
   Pagination,
   Grid,
   Card,
@@ -20,7 +19,6 @@ import { useTheme } from '@mui/material/styles';
 import Topbar from './Topbar';
 import ManagerDeliveryCard from './ManagerDeliveryCard';
 import BonusUpload from '../pages/Driver/BonusUpload';
-import BonusGallery from '../components/BonusGallery';
 
 const ManagerDashboardLayout = ({
   user,

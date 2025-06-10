@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   Container,
   Grid,
@@ -18,22 +18,17 @@ import {
   DialogActions,
   Button,
   Stack,
-  Skeleton,
   Chip,
   Divider,
   Paper,
-  Avatar,
 } from '@mui/material';
 import {
   Visibility,
   DirectionsCar,
   Person,
-  CalendarToday,
   Speed,
   ConfirmationNumber,
   Search,
-  Phone,
-  Home,
   PersonOutline,
   ArrowBackIos,
   ArrowForwardIos,
@@ -61,17 +56,34 @@ const highlightText = (text, searchTerm) => {
 
 const CarGallery = () => {
   const [cars, setCars] = useState([]);
-  const [filteredCars, setFilteredCars] = useState([]);
   const [users, setUsers] = useState({});
   const [drivers, setDrivers] = useState([]);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [searchField, setSearchField] = useState('All');
   const [selectedDriver, setSelectedDriver] = useState('all');
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
+  const [totalCars, setTotalCars] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const [selectedCar, setSelectedCar] = useState(null);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const itemsPerPage = 6;
+
+  // Debounced search function
+  const debounceSearch = useCallback(() => {
+    const timeoutId = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 500); // 500ms delay
+
+    return () => clearTimeout(timeoutId);
+  }, [search]);
+
+  // Effect to handle search debouncing
+  useEffect(() => {
+    const cleanup = debounceSearch();
+    return cleanup;
+  }, [debounceSearch]);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -92,85 +104,96 @@ const CarGallery = () => {
       }
     };
 
-    const fetchCars = async () => {
-      try {
-        const res = await fetchWithSession(`${api}/api/car`);
-        const data = Array.isArray(res) ? res : [];
-
-        const carsWithUrls = await Promise.all(
-          data.map(async (car) => {
-            const signedUrls = await Promise.all(
-              (car.pictureUrls || []).map(async (key) => {
-                try {
-                  return `${api}/api/s3/signed-url?key=${encodeURIComponent(
-                    key
-                  )}`;
-                } catch {
-                  return null;
-                }
-              })
-            );
-
-            let videoUrl = '';
-            if (car.videoUrl) {
-              videoUrl = `${api}/api/s3/signed-url?key=${encodeURIComponent(
-                car.videoUrl
-              )}`;
-            }
-
-            return {
-              ...car,
-              signedUrls: signedUrls.filter((url) => url !== null),
-              videoUrl,
-            };
-          })
-        );
-
-        setCars(carsWithUrls);
-        setFilteredCars(carsWithUrls);
-      } catch (err) {
-        console.error('❌ Error loading cars:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchUsers();
-    fetchCars();
+  }, []);
+
+  const fetchCars = async (
+    currentPage = 1,
+    searchTerm = '',
+    driverId = 'all'
+  ) => {
+    setLoading(true);
+    try {
+      // Build query parameters
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        perPage: itemsPerPage.toString(),
+      });
+
+      if (searchTerm.trim()) {
+        params.append('searchText', searchTerm.trim());
+      }
+      if (driverId !== 'all') {
+        params.append('driverId', driverId);
+      }
+
+      const res = await fetchWithSession(`${api}/api/car?${params.toString()}`);
+
+      const {
+        cars: carsData = [],
+        total = 0,
+        totalPages: pages = Math.ceil(total / itemsPerPage),
+      } = res || {};
+
+      const carsWithUrls = await Promise.all(
+        carsData.map(async (car) => {
+          const signedUrls = await Promise.all(
+            (car.pictureUrls || []).map(async (key) => {
+              try {
+                return `${api}/api/s3/signed-url?key=${encodeURIComponent(
+                  key
+                )}`;
+              } catch {
+                return null;
+              }
+            })
+          );
+
+          let videoUrl = '';
+          if (car.videoUrl) {
+            videoUrl = `${api}/api/s3/signed-url?key=${encodeURIComponent(
+              car.videoUrl
+            )}`;
+          }
+
+          return {
+            ...car,
+            signedUrls: signedUrls.filter((url) => url !== null),
+            videoUrl,
+          };
+        })
+      );
+
+      setCars(carsWithUrls);
+      setTotalCars(total);
+      setTotalPages(pages);
+    } catch (err) {
+      console.error('❌ Error loading cars:', err);
+      setCars([]);
+      setTotalCars(0);
+      setTotalPages(0);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCars(1, debouncedSearch, selectedDriver);
   }, []);
 
   useEffect(() => {
-    const term = search.toLowerCase();
-    const filtered = cars.filter((car) => {
-      const byDriver =
-        selectedDriver === 'all' || car?.driver?._id === selectedDriver;
+    fetchCars(page, debouncedSearch, selectedDriver);
+  }, [page, debouncedSearch, selectedDriver]);
 
-      let matchesSearch = true;
-      if (term) {
-        if (searchField === 'All') {
-          matchesSearch =
-            car.make?.toLowerCase().includes(term) ||
-            car.model?.toLowerCase().includes(term) ||
-            car.trim?.toLowerCase().includes(term);
-        } else if (searchField === 'Make') {
-          matchesSearch = car.make?.toLowerCase().includes(term);
-        } else if (searchField === 'Model') {
-          matchesSearch = car.model?.toLowerCase().includes(term);
-        }
-      }
+  // Reset page when search/filter changes
+  useEffect(() => {
+    if (page !== 1) {
+      setPage(1);
+    } else {
+      fetchCars(1, debouncedSearch, selectedDriver);
+    }
+  }, [debouncedSearch, selectedDriver]);
 
-      return matchesSearch && byDriver;
-    });
-
-    setFilteredCars(filtered);
-    setPage(1);
-  }, [search, searchField, cars, selectedDriver]);
-
-  const paginatedCars = filteredCars.slice(
-    (page - 1) * itemsPerPage,
-    page * itemsPerPage
-  );
-  console.log({ selectedCar });
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
       <Topbar />
@@ -206,7 +229,7 @@ const CarGallery = () => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
             <Search color="primary" />
             <Typography variant="h6" fontWeight={600}>
-              Search & Filter
+              Search
             </Typography>
           </Box>
 
@@ -234,24 +257,6 @@ const CarGallery = () => {
                 },
               }}
             />
-            <TextField
-              select
-              label="Filter Field"
-              value={searchField}
-              onChange={(e) => setSearchField(e.target.value)}
-              variant="outlined"
-              sx={{
-                minWidth: 180,
-                '& .MuiOutlinedInput-root': {
-                  backgroundColor: 'white',
-                  borderRadius: 2,
-                },
-              }}
-            >
-              <MenuItem value="All">All Fields</MenuItem>
-              <MenuItem value="Make">Make</MenuItem>
-              <MenuItem value="Model">Model</MenuItem>
-            </TextField>
             <TextField
               select
               label="Driver"
@@ -284,8 +289,15 @@ const CarGallery = () => {
             }}
           >
             <Typography variant="body2" color="text.secondary">
-              Showing {filteredCars.length} of {cars.length} cars
+              Showing {cars.length} of {totalCars} cars
+              {debouncedSearch && ` • Search: "${debouncedSearch}"`}
+              {selectedDriver !== 'all' &&
+                ` • Driver: ${
+                  drivers.find((d) => d.id === selectedDriver)?.label ||
+                  'Unknown'
+                }`}
             </Typography>
+            {loading && <CircularProgress size={20} />}
           </Box>
         </Stack>
       </Paper>
@@ -299,7 +311,7 @@ const CarGallery = () => {
             </Typography>
           </Stack>
         </Box>
-      ) : filteredCars.length === 0 ? (
+      ) : cars.length === 0 ? (
         <Paper sx={{ p: 6, textAlign: 'center', mt: 4 }}>
           <DirectionsCar
             sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }}
@@ -308,12 +320,14 @@ const CarGallery = () => {
             No cars found
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            Try adjusting your search criteria
+            {debouncedSearch || selectedDriver !== 'all'
+              ? 'Try adjusting your search criteria'
+              : 'No cars available in the system'}
           </Typography>
         </Paper>
       ) : (
         <Grid container spacing={4} justifyContent="center">
-          {paginatedCars.map((car) => (
+          {cars.map((car) => (
             <Grid item xs={12} sm={6} lg={4} key={car._id}>
               <Card
                 sx={{
@@ -399,7 +413,7 @@ const CarGallery = () => {
                     >
                       {highlightText(
                         `${car.year} ${car.make} ${car.model}`,
-                        search
+                        debouncedSearch
                       )}
                     </Typography>
 
@@ -409,7 +423,7 @@ const CarGallery = () => {
                         color="primary.main"
                         sx={{ mb: 2, fontWeight: 500 }}
                       >
-                        {highlightText(car.trim, search)}
+                        {highlightText(car.trim, debouncedSearch)}
                       </Typography>
                     )}
 
@@ -481,18 +495,24 @@ const CarGallery = () => {
       )}
 
       {/* Enhanced Pagination */}
-      {filteredCars.length > itemsPerPage && (
+      {totalPages > 1 && (
         <Box mt={6} display="flex" justifyContent="center">
           <Paper elevation={2} sx={{ p: 2, borderRadius: 3 }}>
-            <Pagination
-              count={Math.ceil(filteredCars.length / itemsPerPage)}
-              page={page}
-              onChange={(e, value) => setPage(value)}
-              color="primary"
-              size="large"
-              showFirstButton
-              showLastButton
-            />
+            <Stack spacing={2} alignItems="center">
+              <Pagination
+                count={totalPages}
+                page={page}
+                onChange={(e, value) => setPage(value)}
+                color="primary"
+                size="large"
+                showFirstButton
+                showLastButton
+                disabled={loading}
+              />
+              <Typography variant="caption" color="text.secondary">
+                Page {page} of {totalPages} • {totalCars} total cars
+              </Typography>
+            </Stack>
           </Paper>
         </Box>
       )}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useCallback } from 'react';
 import {
   Box,
   Container,
@@ -20,6 +20,7 @@ import {
   IconButton,
   Paper,
   Chip,
+  CircularProgress,
 } from '@mui/material';
 import {
   Visibility,
@@ -30,6 +31,7 @@ import {
   ArrowForwardIos,
   PlayCircleOutline,
   Image as ImageIcon,
+  Search,
 } from '@mui/icons-material';
 import { AuthContext } from '../contexts/AuthContext';
 import Topbar from '../components/Topbar';
@@ -55,20 +57,35 @@ const highlightText = (text, searchTerm) => {
 const LeaseReturnsList = () => {
   const { user, token } = useContext(AuthContext);
   const [leases, setLeases] = useState([]);
-  const [filteredLeases, setFilteredLeases] = useState([]);
-  const [paginatedLeases, setPaginatedLeases] = useState([]);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [searchField, setSearchField] = useState('All');
   const [loading, setLoading] = useState(true);
   const [selectedLease, setSelectedLease] = useState(null);
   const [thumbnails, setThumbnails] = useState({});
   const [users, setUsers] = useState({});
   const [page, setPage] = useState(1);
+  const [totalLeases, setTotalLeases] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const itemsPerPage = 6;
-  const [groundingStatus, setGroundingStatus] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [groundingNote, setGroundingNote] = useState('');
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
+
+  // Debounced search function
+  const debounceSearch = useCallback(() => {
+    const timeoutId = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [search]);
+
+  // Effect to handle search debouncing
+  useEffect(() => {
+    const cleanup = debounceSearch();
+    return cleanup;
+  }, [debounceSearch]);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -89,60 +106,56 @@ const LeaseReturnsList = () => {
       }
     };
 
-    const fetchLeases = async () => {
-      try {
-        const res = await fetch(`${api}/lease/getlr`, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-        });
-        const data = await res.json();
-
-        setLeases(data);
-        fetchThumbnails(data);
-
-        // Re-apply filters and search
-        const term = search.toLowerCase();
-        const filtered = data.filter((lr) => {
-          const matchesSearch = (() => {
-            if (!term) return true;
-            if (searchField === 'All') {
-              return (
-                lr.customerName?.toLowerCase().includes(term) ||
-                lr.vin?.toLowerCase().includes(term) ||
-                lr.address?.toLowerCase().includes(term) ||
-                lr.make?.toLowerCase().includes(term) ||
-                lr.trim?.toLowerCase().includes(term) ||
-                lr.model?.toLowerCase().includes(term)
-              );
-            }
-            if (searchField === 'Make')
-              return lr.make?.toLowerCase().includes(term);
-            if (searchField === 'Trim')
-              return lr.trim?.toLowerCase().includes(term);
-            if (searchField === 'Model')
-              return lr.model?.toLowerCase().includes(term);
-            return false;
-          })();
-
-          const matchesStatus =
-            !statusFilter || lr.groundingStatus === statusFilter;
-          return matchesSearch && matchesStatus;
-        });
-
-        setFilteredLeases(filtered);
-        setPage(1);
-        setPaginatedLeases(filtered.slice(0, itemsPerPage));
-      } catch (err) {
-        console.error('Failed to fetch lease returns:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchUsers();
-    fetchLeases();
   }, [token]);
+
+  const fetchLeases = async (currentPage = 1, searchTerm = '', status = '') => {
+    setLoading(true);
+    try {
+      // Build query parameters
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        perPage: itemsPerPage.toString(),
+      });
+
+      if (searchTerm.trim()) {
+        params.append('search', searchTerm.trim());
+        if (searchField !== 'All') {
+          params.append('searchField', searchField.toLowerCase());
+        }
+      }
+
+      if (status.trim()) {
+        params.append('status', status.trim());
+      }
+
+      const res = await fetch(`${api}/lease/getlr?${params.toString()}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      const data = await res.json();
+
+      // Expect backend to return { leases, total, totalPages, currentPage }
+      const {
+        leases: leasesData = data.leases,
+        total = data.total,
+        totalPages: pages = Math.ceil(total / itemsPerPage),
+      } = data;
+
+      setLeases(leasesData);
+      setTotalLeases(total);
+      setTotalPages(pages);
+      fetchThumbnails(leasesData);
+    } catch (err) {
+      console.error('Failed to fetch lease returns:', err);
+      setLeases([]);
+      setTotalLeases(0);
+      setTotalPages(0);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchThumbnails = async (leaseList) => {
     const thumbs = {};
@@ -184,55 +197,21 @@ const LeaseReturnsList = () => {
   };
 
   useEffect(() => {
-    const term = search.toLowerCase();
-    const filtered = leases.filter((lr) => {
-      const matchesSearch = (() => {
-        if (!term) return true;
-        if (searchField === 'All') {
-          return (
-            lr.customerName?.toLowerCase().includes(term) ||
-            lr.vin?.toLowerCase().includes(term) ||
-            lr.address?.toLowerCase().includes(term) ||
-            lr.make?.toLowerCase().includes(term) ||
-            lr.trim?.toLowerCase().includes(term) ||
-            lr.model?.toLowerCase().includes(term)
-          );
-        }
-        if (searchField === 'Make')
-          return lr.make?.toLowerCase().includes(term);
-        if (searchField === 'Trim')
-          return lr.trim?.toLowerCase().includes(term);
-        if (searchField === 'Model')
-          return lr.model?.toLowerCase().includes(term);
-        return false;
-      })();
-
-      const matchesStatus =
-        !statusFilter || lr.groundingStatus === statusFilter.trim();
-
-      return matchesSearch && matchesStatus;
-    });
-
-    setFilteredLeases(filtered);
-    // Only reset page if we're beyond the available pages
-    const maxPages = Math.ceil(filtered.length / itemsPerPage);
-    if (page > maxPages && maxPages > 0) {
-      setPage(maxPages);
-    } else if (filtered.length === 0) {
-      setPage(1);
-    }
-
-    // Update paginated results based on current page
-    const startIndex = (page - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    setPaginatedLeases(filtered.slice(startIndex, endIndex));
-  }, [search, searchField, statusFilter, leases, page]);
+    fetchLeases(1, debouncedSearch, statusFilter);
+  }, [token]);
 
   useEffect(() => {
-    const startIndex = (page - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    setPaginatedLeases(filteredLeases.slice(startIndex, endIndex));
-  }, [page, filteredLeases]);
+    fetchLeases(page, debouncedSearch, statusFilter);
+  }, [page, debouncedSearch, statusFilter]);
+
+  // Reset page when search/filter changes
+  useEffect(() => {
+    if (page !== 1) {
+      setPage(1);
+    } else {
+      fetchLeases(1, debouncedSearch, statusFilter);
+    }
+  }, [debouncedSearch, searchField, statusFilter]);
 
   const handleViewLease = async (lease) => {
     const odometerUrl = `${api}/api/s3/signed-url?key=${encodeURIComponent(
@@ -267,7 +246,6 @@ const LeaseReturnsList = () => {
       damageVideos,
       odometerStatementUrl,
     });
-    setGroundingStatus(lease.groundingStatus || '');
     setGroundingNote(lease.groundingNote || '');
   };
 
@@ -360,66 +338,123 @@ const LeaseReturnsList = () => {
     <Container maxWidth="xl" sx={{ py: 4 }}>
       <Topbar />
       <Container maxWidth="lg" sx={{ mt: 4, pb: 4 }}>
-        <Typography
-          variant="h4"
-          mb={4}
-          fontWeight="bold"
-          textAlign="center"
-          sx={{ color: 'primary.main' }}
-        >
-          Lease Returns Gallery
-        </Typography>
-
-        {/* Search and Filter Controls */}
-        <Card sx={{ mb: 4, p: 3, borderRadius: 3, boxShadow: 2 }}>
-          <Box
+        <Box sx={{ textAlign: 'center', mb: 6 }}>
+          <Typography
+            variant="h3"
             sx={{
-              display: 'flex',
-              gap: 2,
-              flexDirection: { xs: 'column', sm: 'row' },
-              alignItems: 'center',
+              fontWeight: 700,
+              background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              mb: 2,
             }}
           >
-            <TextField
-              fullWidth
-              label={
-                searchField === 'All'
-                  ? 'Search by Customer, VIN, or Address'
-                  : `Search by ${searchField}`
-              }
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              variant="outlined"
-              sx={{ borderRadius: 2 }}
-            />
-            <TextField
-              select
-              label="Filter Field"
-              value={searchField}
-              onChange={(e) => setSearchField(e.target.value)}
-              variant="outlined"
-              sx={{ minWidth: 150 }}
+            Lease Returns Gallery
+          </Typography>
+          <Typography variant="h6" color="text.secondary" sx={{ mb: 4 }}>
+            Vehicle return inspection records
+          </Typography>
+        </Box>
+
+        {/* Enhanced Search and Filter Section */}
+        <Paper
+          elevation={2}
+          sx={{
+            p: 3,
+            mb: 4,
+            borderRadius: 3,
+            background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+          }}
+        >
+          <Stack spacing={3}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+              <Search color="primary" />
+              <Typography variant="h6" fontWeight={600}>
+                Search & Filter
+              </Typography>
+            </Box>
+
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', md: 'row' },
+                gap: 2,
+              }}
             >
-              <MenuItem value="All">All</MenuItem>
-              <MenuItem value="Make">Make</MenuItem>
-              <MenuItem value="Trim">Trim</MenuItem>
-              <MenuItem value="Model">Model</MenuItem>
-            </TextField>
-            <TextField
-              select
-              label="Filter by Status"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              sx={{ minWidth: 160 }}
+              <TextField
+                fullWidth
+                label={
+                  searchField === 'All'
+                    ? 'Search by Customer, VIN, or Address'
+                    : `Search by ${searchField}`
+                }
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                variant="outlined"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: 'white',
+                    borderRadius: 2,
+                  },
+                }}
+              />
+              <TextField
+                select
+                label="Filter Field"
+                value={searchField}
+                onChange={(e) => setSearchField(e.target.value)}
+                variant="outlined"
+                sx={{
+                  minWidth: 150,
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: 'white',
+                    borderRadius: 2,
+                  },
+                }}
+              >
+                <MenuItem value="All">All</MenuItem>
+                <MenuItem value="Make">Make</MenuItem>
+                <MenuItem value="Trim">Trim</MenuItem>
+                <MenuItem value="Model">Model</MenuItem>
+              </TextField>
+              <TextField
+                select
+                label="Filter by Status"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                sx={{
+                  minWidth: 160,
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: 'white',
+                    borderRadius: 2,
+                  },
+                }}
+              >
+                <MenuItem value="">All</MenuItem>
+                <MenuItem value="Grounded">Grounded</MenuItem>
+                <MenuItem value="Buy">Buying</MenuItem>
+                <MenuItem value="In Progress">In Progress</MenuItem>
+                <MenuItem value=" ">Not Set</MenuItem>
+              </TextField>
+            </Box>
+
+            {/* Results Counter */}
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
             >
-              <MenuItem value="">All</MenuItem>
-              <MenuItem value="Grounded">Grounded</MenuItem>
-              <MenuItem value="Buy">Buying</MenuItem>
-              <MenuItem value="In Progress">In Progress</MenuItem>
-              <MenuItem value=" ">Not Set</MenuItem>
-            </TextField>
-          </Box>
-        </Card>
+              <Typography variant="body2" color="text.secondary">
+                Showing {leases.length} of {totalLeases} lease returns
+                {debouncedSearch && ` • Search: "${debouncedSearch}"`}
+                {statusFilter && ` • Status: ${statusFilter}`}
+              </Typography>
+              {loading && <CircularProgress size={20} />}
+            </Box>
+          </Stack>
+        </Paper>
 
         {loading ? (
           <Grid container spacing={3} justifyContent="center">
@@ -443,9 +478,23 @@ const LeaseReturnsList = () => {
               </Grid>
             ))}
           </Grid>
+        ) : leases.length === 0 ? (
+          <Paper sx={{ p: 6, textAlign: 'center', mt: 4 }}>
+            <DirectionsCar
+              sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }}
+            />
+            <Typography variant="h5" color="text.secondary" gutterBottom>
+              No lease returns found
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              {debouncedSearch || statusFilter
+                ? 'Try adjusting your search criteria'
+                : 'No lease returns available'}
+            </Typography>
+          </Paper>
         ) : (
           <Grid container spacing={3} justifyContent="center">
-            {paginatedLeases.map((lease) => (
+            {leases.map((lease) => (
               <Grid item xs={12} sm={6} md={4} key={lease._id}>
                 <Card
                   sx={{
@@ -453,11 +502,11 @@ const LeaseReturnsList = () => {
                     display: 'flex',
                     flexDirection: 'column',
                     borderRadius: 3,
-                    boxShadow: 3,
-                    transition: 'all 0.3s ease',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     '&:hover': {
-                      transform: 'translateY(-4px)',
-                      boxShadow: '0 12px 24px rgba(0,0,0,0.15)',
+                      transform: 'translateY(-8px)',
+                      boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
                     },
                     overflow: 'hidden',
                   }}
@@ -620,20 +669,27 @@ const LeaseReturnsList = () => {
           </Grid>
         )}
 
-        {filteredLeases.length > itemsPerPage && (
-          <Box mt={4} display="flex" justifyContent="center">
-            <Pagination
-              count={Math.ceil(filteredLeases.length / itemsPerPage)}
-              page={page}
-              onChange={(e, value) => setPage(value)}
-              color="primary"
-              size="large"
-              sx={{
-                '& .MuiPaginationItem-root': {
-                  borderRadius: 2,
-                },
-              }}
-            />
+        {/* Enhanced Pagination */}
+        {totalPages > 1 && (
+          <Box mt={6} display="flex" justifyContent="center">
+            <Paper elevation={2} sx={{ p: 2, borderRadius: 3 }}>
+              <Stack spacing={2} alignItems="center">
+                <Pagination
+                  count={totalPages}
+                  page={page}
+                  onChange={(e, value) => setPage(value)}
+                  color="primary"
+                  size="large"
+                  showFirstButton
+                  showLastButton
+                  disabled={loading}
+                />
+                <Typography variant="caption" color="text.secondary">
+                  Page {page} of {totalPages} • {totalLeases} total lease
+                  returns
+                </Typography>
+              </Stack>
+            </Paper>
           </Box>
         )}
 
@@ -826,8 +882,13 @@ const LeaseReturnsList = () => {
                           select
                           fullWidth
                           label="Select Status"
-                          value={groundingStatus}
-                          onChange={(e) => setGroundingStatus(e.target.value)}
+                          value={selectedLease.groundingStatus}
+                          onChange={(e) =>
+                            setSelectedLease((prev) => ({
+                              ...prev,
+                              groundingStatus: e.target.value,
+                            }))
+                          }
                         >
                           <MenuItem value="Grounded">Grounded</MenuItem>
                         </TextField>
@@ -847,8 +908,13 @@ const LeaseReturnsList = () => {
                         select
                         fullWidth
                         label="Select Status"
-                        value={groundingStatus}
-                        onChange={(e) => setGroundingStatus(e.target.value)}
+                        value={selectedLease.groundingStatus}
+                        onChange={(e) =>
+                          setSelectedLease((prev) => ({
+                            ...prev,
+                            groundingStatus: e.target.value,
+                          }))
+                        }
                       >
                         <MenuItem value="Ground">Ground</MenuItem>
                         <MenuItem value="Buy">Buying</MenuItem>
@@ -869,7 +935,7 @@ const LeaseReturnsList = () => {
                       onClick={() =>
                         handleGroundingStatusUpdate(
                           selectedLease._id,
-                          groundingStatus
+                          selectedLease.groundingStatus
                         )
                       }
                     >
