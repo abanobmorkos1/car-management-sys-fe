@@ -16,6 +16,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useParams } from 'react-router-dom';
 import Topbar from '../../components/Topbar';
+import { AuthContext } from '../../contexts/AuthContext';
 const api = process.env.REACT_APP_API_URL;
 
 const uploadToS3 = async (file, category, customerName) => {
@@ -82,6 +83,7 @@ const NewLeaseForm = ({ prefill, fromDelivery = false }) => {
     msg: '',
     severity: 'success',
   });
+  const { user } = useContext(AuthContext);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -198,6 +200,7 @@ const NewLeaseForm = ({ prefill, fromDelivery = false }) => {
       [name]: name === 'leaseReturnMedia' ? Array.from(files) : files[0],
     }));
   };
+  console.log({ user });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -239,7 +242,11 @@ const NewLeaseForm = ({ prefill, fromDelivery = false }) => {
           msg: 'Lease return created successfully!',
           severity: 'success',
         });
-        navigate('/driver/dashboard');
+        if (user.role === 'Management') {
+          navigate('/management/dashboard');
+        } else {
+          navigate('/driver/dashboard');
+        }
       } else {
         setSnack({
           open: true,

@@ -26,10 +26,9 @@ const ManagerDeliveryCard = ({
   user,
   onAssignDriver,
 }) => {
+  const navigate = useNavigate();
   const [assignedDriver, setAssignedDriver] = useState('');
   const [status, setStatus] = useState(delivery?.status || '');
-  const navigate = useNavigate();
-  const theme = useTheme();
 
   useEffect(() => {
     if (delivery?.driver) {
@@ -65,6 +64,10 @@ const ManagerDeliveryCard = ({
         body: JSON.stringify({ status: newStatus }),
       });
       setStatus(newStatus);
+      console.log({ newStatus });
+      if (newStatus === 'Delivered') {
+        navigate(`/driver/cod/from-delivery/${delivery._id}`);
+      }
       onAssignDriver();
     } catch (err) {
       console.error('Error updating delivery status:', err);

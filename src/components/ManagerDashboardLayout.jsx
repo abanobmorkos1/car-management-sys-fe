@@ -3,38 +3,58 @@ import {
   Box,
   Container,
   Typography,
-  Pagination,
   Grid,
   Card,
   CardContent,
   Paper,
+  TextField,
+  Stack,
+  CircularProgress,
+  Skeleton,
+  Pagination,
+  FormControl,
+  Select,
+  MenuItem,
+  InputLabel,
 } from '@mui/material';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import {
   Assignment,
   DirectionsCar,
   ReviewsOutlined,
   PhotoCamera,
+  Search,
+  DateRange,
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import Topbar from './Topbar';
 import ManagerDeliveryCard from './ManagerDeliveryCard';
 import BonusUpload from '../pages/Driver/BonusUpload';
+import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
+import { format } from 'date-fns';
 
 const ManagerDashboardLayout = ({
-  user,
-  deliveries = [],
   drivers = [],
+  user,
   onAssignDriver = () => {},
   handleStatusChange,
-  showGallery,
-  setShowGallery,
   triggerInitialBonusFetch,
 }) => {
   const theme = useTheme();
-  const [page, setPage] = useState(1);
-  const itemsPerPage = 4;
-
+  const [deliveries, setDeliveries] = useState([]);
+  const [totalDeliveries, setTotalDeliveries] = useState(0);
+  const [loading, setLoading] = useState(true);
   const [bonusCounts, setBonusCounts] = useState({ review: 0, customer: 0 });
+
+  const [startDate, setStartDate] = useState(new Date());
+  const [endDate, setEndDate] = useState(new Date());
+
+  // Add pagination state
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(5);
+  const [totalPages, setTotalPages] = useState(0);
+
+  const api = process.env.REACT_APP_API_URL;
 
   const handleBonusUpdate = (updatedCounts) => {
     if (
@@ -45,11 +65,52 @@ const ManagerDashboardLayout = ({
     }
   };
 
-  const pageCount = Math.ceil(deliveries.length / itemsPerPage);
-  const paginatedDeliveries = deliveries.slice(
-    (page - 1) * itemsPerPage,
-    page * itemsPerPage
-  );
+  const fetchDeliveries = async (start = '', end = '') => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+
+      // Add pagination parameters
+      params.append('page', page.toString());
+      params.append('pageSize', perPage.toString());
+
+      if (start) {
+        params.append('startDate', start);
+      }
+      if (end) {
+        params.append('endDate', end);
+      }
+
+      const res = await fetch(
+        `${api}/api/delivery/deliveries?${params.toString()}`,
+        {
+          credentials: 'include',
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
+      const data = await res.json();
+
+      // Handle both paginated and non-paginated responses
+      const deliveriesData = data.deliveries;
+      const total = data.total;
+      const totalPagesCount = Math.ceil(total / perPage);
+
+      setDeliveries(deliveriesData);
+      setTotalDeliveries(total);
+      setTotalPages(totalPagesCount);
+    } catch (err) {
+      console.error('❌ Failed to fetch deliveries:', err);
+      setDeliveries([]);
+      setTotalDeliveries(0);
+      setTotalPages(0);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (triggerInitialBonusFetch && typeof handleBonusUpdate === 'function') {
@@ -76,6 +137,20 @@ const ManagerDashboardLayout = ({
       fetchInitialCounts();
     }
   }, [triggerInitialBonusFetch]);
+
+  useEffect(() => {
+    fetchDeliveries();
+  }, [startDate, endDate, page, perPage]);
+
+  // Handle pagination changes
+  const handlePageChange = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handlePerPageChange = (event) => {
+    setPerPage(event.target.value);
+    setPage(1); // Reset to first page when changing items per page
+  };
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
@@ -120,7 +195,7 @@ const ManagerDashboardLayout = ({
             {[
               {
                 title: 'Total Deliveries',
-                value: deliveries.length,
+                value: totalDeliveries,
                 icon: <Assignment />,
                 color: theme.gradients?.info,
               },
@@ -263,6 +338,87 @@ const ManagerDashboardLayout = ({
             </Card>
           </Grid>
 
+          {/* Date Filter Section */}
+          <Paper
+            elevation={2}
+            sx={{
+              p: 3,
+              mb: 4,
+              borderRadius: 3,
+              background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+            }}
+          >
+            <Stack spacing={3}>
+              <Box
+                sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}
+              >
+                <DateRange color="primary" />
+                <Typography variant="h6" fontWeight={600}>
+                  Filter Deliveries by Date
+                </Typography>
+              </Box>
+
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: { xs: 'column', md: 'row' },
+                  gap: 2,
+                  alignItems: 'center',
+                }}
+              >
+                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                  <Box
+                    display="flex"
+                    flexWrap="wrap"
+                    justifyContent="space-between"
+                    alignItems="center"
+                    gap={2}
+                    mb={3}
+                  >
+                    <Stack direction="row" spacing={2} alignItems="center">
+                      <DatePicker
+                        label="Start Date"
+                        value={startDate}
+                        onChange={(newValue) => setStartDate(newValue)}
+                        renderInput={(params) => (
+                          <TextField {...params} size="small" />
+                        )}
+                      />
+                      <DatePicker
+                        label="End Date"
+                        value={endDate}
+                        onChange={(newValue) => setEndDate(newValue)}
+                        renderInput={(params) => (
+                          <TextField {...params} size="small" />
+                        )}
+                      />
+                    </Stack>
+                  </Box>
+                </LocalizationProvider>
+              </Box>
+
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                <Typography variant="body2" color="text.secondary">
+                  Showing {deliveries.length} of {totalDeliveries} deliveries
+                  (Page {page} of {totalPages})
+                  {startDate &&
+                    endDate &&
+                    ` • Filtered: ${format(
+                      startDate,
+                      'MMM dd, yyyy'
+                    )} to ${format(endDate, 'MMM dd, yyyy')}`}
+                </Typography>
+                {loading && <CircularProgress size={20} />}
+              </Box>
+            </Stack>
+          </Paper>
+
           {/* Enhanced Deliveries Section */}
           <Paper elevation={2} sx={{ borderRadius: 3, overflow: 'hidden' }}>
             <Box
@@ -278,46 +434,52 @@ const ManagerDashboardLayout = ({
               <Typography variant="h5" fontWeight={600}>
                 Delivery Management
               </Typography>
-              <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                {deliveries.length} total deliveries
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                  {totalDeliveries} total deliveries
+                </Typography>
+              </Box>
             </Box>
             <Box sx={{ p: 3 }}>
-              {paginatedDeliveries.length > 0 ? (
-                <>
-                  <Grid container spacing={3} sx={{ alignItems: 'stretch' }}>
-                    {paginatedDeliveries.map((delivery) => (
-                      <Grid
-                        item
-                        xs={12}
-                        md={6}
-                        key={delivery._id}
-                        sx={{ display: 'flex' }}
-                      >
-                        <ManagerDeliveryCard
-                          delivery={delivery}
-                          drivers={drivers}
-                          onAssignDriver={onAssignDriver}
-                          onStatusChange={handleStatusChange}
-                        />
-                      </Grid>
-                    ))}
-                  </Grid>
-
-                  {pageCount > 1 && (
-                    <Box mt={4} display="flex" justifyContent="center">
-                      <Paper elevation={2} sx={{ p: 2, borderRadius: 3 }}>
-                        <Pagination
-                          count={pageCount}
-                          page={page}
-                          onChange={(e, value) => setPage(value)}
-                          color="primary"
-                          size="large"
-                        />
-                      </Paper>
-                    </Box>
-                  )}
-                </>
+              {loading ? (
+                <Grid container spacing={3} sx={{ alignItems: 'stretch' }}>
+                  {[...Array(4)].map((_, index) => (
+                    <Grid item xs={12} md={6} key={index}>
+                      <Card sx={{ height: 300, borderRadius: 3 }}>
+                        <CardContent>
+                          <Skeleton variant="text" height={32} />
+                          <Skeleton variant="text" height={24} />
+                          <Skeleton variant="text" height={24} />
+                          <Skeleton
+                            variant="rectangular"
+                            height={40}
+                            sx={{ mt: 2 }}
+                          />
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  ))}
+                </Grid>
+              ) : deliveries.length > 0 ? (
+                <Grid container spacing={3} sx={{ alignItems: 'stretch' }}>
+                  {deliveries.map((delivery) => (
+                    <Grid
+                      item
+                      xs={12}
+                      md={6}
+                      key={delivery._id}
+                      sx={{ display: 'flex' }}
+                    >
+                      <ManagerDeliveryCard
+                        user={user}
+                        delivery={delivery}
+                        drivers={drivers}
+                        onAssignDriver={onAssignDriver}
+                        onStatusChange={handleStatusChange}
+                      />
+                    </Grid>
+                  ))}
+                </Grid>
               ) : (
                 <Box sx={{ textAlign: 'center', py: 6 }}>
                   <Assignment
@@ -326,6 +488,34 @@ const ManagerDashboardLayout = ({
                   <Typography variant="h6" color="text.secondary">
                     No deliveries found
                   </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {startDate || endDate
+                      ? 'Try adjusting your date filters'
+                      : 'No deliveries available'}
+                  </Typography>
+                </Box>
+              )}
+
+              {/* Add Pagination Controls */}
+              {!loading && deliveries.length > 0 && totalPages > 1 && (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    mt: 4,
+                    gap: 2,
+                  }}
+                >
+                  <Pagination
+                    count={totalPages}
+                    page={page}
+                    onChange={handlePageChange}
+                    color="primary"
+                    size="large"
+                    showFirstButton
+                    showLastButton
+                  />
                 </Box>
               )}
             </Box>

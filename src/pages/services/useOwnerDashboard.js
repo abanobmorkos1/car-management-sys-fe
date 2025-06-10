@@ -15,17 +15,12 @@ const useOwnerDashboardData = () => {
 
   useEffect(() => {
     const loadInitialData = async () => {
-      const today = isValid(selectedDate) ? selectedDate : null;
-
       try {
-        const [deliveryData, clockData, pendingData] = await Promise.all([
-          fetchDeliveriesByDate(today, today),
-          fetchClockSessionsByDate(today),
+        const [clockData, pendingData] = await Promise.all([
+          fetchClockSessionsByDate(selectedDate),
           fetchPendingClockInRequests(),
         ]);
-        console.log({ loadedfor: { today } });
 
-        setDeliveries(Array.isArray(deliveryData) ? deliveryData : []);
         setClockSessions(Array.isArray(clockData) ? clockData : []);
         setPendingRequests(Array.isArray(pendingData) ? pendingData : []);
       } catch (err) {

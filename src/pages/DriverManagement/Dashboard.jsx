@@ -1,6 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
-import useOwnerDashboardData from '../services/useOwnerDashboard';
 import ManagerDashboardLayout from '../../components/ManagerDashboardLayout';
 
 const ManagerDashboard = () => {
@@ -8,17 +7,15 @@ const ManagerDashboard = () => {
   const [drivers, setDrivers] = useState([]);
   const [showGallery, setShowGallery] = useState(false);
 
-  const {
-    deliveries = [],
-    updateDeliveriesByRange,
-  } = useOwnerDashboardData();
-
   useEffect(() => {
     const fetchDrivers = async () => {
       try {
-        const res = await fetch(`${process.env.REACT_APP_API_URL}/api/users/drivers`, {
-          credentials: 'include'
-        });
+        const res = await fetch(
+          `${process.env.REACT_APP_API_URL}/api/users/drivers`,
+          {
+            credentials: 'include',
+          }
+        );
         const data = await res.json();
         setDrivers(Array.isArray(data) ? data : []);
       } catch (err) {
@@ -28,17 +25,32 @@ const ManagerDashboard = () => {
     fetchDrivers();
   }, []);
 
+  const handleAssignDriver = async () => {
+    // Refresh drivers list after assignment
+    try {
+      const res = await fetch(
+        `${process.env.REACT_APP_API_URL}/api/users/drivers`,
+        {
+          credentials: 'include',
+        }
+      );
+      const data = await res.json();
+      setDrivers(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Error refreshing drivers:', err);
+    }
+  };
+
   return (
-  <ManagerDashboardLayout
-    user={user}
-    deliveries={deliveries}
-    drivers={drivers}
-    onAssignDriver={updateDeliveriesByRange}
-    handleStatusChange={() => {}}
-    showGallery={showGallery}
-    setShowGallery={setShowGallery}
-    triggerInitialBonusFetch={true}
-  />
+    <ManagerDashboardLayout
+      user={user}
+      drivers={drivers}
+      onAssignDriver={handleAssignDriver}
+      handleStatusChange={() => {}}
+      showGallery={showGallery}
+      setShowGallery={setShowGallery}
+      triggerInitialBonusFetch={true}
+    />
   );
 };
 
