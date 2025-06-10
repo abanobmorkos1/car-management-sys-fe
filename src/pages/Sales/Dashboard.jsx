@@ -17,9 +17,32 @@ import {
 } from '@mui/material';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  LineElement,
+  PointElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import { Bar, Line } from 'react-chartjs-2';
 import Topbar from '../../components/Topbar';
 import EditDeliveryForm from './EditDeliveryForm';
 import NewDeliveryForm from './CreateDelivery';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  LineElement,
+  PointElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 const api = process.env.REACT_APP_API_URL;
 const itemsPerPage = 4;
@@ -34,6 +57,10 @@ const SalesDashboard = () => {
   const [page, setPage] = useState(1);
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date());
+
+  // Chart data states
+  const [chartData, setChartData] = useState(null);
+  const [chartLoading, setChartLoading] = useState(true);
 
   const fetchDeliveries = async (
     pageNum = page,
@@ -79,12 +106,52 @@ const SalesDashboard = () => {
     }
   };
 
+  const fetchCODChartData = async (dateFrom = startDate, dateTo = endDate) => {
+    setChartLoading(true);
+    try {
+      const from = new Date(
+        dateFrom.getFullYear(),
+        dateFrom.getMonth(),
+        dateFrom.getDate()
+      );
+      const to = new Date(
+        dateTo.getFullYear(),
+        dateTo.getMonth(),
+        dateTo.getDate()
+      );
+      to.setHours(23, 59, 59, 999);
+
+      const params = new URLSearchParams({
+        start: from.toISOString(),
+        end: to.toISOString(),
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      });
+
+      const res = await fetch(`${api}/api/delivery/cod-chart-data?${params}`, {
+        credentials: 'include',
+        headers: {
+          'Cache-Control': 'no-cache',
+          Pragma: 'no-cache',
+        },
+      });
+      const data = await res.json();
+      setChartData(data);
+    } catch (err) {
+      console.error('Error fetching COD chart data:', err);
+      setChartData(null);
+    } finally {
+      setChartLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchDeliveries();
+    fetchCODChartData();
   }, []);
 
   useEffect(() => {
     fetchDeliveries(1, startDate, endDate);
+    fetchCODChartData(startDate, endDate);
     setPage(1);
   }, [startDate, endDate]);
 
@@ -103,6 +170,73 @@ const SalesDashboard = () => {
       prev.map((d) => (d._id === updatedDelivery._id ? updatedDelivery : d))
     );
     setEditOpen(false);
+  };
+
+  // Chart configuration
+  const chartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top',
+      },
+      title: {
+        display: true,
+        text: 'COD Collections Over Time',
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          callback: function (value) {
+            return '$' + value.toLocaleString();
+          },
+        },
+      },
+    },
+  };
+
+  const prepareChartData = () => {
+    if (!chartData || !chartData?.dailyCollections?.length) return null;
+
+    return {
+      labels: chartData.dailyCollections.map((item) =>
+        new Date(item.date).toLocaleDateString()
+      ),
+      datasets: [
+        {
+          label: 'Total COD Collected',
+          data: chartData.dailyCollections.map((item) => item.totalAmount),
+          backgroundColor: 'rgba(54, 162, 235, 0.5)',
+          borderColor: 'rgba(54, 162, 235, 1)',
+          borderWidth: 2,
+        },
+        {
+          label: 'Number of Collections',
+          data: chartData.dailyCollections.map((item) => item.count),
+          backgroundColor: 'rgba(255, 99, 132, 0.5)',
+          borderColor: 'rgba(255, 99, 132, 1)',
+          borderWidth: 2,
+          yAxisID: 'y1',
+        },
+      ],
+    };
+  };
+
+  const chartOptionsWithSecondAxis = {
+    ...chartOptions,
+    scales: {
+      ...chartOptions.scales,
+      y1: {
+        type: 'linear',
+        display: true,
+        position: 'right',
+        beginAtZero: true,
+        grid: {
+          drawOnChartArea: false,
+        },
+      },
+    },
   };
 
   return (
@@ -157,6 +291,63 @@ const SalesDashboard = () => {
           </Box>
         ) : (
           <Stack spacing={4}>
+            {/* Charts Section - Moved above deliveries */}
+            <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
+              {chartLoading ? (
+                <Box
+                  display="flex"
+                  justifyContent="center"
+                  alignItems="center"
+                  minHeight="400px"
+                >
+                  <CircularProgress />
+                </Box>
+              ) : chartData?.dailyCollections?.length ? (
+                <Grid display="flex" spacing={3} columns={2}>
+                  <Card elevation={2} sx={{ p: 3 }}>
+                    <Typography variant="h6" gutterBottom>
+                      Daily COD Collections
+                    </Typography>
+                    <Box sx={{ height: '400px' }}>
+                      {prepareChartData() && (
+                        <Bar
+                          data={prepareChartData()}
+                          options={{
+                            ...chartOptions,
+                            maintainAspectRatio: false,
+                          }}
+                        />
+                      )}
+                    </Box>
+                  </Card>
+
+                  <Card elevation={2} sx={{ p: 3 }}>
+                    <Typography variant="h6" gutterBottom>
+                      COD Trend Over Time
+                    </Typography>
+                    <Box sx={{ height: '400px' }}>
+                      {prepareChartData() && (
+                        <Line
+                          data={prepareChartData()}
+                          options={{
+                            ...chartOptionsWithSecondAxis,
+                            maintainAspectRatio: false,
+                          }}
+                        />
+                      )}
+                    </Box>
+                  </Card>
+                </Grid>
+              ) : (
+                <Paper elevation={1} sx={{ p: 3, textAlign: 'center' }}>
+                  <Typography variant="h6" color="text.secondary">
+                    No chart data available for the selected date range.
+                  </Typography>
+                </Paper>
+              )}
+            </Paper>
+
+            {/* Deliveries Grid */}
             <Grid container spacing={3}>
               {deliveries.length ? (
                 deliveries.map((delivery) => (
@@ -305,6 +496,7 @@ const SalesDashboard = () => {
             </Box>
           </Stack>
         )}
+
         <Dialog
           open={editOpen}
           onClose={() => setEditOpen(false)}

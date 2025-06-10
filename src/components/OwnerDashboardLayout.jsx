@@ -13,6 +13,10 @@ import {
   Button,
   Stack,
   CircularProgress,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
@@ -39,6 +43,7 @@ const OwnerDashboardLayout = ({
   onPageChange = () => {},
 }) => {
   const [loadingId, setLoadingId] = useState(null);
+  const [selectedDriver, setSelectedDriver] = useState('all');
   const [snack, setSnack] = useState({
     open: false,
     message: '',
@@ -86,6 +91,23 @@ const OwnerDashboardLayout = ({
       setLoadingId(null);
     }
   };
+
+  // Get unique drivers for filter dropdown
+  const uniqueDrivers = Array.isArray(clockSessions)
+    ? clockSessions.reduce((acc, session) => {
+        if (session.driver && !acc.find((d) => d._id === session.driver._id)) {
+          acc.push(session.driver);
+        }
+        return acc;
+      }, [])
+    : [];
+
+  // Filter clock sessions based on selected driver
+  const filteredClockSessions = Array.isArray(clockSessions)
+    ? selectedDriver === 'all'
+      ? clockSessions
+      : clockSessions.filter((session) => session.driver._id === selectedDriver)
+    : [];
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
@@ -184,12 +206,35 @@ const OwnerDashboardLayout = ({
           {/* Clock Sessions Section */}
           <Card sx={{ mb: 4 }}>
             <CardContent>
-              <Typography variant="h6" fontWeight="bold" gutterBottom>
-                ⏰ Clock Sessions ({clockSessions.length})
-              </Typography>
+              <Box
+                display="flex"
+                justifyContent="space-between"
+                alignItems="center"
+                mb={2}
+              >
+                <Typography variant="h6" fontWeight="bold">
+                  ⏰ Clock Sessions ({filteredClockSessions.length})
+                </Typography>
 
-              {Array.isArray(clockSessions) && clockSessions.length > 0 ? (
-                clockSessions.map(
+                <FormControl size="small" sx={{ minWidth: 200 }}>
+                  <InputLabel>Filter by Driver</InputLabel>
+                  <Select
+                    value={selectedDriver}
+                    label="Filter by Driver"
+                    onChange={(e) => setSelectedDriver(e.target.value)}
+                  >
+                    <MenuItem value="all">All Drivers</MenuItem>
+                    {uniqueDrivers.map((driver) => (
+                      <MenuItem key={driver._id} value={driver._id}>
+                        {driver.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Box>
+
+              {filteredClockSessions.length > 0 ? (
+                filteredClockSessions.map(
                   ({
                     driver,
                     sessions,
@@ -213,7 +258,9 @@ const OwnerDashboardLayout = ({
                 )
               ) : (
                 <Typography variant="body2" color="text.secondary">
-                  No clock-in sessions found.
+                  {selectedDriver === 'all'
+                    ? 'No clock-in sessions found.'
+                    : 'No clock-in sessions found for selected driver.'}
                 </Typography>
               )}
             </CardContent>
