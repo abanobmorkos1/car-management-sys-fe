@@ -10,20 +10,33 @@ import {
   CardContent,
   TextField,
   Pagination,
+  Button,
+  Stack,
+  CircularProgress,
 } from '@mui/material';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import OwnerDeliveryCard from './OwnerDeliveryCard';
 import ClockSessionItem from './ClockSessionItem';
 import ClockApprovalCard from './ClockApprovalCard';
 import Topbar from './Topbar';
 import { format, isValid } from 'date-fns';
+
 const OwnerDashboardLayout = ({
   deliveries = [],
+  totalDeliveries = 0,
   clockSessions = [],
   pendingRequests = [],
   onApprove = () => {},
   onReject = () => {},
   setSelectedDate = () => {},
   selectedDate = new Date(),
+  startDate = new Date(),
+  endDate = new Date(),
+  page = 1,
+  loading = false,
+  onDateRangeChange = () => {},
+  onPageChange = () => {},
 }) => {
   const [loadingId, setLoadingId] = useState(null);
   const [snack, setSnack] = useState({
@@ -32,8 +45,7 @@ const OwnerDashboardLayout = ({
     severity: 'success',
   });
 
-  const [page, setPage] = useState(1);
-  const itemsPerPage = 3;
+  const itemsPerPage = 4;
 
   const handleApprove = async (id) => {
     try {
@@ -75,12 +87,6 @@ const OwnerDashboardLayout = ({
     }
   };
 
-  const paginatedDeliveries = deliveries.slice(
-    (page - 1) * itemsPerPage,
-    page * itemsPerPage
-  );
-  const pageCount = Math.ceil(deliveries.length / itemsPerPage);
-  console.log({ clockSessions });
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
       <Topbar />
@@ -100,50 +106,77 @@ const OwnerDashboardLayout = ({
           <Card sx={{ mb: 4 }}>
             <CardContent>
               <Typography variant="h6" fontWeight="bold" gutterBottom>
-                🚗 Deliveries ({deliveries.length})
+                🚗 Deliveries ({totalDeliveries})
               </Typography>
 
-              <TextField
-                type="date"
-                label="Filter by Date"
-                variant="outlined"
-                size="small"
-                value={
-                  isValid(selectedDate)
-                    ? format(selectedDate, 'yyyy-MM-dd')
-                    : ''
-                }
-                onChange={(e) => {
-                  const rawValue = new Date(e.target.value);
-                  rawValue.setHours(0, 0, 0, 0); // Normalize to start of day
-                  setSelectedDate(rawValue);
-                  setPage(1);
-                }}
-                sx={{ mb: 2 }}
-                InputLabelProps={{ shrink: true }}
-              />
-
-              {paginatedDeliveries.length > 0 ? (
-                paginatedDeliveries.map((delivery) => (
-                  <Box key={delivery._id} mb={2}>
-                    <OwnerDeliveryCard delivery={delivery} />
-                  </Box>
-                ))
-              ) : (
-                <Typography variant="body2" color="text.secondary">
-                  No deliveries found for this date.
-                </Typography>
-              )}
-
-              {pageCount > 1 && (
-                <Box display="flex" justifyContent="center" mt={2}>
-                  <Pagination
-                    count={pageCount}
-                    page={page}
-                    onChange={(e, value) => setPage(value)}
-                    color="primary"
-                  />
+              <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <Box
+                  display="flex"
+                  flexWrap="wrap"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  gap={2}
+                  mb={3}
+                >
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    <DatePicker
+                      label="Start Date"
+                      value={startDate}
+                      onChange={(newValue) =>
+                        onDateRangeChange(newValue, endDate)
+                      }
+                      renderInput={(params) => (
+                        <TextField {...params} size="small" />
+                      )}
+                    />
+                    <DatePicker
+                      label="End Date"
+                      value={endDate}
+                      onChange={(newValue) =>
+                        onDateRangeChange(startDate, newValue)
+                      }
+                      renderInput={(params) => (
+                        <TextField {...params} size="small" />
+                      )}
+                    />
+                  </Stack>
                 </Box>
+              </LocalizationProvider>
+
+              {loading ? (
+                <Box
+                  display="flex"
+                  justifyContent="center"
+                  alignItems="center"
+                  minHeight="300px"
+                >
+                  <CircularProgress />
+                </Box>
+              ) : (
+                <>
+                  {deliveries.length > 0 ? (
+                    deliveries.map((delivery) => (
+                      <Box key={delivery._id} mb={2}>
+                        <OwnerDeliveryCard delivery={delivery} />
+                      </Box>
+                    ))
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      No deliveries found for this date range.
+                    </Typography>
+                  )}
+
+                  {Math.ceil(totalDeliveries / itemsPerPage) > 1 && (
+                    <Box display="flex" justifyContent="center" mt={2}>
+                      <Pagination
+                        count={Math.ceil(totalDeliveries / itemsPerPage)}
+                        page={page}
+                        onChange={onPageChange}
+                        color="primary"
+                      />
+                    </Box>
+                  )}
+                </>
               )}
             </CardContent>
           </Card>
@@ -152,8 +185,9 @@ const OwnerDashboardLayout = ({
           <Card sx={{ mb: 4 }}>
             <CardContent>
               <Typography variant="h6" fontWeight="bold" gutterBottom>
-                ⏱ Clock Sessions ({clockSessions?.length || 0})
+                ⏰ Clock Sessions ({clockSessions.length})
               </Typography>
+
               {Array.isArray(clockSessions) && clockSessions.length > 0 ? (
                 clockSessions.map(
                   ({
@@ -213,13 +247,12 @@ const OwnerDashboardLayout = ({
           {/* Snackbar */}
           <Snackbar
             open={snack.open}
-            autoHideDuration={3000}
+            autoHideDuration={4000}
             onClose={() => setSnack({ ...snack, open: false })}
           >
             <Alert
-              onClose={() => setSnack({ ...snack, open: false })}
               severity={snack.severity}
-              variant="filled"
+              onClose={() => setSnack({ ...snack, open: false })}
             >
               {snack.message}
             </Alert>

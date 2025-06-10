@@ -475,7 +475,6 @@ const ManagerDashboardLayout = ({
                         delivery={delivery}
                         drivers={drivers}
                         onAssignDriver={onAssignDriver}
-                        onStatusChange={handleStatusChange}
                       />
                     </Grid>
                   ))}

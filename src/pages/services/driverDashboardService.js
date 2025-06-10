@@ -33,9 +33,42 @@ export const fetchTodayDeliveries = async () => {
   url += `?start=${from.toISOString()}&end=${to.toISOString()}`;
 
   const data = await fetchWithSession(url);
-  if (!Array.isArray(data)) return [];
-
   return data;
+};
+
+export const fetchDeliveriesByDateRange = async (
+  startDate,
+  endDate,
+  page = 1,
+  pageSize = 5,
+  filter = ''
+) => {
+  let url = `${api}/api/delivery/deliveries`;
+  const params = new URLSearchParams();
+
+  if (startDate && endDate) {
+    const from = new Date(startDate);
+    from.setHours(0, 0, 0, 0);
+    const to = new Date(endDate);
+    to.setHours(23, 59, 59, 999);
+    params.append('start', from.toISOString());
+    params.append('end', to.toISOString());
+    params.append('filter', filter);
+  }
+
+  params.append('page', page.toString());
+  params.append('pageSize', pageSize.toString());
+
+  url += `?${params.toString()}`;
+
+  const data = await fetchWithSession(url);
+  if (!data) return { deliveries: [], total: 0, assigned: 0 };
+
+  return {
+    deliveries: data.deliveries,
+    total: data.total || 0,
+    assigned: data.assigned || 0,
+  };
 };
 
 export const fetchDriverStatus = async () => {

@@ -35,7 +35,7 @@ import {
 } from '@mui/icons-material';
 import { AuthContext } from '../contexts/AuthContext';
 import Topbar from '../components/Topbar';
-import { format } from 'date-fns';
+import { format, set } from 'date-fns';
 
 const api = process.env.REACT_APP_API_URL;
 
@@ -62,6 +62,10 @@ const LeaseReturnsList = () => {
   const [searchField, setSearchField] = useState('All');
   const [loading, setLoading] = useState(true);
   const [selectedLease, setSelectedLease] = useState(null);
+  const [selectedLeaseStatus, setSelectedLeaseStatus] = useState({
+    groundingStatus: '',
+    groundingNote: '',
+  });
   const [thumbnails, setThumbnails] = useState({});
   const [users, setUsers] = useState({});
   const [page, setPage] = useState(1);
@@ -246,11 +250,16 @@ const LeaseReturnsList = () => {
       damageVideos,
       odometerStatementUrl,
     });
-    setGroundingNote(lease.groundingNote || '');
+    setSelectedLeaseStatus({
+      groundingStatus: lease.groundingStatus || '',
+      groundingNote: lease.note || '',
+    });
   };
 
-  const handleGroundingStatusUpdate = async (leaseId, newStatus) => {
+  const handleGroundingStatusUpdate = async () => {
     try {
+      const leaseId = selectedLease._id;
+      const { groundingStatus: newStatus, groundingNote } = selectedLeaseStatus;
       const res = await fetch(`${api}/lease/grounding-status/${leaseId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -259,7 +268,6 @@ const LeaseReturnsList = () => {
       });
 
       const updatedLease = await res.json();
-      console.log('✅ Updated groundingStatus:', updatedLease.groundingStatus);
       const formattedLease = {
         ...updatedLease,
         salesPerson:
@@ -398,25 +406,6 @@ const LeaseReturnsList = () => {
                   },
                 }}
               />
-              <TextField
-                select
-                label="Filter Field"
-                value={searchField}
-                onChange={(e) => setSearchField(e.target.value)}
-                variant="outlined"
-                sx={{
-                  minWidth: 150,
-                  '& .MuiOutlinedInput-root': {
-                    backgroundColor: 'white',
-                    borderRadius: 2,
-                  },
-                }}
-              >
-                <MenuItem value="All">All</MenuItem>
-                <MenuItem value="Make">Make</MenuItem>
-                <MenuItem value="Trim">Trim</MenuItem>
-                <MenuItem value="Model">Model</MenuItem>
-              </TextField>
               <TextField
                 select
                 label="Filter by Status"
@@ -854,15 +843,9 @@ const LeaseReturnsList = () => {
                   <CardContent
                     sx={{
                       opacity:
-                        selectedLease.groundingStatus === 'Grounded' &&
-                        user?.role !== 'Driver' &&
-                        user?.role !== 'Management'
-                          ? 0.6
-                          : 1,
+                        selectedLease.groundingStatus === 'Grounded' ? 0.6 : 1,
                       pointerEvents:
-                        selectedLease.groundingStatus === 'Grounded' &&
-                        user?.role !== 'Driver' &&
-                        user?.role !== 'Management'
+                        selectedLease.groundingStatus === 'Grounded'
                           ? 'none'
                           : 'auto',
                     }}
@@ -882,9 +865,9 @@ const LeaseReturnsList = () => {
                           select
                           fullWidth
                           label="Select Status"
-                          value={selectedLease.groundingStatus}
+                          value={selectedLeaseStatus.groundingStatus}
                           onChange={(e) =>
-                            setSelectedLease((prev) => ({
+                            setSelectedLeaseStatus((prev) => ({
                               ...prev,
                               groundingStatus: e.target.value,
                             }))
@@ -896,8 +879,13 @@ const LeaseReturnsList = () => {
                         <TextField
                           fullWidth
                           label="Where was the car grounded?"
-                          value={groundingNote}
-                          onChange={(e) => setGroundingNote(e.target.value)}
+                          value={selectedLeaseStatus.groundingNote}
+                          onChange={(e) => {
+                            setSelectedLeaseStatus((prev) => ({
+                              ...prev,
+                              groundingNote: e.target.value,
+                            }));
+                          }}
                           multiline
                           rows={2}
                           placeholder="Enter grounding location details..."
@@ -932,12 +920,7 @@ const LeaseReturnsList = () => {
                         fontWeight: 'bold',
                         borderRadius: 2,
                       }}
-                      onClick={() =>
-                        handleGroundingStatusUpdate(
-                          selectedLease._id,
-                          selectedLease.groundingStatus
-                        )
-                      }
+                      onClick={() => handleGroundingStatusUpdate()}
                     >
                       Save Decision
                     </Button>

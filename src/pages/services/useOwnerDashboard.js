@@ -5,13 +5,14 @@ import {
   fetchPendingClockInRequests,
   handleClockApproval,
 } from './ownerDashboardService';
-import { isValid } from 'date-fns';
 
 const useOwnerDashboardData = () => {
   const [deliveries, setDeliveries] = useState([]);
+  const [totalDeliveries, setTotalDeliveries] = useState(0);
   const [clockSessions, setClockSessions] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -53,22 +54,30 @@ const useOwnerDashboardData = () => {
     }
   };
 
-  const updateDeliveriesByRange = async (start, end) => {
+  const fetchDeliveriesByRange = async (startDate, endDate, pageNum = 1) => {
+    setLoading(true);
     try {
-      const data = await fetchDeliveriesByDate(start, end);
-      setDeliveries(Array.isArray(data) ? data : []);
+      const data = await fetchDeliveriesByDate(startDate, endDate, pageNum);
+      setDeliveries(Array.isArray(data.deliveries) ? data.deliveries : []);
+      setTotalDeliveries(data.total || 0);
     } catch (err) {
       console.error('❌ Error fetching deliveries by date range:', err);
+      setDeliveries([]);
+      setTotalDeliveries(0);
+    } finally {
+      setLoading(false);
     }
   };
 
   return {
     deliveries,
+    totalDeliveries,
     clockSessions,
     pendingRequests,
     selectedDate,
+    loading,
     updateDateAndFetchSessions,
-    updateDeliveriesByRange,
+    fetchDeliveriesByRange,
     approveOrRejectClock,
     setSelectedDate,
   };

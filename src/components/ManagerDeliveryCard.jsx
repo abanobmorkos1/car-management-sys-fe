@@ -57,14 +57,13 @@ const ManagerDeliveryCard = ({
 
   const handleStatusChange = async (newStatus) => {
     try {
-      await fetch(`${api}/api/delivery/status/${delivery._id}`, {
+      await fetch(`${api}/api/delivery/update-status/${delivery._id}`, {
         method: 'PUT',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
       });
       setStatus(newStatus);
-      console.log({ newStatus });
       if (newStatus === 'Delivered') {
         navigate(`/driver/cod/from-delivery/${delivery._id}`);
       }

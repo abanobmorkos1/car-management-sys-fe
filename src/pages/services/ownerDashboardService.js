@@ -1,37 +1,40 @@
 // services/ownerDashboardService.js
 
 const api = process.env.REACT_APP_API_URL;
-// const fetchWithSession = async (url, options = {}) => {
-//   const res = await fetch(url, {
-//     ...options,
-//     credentials: 'include',
-//     headers: {
-//       'Content-Type': 'application/json',
-//       ...(options.headers || {})
-//     }
-//   });
+const itemsPerPage = 4;
 
-//   if (!res.ok) throw new Error(await res.text());
-//   return await res.json();
-
-// }; fetchWithSession is not used in this file look at it ... IMPORTANT
-
-// Fetch deliveries in a date range
-export const fetchDeliveriesByDate = async (startDate, endDate) => {
+// Fetch deliveries in a date range with pagination
+export const fetchDeliveriesByDate = async (
+  startDate,
+  endDate,
+  pageNum = 1
+) => {
   let url = `${api}/api/delivery/deliveries`;
+  const params = new URLSearchParams();
 
   if (startDate && endDate) {
     const from = new Date(startDate);
     from.setHours(0, 0, 0, 0);
     const to = new Date(endDate);
     to.setHours(23, 59, 59, 999);
-    url += `?start=${from.toISOString()}&end=${to.toISOString()}`;
+
+    params.append('start', from.toISOString());
+    params.append('end', to.toISOString());
   }
+
+  params.append('page', pageNum.toString());
+  params.append('pageSize', itemsPerPage.toString());
+
+  url += '?' + params.toString();
 
   const res = await fetch(url, {
     method: 'GET',
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache',
+      Pragma: 'no-cache',
+    },
   });
 
   if (!res.ok) throw new Error('Failed to fetch deliveries');
@@ -40,17 +43,18 @@ export const fetchDeliveriesByDate = async (startDate, endDate) => {
 
 // Fetch today's or specific date clock sessions
 export const fetchClockSessionsByDate = async () => {
+  let url = `${api}/api/hours/manager-owner/sessions-by-date`;
+
   const lastFriday = new Date();
   const today = new Date().toISOString();
   lastFriday.setDate(lastFriday.getDate() - ((lastFriday.getDay() + 2) % 7));
   lastFriday.setHours(0, 0, 0, 0);
   const lastFridayISO = lastFriday.toISOString();
-  const res = await fetch(
-    `${api}/api/hours/manager-owner/sessions-by-date?today=${today}&weekStart=${lastFridayISO}`,
-    {
-      credentials: 'include',
-    }
-  );
+  url += `?today=${today}&weekStart=${lastFridayISO}`;
+
+  const res = await fetch(url, {
+    credentials: 'include',
+  });
 
   if (!res.ok) throw new Error('Failed to fetch clock sessions');
   return res.json();

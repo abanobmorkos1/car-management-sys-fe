@@ -14,6 +14,10 @@ import {
   Chip,
   Avatar,
   Paper,
+  TextField,
+  Stack,
+  Pagination,
+  CircularProgress,
 } from '@mui/material';
 import {
   DirectionsCar,
@@ -23,7 +27,10 @@ import {
   TrendingUp,
   PhotoCamera,
   ReviewsOutlined,
+  DateRange,
 } from '@mui/icons-material';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import DriverDeliveryCard from '../components/DriverDeliveryCard';
 import BonusUpload from '../pages/Driver/BonusUpload';
 import BonusGallery from '../components/BonusGallery';
@@ -106,6 +113,13 @@ const DriverDashboardLayout = ({
   submittingClockIn,
   showGallery,
   setShowGallery,
+  startDate,
+  endDate,
+  onDateChange,
+  page,
+  totalPages,
+  onPageChange,
+  loading,
 }) => {
   const [bonusCounts, setBonusCounts] = useState({ review: 0, customer: 0 });
   const base = weeklyEarnings?.baseEarnings || 0;
@@ -295,6 +309,55 @@ const DriverDashboardLayout = ({
               Deliveries
             </Typography>
 
+            <Paper
+              elevation={2}
+              sx={{
+                p: 3,
+                mb: 3,
+                borderRadius: 3,
+                background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+              }}
+            >
+              <Box
+                sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}
+              >
+                <DateRange color="primary" />
+                <Typography variant="h6" fontWeight={600}>
+                  Filter Deliveries by Date
+                </Typography>
+              </Box>
+
+              <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <Box
+                  display="flex"
+                  flexWrap="wrap"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  gap={2}
+                  mb={3}
+                >
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    <DatePicker
+                      label="Start Date"
+                      value={startDate}
+                      onChange={(newValue) => onDateChange(newValue, endDate)}
+                      renderInput={(params) => (
+                        <TextField {...params} size="small" />
+                      )}
+                    />
+                    <DatePicker
+                      label="End Date"
+                      value={endDate}
+                      onChange={(newValue) => onDateChange(startDate, newValue)}
+                      renderInput={(params) => (
+                        <TextField {...params} size="small" />
+                      )}
+                    />
+                  </Stack>
+                </Box>
+              </LocalizationProvider>
+            </Paper>
+
             <Box display="flex" justifyContent="center" mb={3}>
               <ToggleButtonGroup
                 value={filter}
@@ -330,19 +393,42 @@ const DriverDashboardLayout = ({
               </ToggleButtonGroup>
             </Box>
 
-            {deliveries.length > 0 ? (
-              <Grid container spacing={2}>
-                {deliveries.map((del) => (
-                  <Grid item xs={12} key={del._id}>
-                    <DriverDeliveryCard
-                      delivery={del}
-                      onStatusChange={handleStatusChange}
-                      userId={user?._id}
-                      navigate={navigate}
+            {loading ? (
+              <Box
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+                minHeight="300px"
+              >
+                <CircularProgress />
+              </Box>
+            ) : deliveries.length > 0 ? (
+              <>
+                <Grid container spacing={2}>
+                  {deliveries.map((del) => (
+                    <Grid item xs={12} key={del._id}>
+                      <DriverDeliveryCard
+                        delivery={del}
+                        onStatusChange={handleStatusChange}
+                        userId={user?._id}
+                        navigate={navigate}
+                      />
+                    </Grid>
+                  ))}
+                </Grid>
+
+                {totalPages > 1 && (
+                  <Box display="flex" justifyContent="center" mt={3}>
+                    <Pagination
+                      count={totalPages}
+                      page={page}
+                      onChange={onPageChange}
+                      color="primary"
+                      size="large"
                     />
-                  </Grid>
-                ))}
-              </Grid>
+                  </Box>
+                )}
+              </>
             ) : (
               <Paper
                 elevation={0}
@@ -357,7 +443,9 @@ const DriverDashboardLayout = ({
                   No deliveries found
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Check back later for new assignments
+                  {startDate || endDate
+                    ? 'Try adjusting your date filters'
+                    : 'Check back later for new assignments'}
                 </Typography>
               </Paper>
             )}

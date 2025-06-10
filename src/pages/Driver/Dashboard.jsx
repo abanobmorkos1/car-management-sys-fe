@@ -39,6 +39,12 @@ const DriverDashboard = () => {
     lastSessionEarnings,
     clockRequestPending,
     bonusCounts,
+    startDate,
+    endDate,
+    page,
+    totalPages,
+    onDateChange,
+    onPageChange,
   } = useDriverDashboardData(user, navigate);
 
   if (loading || !user) {
@@ -197,6 +203,12 @@ const DriverDashboard = () => {
       setShowGallery={setShowGallery}
       triggerInitialBonusFetch={true}
       bonusCounts={bonusCounts}
+      startDate={startDate}
+      endDate={endDate}
+      onDateChange={onDateChange}
+      page={page}
+      totalPages={totalPages}
+      onPageChange={onPageChange}
     />
   );
 };

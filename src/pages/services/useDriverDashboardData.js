@@ -6,6 +6,7 @@ import {
   clockOut,
   fetchWeeklyEarnings,
   fetchWeeklyBreakdown,
+  fetchDeliveriesByDateRange,
 } from '../services/driverDashboardService';
 
 const useDriverDashboardData = (user, navigate) => {
@@ -32,6 +33,14 @@ const useDriverDashboardData = (user, navigate) => {
   const [lastSessionEarnings, setLastSessionEarnings] = useState(null);
   const [submittingClockIn, setSubmittingClockIn] = useState(false);
 
+  // Add pagination and date filtering state
+  const [startDate, setStartDate] = useState(new Date());
+  const [endDate, setEndDate] = useState(new Date());
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const itemsPerPage = 5;
+
   const loadInitialData = useCallback(async () => {
     try {
       const [deliveries, status, earnings, breakdown] = await Promise.all([
@@ -41,11 +50,10 @@ const useDriverDashboardData = (user, navigate) => {
         fetchWeeklyBreakdown(),
       ]);
       setCounts({
-        assigned: deliveries.filter((del) => del.driver?._id === user?._id)
-          .length,
-        total: deliveries.length,
+        assigned: deliveries.assigned,
+        total: deliveries.total,
       });
-      setAllDeliveries(Array.isArray(deliveries) ? deliveries : []);
+      setAllDeliveries(deliveries.deliveries);
 
       setIsClockedIn(status?.isClockedIn && status.status === 'approved');
       setClockInTime(
@@ -62,11 +70,53 @@ const useDriverDashboardData = (user, navigate) => {
     }
   }, []);
 
+  // Add function to fetch deliveries by date range with pagination
+  const fetchDeliveriesByDate = useCallback(
+    async (start, end, pageNum = 1, filter) => {
+      setLoading(true);
+      try {
+        const data = await fetchDeliveriesByDateRange(
+          start,
+          end,
+          pageNum,
+          itemsPerPage,
+          filter
+        );
+        setAllDeliveries(data.deliveries);
+        setCounts({
+          assigned: data.assigned,
+          total: data.total,
+        });
+        setTotalPages(
+          Math.ceil(
+            (filter === 'assigned' ? data.assigned : data.total || 0) /
+              itemsPerPage
+          )
+        );
+      } catch (err) {
+        console.error('🔴 Error fetching deliveries by date:', err);
+        setAllDeliveries([]);
+        setCounts({ assigned: 0, total: 0 });
+        setTotalPages(0);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [user?._id, itemsPerPage]
+  );
+
   useEffect(() => {
     if (user?._id) {
       loadInitialData();
     }
   }, [user?._id, loadInitialData]);
+
+  // Fetch deliveries when date range or page changes
+  useEffect(() => {
+    if (user?._id && (startDate || endDate)) {
+      fetchDeliveriesByDate(startDate, endDate, page, filter);
+    }
+  }, [user?._id, startDate, endDate, page, fetchDeliveriesByDate, filter]);
 
   useEffect(() => {
     let interval;
@@ -135,21 +185,24 @@ const useDriverDashboardData = (user, navigate) => {
     }
   };
 
-  const filteredDeliveries = allDeliveries.filter((del) =>
-    filter === 'assigned'
-      ? del.driver === user?._id || del.driver?._id === user?._id
-      : true
-  );
-  filteredDeliveries.sort((a, b) => {
-    const dateA = new Date(a.deliveryDate);
-    const dateB = new Date(b.deliveryDate);
-    return dateB - dateA;
-  });
+  const handleDateChange = (newStartDate, newEndDate) => {
+    setStartDate(newStartDate);
+    setEndDate(newEndDate);
+    setPage(1); // Reset to first page when dates change
+  };
+
+  const handlePageChange = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  useEffect(() => {
+    setPage(1);
+  }, [filter]);
 
   return {
     showGallery,
     setShowGallery,
-    deliveries: filteredDeliveries,
+    deliveries: allDeliveries,
     filter,
     setFilter,
     isClockedIn,
@@ -163,6 +216,14 @@ const useDriverDashboardData = (user, navigate) => {
     lastSessionEarnings,
     submittingClockIn,
     counts,
+    // Add new return values
+    startDate,
+    endDate,
+    page,
+    totalPages,
+    loading,
+    onDateChange: handleDateChange,
+    onPageChange: handlePageChange,
   };
 };
 
