@@ -60,7 +60,6 @@ const NewLeaseForm = ({ prefill, fromDelivery = false }) => {
     driver: '',
     damageReport: '',
     hasTitle: false,
-    odometer: null,
     title: null,
     leaseReturnMedia: [],
     year: '',
@@ -200,7 +199,6 @@ const NewLeaseForm = ({ prefill, fromDelivery = false }) => {
       [name]: name === 'leaseReturnMedia' ? Array.from(files) : files[0],
     }));
   };
-  console.log({ user });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -208,11 +206,6 @@ const NewLeaseForm = ({ prefill, fromDelivery = false }) => {
     setLoading(true);
 
     try {
-      const odometerKey = await uploadToS3(
-        form.odometer,
-        'lease-return',
-        form.customerName
-      );
       const titleKey = form.title
         ? await uploadToS3(form.title, 'lease-return', form.customerName)
         : null;
@@ -229,7 +222,6 @@ const NewLeaseForm = ({ prefill, fromDelivery = false }) => {
         credentials: 'include',
         body: JSON.stringify({
           ...form,
-          odometerKey,
           titleKey,
           leaseReturnMediaKeys,
         }),
@@ -431,16 +423,6 @@ const NewLeaseForm = ({ prefill, fromDelivery = false }) => {
               rows={3}
             />
 
-            <Box mt={2}>
-              <Typography variant="body1">Upload Odometer Picture *</Typography>
-              <input
-                type="file"
-                name="odometer"
-                accept="image/*"
-                onChange={handleFile}
-                required
-              />
-            </Box>
             <Box mt={2}>
               <Typography variant="body1">
                 Upload Title Picture (optional)

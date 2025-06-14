@@ -104,7 +104,6 @@ const BonusUpload = ({ onCountUpdate }) => {
       // Step 2: Upload to S3
       const uploadRes = await fetch(uploadUrl, {
         method: 'PUT',
-        headers: { 'Content-Type': file.type },
         body: file,
       });
 
