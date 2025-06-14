@@ -1,4 +1,10 @@
-import React, { useEffect, useState, useContext, useCallback } from 'react';
+import React, {
+  useEffect,
+  useState,
+  useContext,
+  useCallback,
+  useRef,
+} from 'react';
 import {
   Box,
   Container,
@@ -32,10 +38,15 @@ import {
   PlayCircleOutline,
   Image as ImageIcon,
   Search,
+  Print as PrintIcon,
+  Close as CloseIcon,
 } from '@mui/icons-material';
+
 import { AuthContext } from '../contexts/AuthContext';
 import Topbar from '../components/Topbar';
-import { format, set } from 'date-fns';
+import { format } from 'date-fns';
+import OdometerAndDamageDisclosureForm from '../components/OdometerAndDamageDisclosureForm';
+import html2pdf from 'html2pdf.js';
 
 const api = process.env.REACT_APP_API_URL;
 
@@ -75,7 +86,55 @@ const LeaseReturnsList = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [groundingNote, setGroundingNote] = useState('');
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
+  const [showOdometerDisclosure, setShowOdometerDisclosure] = useState(false);
 
+  const printRef = useRef();
+  const handlePrint = () => {
+    const element = printRef.current;
+
+    if (!element) {
+      console.error('Print element not found');
+      return;
+    }
+
+    const opt = {
+      filename: `Odometer_Damage_Disclosure_${
+        new Date().toISOString().split('T')[0]
+      }.pdf`,
+      image: { type: 'jpeg', quality: 1 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        letterRendering: true,
+        allowTaint: true,
+      },
+      jsPDF: {
+        unit: 'in',
+        format: 'letter',
+        orientation: 'portrait',
+      },
+    };
+
+    const printButtons = element.querySelectorAll('.no-print');
+    printButtons.forEach((btn) => (btn.style.display = 'none'));
+
+    html2pdf()
+      .set(opt)
+      .from(element)
+      .save()
+      .then(() => {
+        printButtons.forEach((btn) => (btn.style.display = ''));
+      })
+      .catch((error) => {
+        console.error('PDF generation failed:', error);
+        setSnack({
+          open: true,
+          msg: 'Failed to generate PDF',
+          severity: 'error',
+        });
+        printButtons.forEach((btn) => (btn.style.display = ''));
+      });
+  };
   // Debounced search function
   const debounceSearch = useCallback(() => {
     const timeoutId = setTimeout(() => {
@@ -768,12 +827,20 @@ const LeaseReturnsList = () => {
                         <Typography variant="subtitle2" color="text.secondary">
                           Odometer Disclosure
                         </Typography>
-                        <Typography variant="body1" fontWeight="500">
-                          {selectedLease.odometerDisclosure ? 
-                        //view in a modal
-                        <  
-                        }
-                        </Typography>
+                        {selectedLease.odometerDisclosure ? (
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            onClick={() => setShowOdometerDisclosure(true)}
+                            sx={{ mt: 0.5 }}
+                          >
+                            View Statement
+                          </Button>
+                        ) : (
+                          <Typography variant="body2" color="text.secondary">
+                            Not Available
+                          </Typography>
+                        )}
                       </Grid>
                     </Grid>
 
@@ -1264,6 +1331,80 @@ const LeaseReturnsList = () => {
               Close
             </Button>
           </DialogActions>
+        </Dialog>
+
+        {/* Odometer Disclosure Dialog */}
+        <Dialog
+          open={showOdometerDisclosure}
+          onClose={() => setShowOdometerDisclosure(false)}
+          maxWidth="lg"
+          fullWidth
+          PaperProps={{
+            sx: {
+              borderRadius: 3,
+              maxHeight: '100vh',
+            },
+          }}
+        >
+          <DialogTitle
+            sx={{
+              fontWeight: 700,
+              fontSize: '1.5rem',
+              textAlign: 'center',
+            }}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <Typography variant="h6">
+                Odometer and Damage Disclosure Statement
+              </Typography>
+              <Box>
+                <Button
+                  startIcon={<PrintIcon />}
+                  onClick={handlePrint}
+                  variant="outlined"
+                  sx={{ mr: 1 }}
+                >
+                  Print
+                </Button>
+                <IconButton
+                  onClick={() => {
+                    setShowOdometerDisclosure(false);
+                  }}
+                >
+                  <CloseIcon />
+                </IconButton>
+              </Box>
+            </Box>
+          </DialogTitle>
+
+          <DialogContent sx={{ p: 0 }}>
+            <Box
+              ref={printRef}
+              sx={{
+                p: 2,
+                backgroundColor: 'white',
+                minHeight: '100vh',
+                '& .no-print': {
+                  '@media print': {
+                    display: 'none !important',
+                  },
+                },
+              }}
+            >
+              {selectedLease?.odometerDisclosure && (
+                <OdometerAndDamageDisclosureForm
+                  data={selectedLease.odometerDisclosure}
+                  viewOnly={true}
+                />
+              )}
+            </Box>
+          </DialogContent>
         </Dialog>
       </Container>
     </Container>
