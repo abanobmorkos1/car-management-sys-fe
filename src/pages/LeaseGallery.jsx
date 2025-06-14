@@ -168,19 +168,7 @@ const LeaseReturnsList = () => {
         /\.(jpg|jpeg|png|webp)$/i.test(k)
       );
       if (!key) {
-        if (
-          lease.odometerKey &&
-          /\.(jpg|jpeg|png|webp)$/i.test(lease.odometerKey)
-        ) {
-          thumbs[lease._id] =
-            `${api}/api/s3/signed-url?key=${encodeURIComponent(
-              lease.odometerKey
-            )}`;
-          continue;
-        } else if (
-          lease.titleKey &&
-          /\.(jpg|jpeg|png|webp)$/i.test(lease.titleKey)
-        ) {
+        if (lease.titleKey && /\.(jpg|jpeg|png|webp)$/i.test(lease.titleKey)) {
           thumbs[lease._id] =
             `${api}/api/s3/signed-url?key=${encodeURIComponent(
               lease.titleKey
@@ -218,16 +206,8 @@ const LeaseReturnsList = () => {
   }, [debouncedSearch, searchField, statusFilter]);
 
   const handleViewLease = async (lease) => {
-    const odometerUrl = `${api}/api/s3/signed-url?key=${encodeURIComponent(
-      lease.odometerKey
-    )}`;
     const titleUrl = lease.hasTitle
       ? `${api}/api/s3/signed-url?key=${encodeURIComponent(lease.titleKey)}`
-      : null;
-    const odometerStatementUrl = lease.odometerStatementKey
-      ? `${api}/api/s3/signed-url?key=${encodeURIComponent(
-          lease.odometerStatementKey
-        )}`
       : null;
     const mediaKeys = lease.leaseReturnMediaKeys || [];
     const mediaFiles = await Promise.all(
@@ -244,11 +224,9 @@ const LeaseReturnsList = () => {
       .map((file) => file.url);
     setSelectedLease({
       ...lease,
-      odometerPicture: odometerUrl,
       titlePicture: titleUrl,
       damagePictures,
       damageVideos,
-      odometerStatementUrl,
     });
     setSelectedLeaseStatus({
       groundingStatus: lease.groundingStatus || '',
@@ -784,6 +762,18 @@ const LeaseReturnsList = () => {
                             ).sx,
                           }}
                         />
+                      </Grid>
+                      {/* /odometerDisclosure */}
+                      <Grid item xs={12} md={4}>
+                        <Typography variant="subtitle2" color="text.secondary">
+                          Odometer Disclosure
+                        </Typography>
+                        <Typography variant="body1" fontWeight="500">
+                          {selectedLease.odometerDisclosure ? 
+                        //view in a modal
+                        <  
+                        }
+                        </Typography>
                       </Grid>
                     </Grid>
 
