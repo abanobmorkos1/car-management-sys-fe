@@ -23,6 +23,8 @@ const OwnerDashboard = () => {
     fetchDeliveriesByRange,
     approveOrRejectClock,
     setSelectedDate,
+    chartLoading = false,
+    chartData,
   } = useOwnerDashboardData();
 
   const handlePageChange = (event, value) => {
@@ -44,18 +46,20 @@ const OwnerDashboard = () => {
       deliveries={deliveries}
       totalDeliveries={totalDeliveries}
       clockSessions={clockSessions}
-      pendingRequests={pendingRequests}
       selectedDate={selectedDate}
       startDate={startDate}
       endDate={endDate}
       page={page}
       loading={loading}
       updateDateAndFetchSessions={updateDateAndFetchSessions}
+      pendingRequests={pendingRequests}
       onApprove={(id) => approveOrRejectClock(id, true)}
       onReject={(id) => approveOrRejectClock(id, false)}
       setSelectedDate={setSelectedDate}
       onDateRangeChange={handleDateRangeChange}
       onPageChange={handlePageChange}
+      chartData={chartData}
+      chartLoading={chartLoading}
     />
   );
 };

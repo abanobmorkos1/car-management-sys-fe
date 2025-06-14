@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Container,
@@ -17,6 +17,9 @@ import {
   Select,
   FormControl,
   InputLabel,
+  Paper,
+  Grid,
+  Chip,
 } from '@mui/material';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
@@ -24,7 +27,7 @@ import OwnerDeliveryCard from './OwnerDeliveryCard';
 import ClockSessionItem from './ClockSessionItem';
 import ClockApprovalCard from './ClockApprovalCard';
 import Topbar from './Topbar';
-import { format, isValid } from 'date-fns';
+import { Bar, Line } from 'react-chartjs-2';
 
 const OwnerDashboardLayout = ({
   deliveries = [],
@@ -33,14 +36,14 @@ const OwnerDashboardLayout = ({
   pendingRequests = [],
   onApprove = () => {},
   onReject = () => {},
-  setSelectedDate = () => {},
-  selectedDate = new Date(),
   startDate = new Date(),
   endDate = new Date(),
   page = 1,
   loading = false,
   onDateRangeChange = () => {},
   onPageChange = () => {},
+  chartData = null,
+  chartLoading = false,
 }) => {
   const [loadingId, setLoadingId] = useState(null);
   const [selectedDriver, setSelectedDriver] = useState('all');
@@ -108,7 +111,71 @@ const OwnerDashboardLayout = ({
       ? clockSessions
       : clockSessions.filter((session) => session.driver._id === selectedDriver)
     : [];
+  const chartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top',
+      },
+      title: {
+        display: true,
+        text: 'COD Collections Over Time',
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          callback: function (value) {
+            return '$' + value.toLocaleString();
+          },
+        },
+      },
+    },
+  };
 
+  const prepareChartData = () => {
+    if (!chartData || !chartData?.dailyCollections?.length) return null;
+
+    return {
+      labels: chartData.dailyCollections.map((item) =>
+        new Date(item.date).toLocaleDateString()
+      ),
+      datasets: [
+        {
+          label: 'Total COD Collected',
+          data: chartData.dailyCollections.map((item) => item.totalAmount),
+          backgroundColor: 'rgba(54, 162, 235, 0.5)',
+          borderColor: 'rgba(54, 162, 235, 1)',
+          borderWidth: 2,
+        },
+        {
+          label: 'Number of Collections',
+          data: chartData.dailyCollections.map((item) => item.count),
+          backgroundColor: 'rgba(255, 99, 132, 0.5)',
+          borderColor: 'rgba(255, 99, 132, 1)',
+          borderWidth: 2,
+          yAxisID: 'y1',
+        },
+      ],
+    };
+  };
+
+  const chartOptionsWithSecondAxis = {
+    ...chartOptions,
+    scales: {
+      ...chartOptions.scales,
+      y1: {
+        type: 'linear',
+        display: true,
+        position: 'right',
+        beginAtZero: true,
+        grid: {
+          drawOnChartArea: false,
+        },
+      },
+    },
+  };
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
       <Topbar />
@@ -164,7 +231,74 @@ const OwnerDashboardLayout = ({
                   </Stack>
                 </Box>
               </LocalizationProvider>
+              {loading ? (
+                <Box
+                  display="flex"
+                  justifyContent="center"
+                  alignItems="center"
+                  minHeight="300px"
+                >
+                  <CircularProgress />
+                </Box>
+              ) : (
+                <Stack spacing={4}>
+                  {/* Charts Section - Moved above deliveries */}
+                  <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
+                    {chartLoading ? (
+                      <Box
+                        display="flex"
+                        justifyContent="center"
+                        alignItems="center"
+                        minHeight="400px"
+                      >
+                        <CircularProgress />
+                      </Box>
+                    ) : chartData?.dailyCollections?.length ? (
+                      <Grid display="flex" spacing={3} columns={2}>
+                        <Card elevation={2} sx={{ p: 3 }}>
+                          <Typography variant="h6" gutterBottom>
+                            Daily COD Collections
+                          </Typography>
+                          <Box sx={{ height: '400px' }}>
+                            {prepareChartData() && (
+                              <Bar
+                                data={prepareChartData()}
+                                options={{
+                                  ...chartOptions,
+                                  maintainAspectRatio: false,
+                                }}
+                              />
+                            )}
+                          </Box>
+                        </Card>
 
+                        <Card elevation={2} sx={{ p: 3 }}>
+                          <Typography variant="h6" gutterBottom>
+                            COD Trend Over Time
+                          </Typography>
+                          <Box sx={{ height: '400px' }}>
+                            {prepareChartData() && (
+                              <Line
+                                data={prepareChartData()}
+                                options={{
+                                  ...chartOptionsWithSecondAxis,
+                                  maintainAspectRatio: false,
+                                }}
+                              />
+                            )}
+                          </Box>
+                        </Card>
+                      </Grid>
+                    ) : (
+                      <Paper elevation={1} sx={{ p: 3, textAlign: 'center' }}>
+                        <Typography variant="h6" color="text.secondary">
+                          No chart data available for the selected date range.
+                        </Typography>
+                      </Paper>
+                    )}
+                  </Paper>
+                </Stack>
+              )}
               {loading ? (
                 <Box
                   display="flex"

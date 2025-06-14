@@ -172,7 +172,6 @@ const SalesDashboard = () => {
     setEditOpen(false);
   };
 
-  // Chart configuration
   const chartOptions = {
     responsive: true,
     plugins: {

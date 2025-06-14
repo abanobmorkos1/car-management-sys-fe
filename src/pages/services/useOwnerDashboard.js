@@ -5,7 +5,7 @@ import {
   fetchPendingClockInRequests,
   handleClockApproval,
 } from './ownerDashboardService';
-
+const api = process.env.REACT_APP_API_URL;
 const useOwnerDashboardData = () => {
   const [deliveries, setDeliveries] = useState([]);
   const [totalDeliveries, setTotalDeliveries] = useState(0);
@@ -13,6 +13,8 @@ const useOwnerDashboardData = () => {
   const [pendingRequests, setPendingRequests] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [loading, setLoading] = useState(false);
+  const [chartData, setChartData] = useState(null);
+  const [chartLoading, setChartLoading] = useState(false);
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -56,6 +58,8 @@ const useOwnerDashboardData = () => {
 
   const fetchDeliveriesByRange = async (startDate, endDate, pageNum = 1) => {
     setLoading(true);
+    console.log('im called');
+    await fetchCODChartData(startDate, endDate);
     try {
       const data = await fetchDeliveriesByDate(startDate, endDate, pageNum);
       setDeliveries(Array.isArray(data.deliveries) ? data.deliveries : []);
@@ -68,6 +72,47 @@ const useOwnerDashboardData = () => {
       setLoading(false);
     }
   };
+  const fetchCODChartData = async (dateFrom = startDate, dateTo = endDate) => {
+    setChartLoading(true);
+    try {
+      const from = new Date(
+        dateFrom.getFullYear(),
+        dateFrom.getMonth(),
+        dateFrom.getDate()
+      );
+      const to = new Date(
+        dateTo.getFullYear(),
+        dateTo.getMonth(),
+        dateTo.getDate()
+      );
+      to.setHours(23, 59, 59, 999);
+
+      const params = new URLSearchParams({
+        start: from.toISOString(),
+        end: to.toISOString(),
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      });
+
+      const res = await fetch(`${api}/api/delivery/cod-chart-data?${params}`, {
+        credentials: 'include',
+        headers: {
+          'Cache-Control': 'no-cache',
+          Pragma: 'no-cache',
+        },
+      });
+      const data = await res.json();
+      setChartData(data);
+    } catch (err) {
+      console.error('Error fetching COD chart data:', err);
+      setChartData(null);
+    } finally {
+      setChartLoading(false);
+    }
+  };
+  useEffect(() => {
+    const today = new Date();
+    fetchDeliveriesByRange(today, today);
+  }, []);
 
   return {
     deliveries,
@@ -80,6 +125,8 @@ const useOwnerDashboardData = () => {
     fetchDeliveriesByRange,
     approveOrRejectClock,
     setSelectedDate,
+    chartData,
+    chartLoading,
   };
 };
 

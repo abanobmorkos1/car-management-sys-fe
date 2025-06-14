@@ -16,6 +16,9 @@ import {
   Select,
   MenuItem,
   InputLabel,
+  Snackbar,
+  Alert,
+  Button,
 } from '@mui/material';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import {
@@ -25,6 +28,7 @@ import {
   PhotoCamera,
   Search,
   DateRange,
+  AttachMoney,
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import Topbar from './Topbar';
@@ -32,6 +36,8 @@ import ManagerDeliveryCard from './ManagerDeliveryCard';
 import BonusUpload from '../pages/Driver/BonusUpload';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { format } from 'date-fns';
+import ClockApprovalCard from './ClockApprovalCard';
+import { useNavigate } from 'react-router-dom';
 
 const ManagerDashboardLayout = ({
   drivers = [],
@@ -39,13 +45,22 @@ const ManagerDashboardLayout = ({
   onAssignDriver = () => {},
   handleStatusChange,
   triggerInitialBonusFetch,
+  pendingRequests = [],
+  onApprove = () => {},
+  onReject = () => {},
 }) => {
+  const navigate = useNavigate();
+  const [loadingId, setLoadingId] = useState(null);
   const theme = useTheme();
   const [deliveries, setDeliveries] = useState([]);
   const [totalDeliveries, setTotalDeliveries] = useState(0);
   const [loading, setLoading] = useState(true);
   const [bonusCounts, setBonusCounts] = useState({ review: 0, customer: 0 });
-
+  const [snack, setSnack] = useState({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date());
 
@@ -62,6 +77,45 @@ const ManagerDashboardLayout = ({
       updatedCounts?.customer !== undefined
     ) {
       setBonusCounts(updatedCounts);
+    }
+  };
+  const handleApprove = async (id) => {
+    try {
+      setLoadingId(id);
+      onApprove(id);
+      setSnack({
+        open: true,
+        message: 'Clock-in approved ✅',
+        severity: 'success',
+      });
+    } catch (err) {
+      setSnack({
+        open: true,
+        message: 'Failed to approve ❌',
+        severity: 'error',
+      });
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
+  const handleReject = async (id) => {
+    try {
+      setLoadingId(id);
+      await onReject(id);
+      setSnack({
+        open: true,
+        message: 'Clock-in rejected ❌',
+        severity: 'info',
+      });
+    } catch (err) {
+      setSnack({
+        open: true,
+        message: 'Failed to reject ❌',
+        severity: 'error',
+      });
+    } finally {
+      setLoadingId(null);
     }
   };
 
@@ -236,7 +290,99 @@ const ManagerDashboardLayout = ({
               </Grid>
             ))}
           </Grid>
-
+          <Paper
+            elevation={3}
+            sx={{
+              p: 3,
+              mb: 4,
+              borderRadius: 3,
+              bgcolor: 'background.paper',
+            }}
+          >
+            <Typography
+              variant="h6"
+              fontWeight="bold"
+              color="text.primary"
+              mb={3}
+              display="flex"
+              alignItems="center"
+              gap={1}
+            >
+              <Assignment color="primary" />
+              Quick Actions
+            </Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={4}>
+                <Button
+                  variant="contained"
+                  fullWidth
+                  size="large"
+                  startIcon={<DirectionsCar />}
+                  onClick={() => navigate('/new-car')}
+                  sx={{
+                    py: 2,
+                    borderRadius: 2,
+                    fontWeight: 'bold',
+                    background:
+                      'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+                    '&:hover': {
+                      transform: 'translateY(-2px)',
+                      boxShadow: 4,
+                    },
+                    transition: 'all 0.3s ease',
+                  }}
+                >
+                  Post New Car
+                </Button>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <Button
+                  variant="contained"
+                  fullWidth
+                  size="large"
+                  startIcon={<Assignment />}
+                  onClick={() => navigate('/lease/create')}
+                  sx={{
+                    py: 2,
+                    borderRadius: 2,
+                    fontWeight: 'bold',
+                    background:
+                      'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+                    '&:hover': {
+                      transform: 'translateY(-2px)',
+                      boxShadow: 4,
+                    },
+                    transition: 'all 0.3s ease',
+                  }}
+                >
+                  Lease Return
+                </Button>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <Button
+                  variant="contained"
+                  fullWidth
+                  size="large"
+                  startIcon={<AttachMoney />}
+                  onClick={() => navigate('/driver/cod/new')}
+                  sx={{
+                    py: 2,
+                    borderRadius: 2,
+                    fontWeight: 'bold',
+                    background:
+                      'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+                    '&:hover': {
+                      transform: 'translateY(-2px)',
+                      boxShadow: 4,
+                    },
+                    transition: 'all 0.3s ease',
+                  }}
+                >
+                  Create COD
+                </Button>
+              </Grid>
+            </Grid>
+          </Paper>
           {/* Enhanced Bonus Section */}
           <Grid item xs={12} md={6}>
             <Card
@@ -512,9 +658,46 @@ const ManagerDashboardLayout = ({
                 </Box>
               )}
             </Box>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" fontWeight="bold" gutterBottom>
+                  📝 Pending Clock-Ins ({pendingRequests?.length || 0})
+                </Typography>
+                {Array.isArray(pendingRequests) &&
+                pendingRequests.length > 0 ? (
+                  pendingRequests.map((req) => (
+                    <Box key={req._id} mb={2}>
+                      <ClockApprovalCard
+                        request={req}
+                        onApprove={handleApprove}
+                        onReject={handleReject}
+                        loading={loadingId === req._id}
+                      />
+                    </Box>
+                  ))
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    No pending clock-in requests.
+                  </Typography>
+                )}
+              </CardContent>
+            </Card>
           </Paper>
         </Container>
       </Box>
+
+      <Snackbar
+        open={snack.open}
+        autoHideDuration={4000}
+        onClose={() => setSnack({ ...snack, open: false })}
+      >
+        <Alert
+          severity={snack.severity}
+          onClose={() => setSnack({ ...snack, open: false })}
+        >
+          {snack.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };

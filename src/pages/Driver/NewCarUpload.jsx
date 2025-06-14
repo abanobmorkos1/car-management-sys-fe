@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   Box,
   Container,
@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import Topbar from '../../components/Topbar';
+import { AuthContext } from '../../contexts/AuthContext';
 const api = process.env.REACT_APP_API_URL;
 
 const NewCarForm = () => {
@@ -231,7 +232,8 @@ const NewCarForm = () => {
           pictureFiles: [],
           videoFile: null,
         });
-        navigate('/driver/dashboard');
+
+        navigate('/cars');
       } else {
         const data = await res.json();
         throw new Error(data.message || 'Submission failed');

@@ -331,6 +331,7 @@ const CarGallery = () => {
             <Grid item xs={12} sm={6} lg={4} key={car._id}>
               <Card
                 sx={{
+                  minWidth: 440,
                   height: 480,
                   display: 'flex',
                   flexDirection: 'column',
@@ -697,7 +698,7 @@ const CarGallery = () => {
                             Phone
                           </Typography>
                           <Typography variant="body1">
-                            {selectedCar.driver?.phone || 'N/A'}
+                            {selectedCar.driver?.phoneNumber || 'N/A'}
                           </Typography>
                         </Box>
                       </Stack>
@@ -750,7 +751,7 @@ const CarGallery = () => {
                             Phone
                           </Typography>
                           <Typography variant="body1">
-                            {selectedCar.salesPerson?.phone || 'N/A'}
+                            {selectedCar.salesPerson?.phoneNumber || 'N/A'}
                           </Typography>
                         </Box>
                       </Stack>

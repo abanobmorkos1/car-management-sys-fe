@@ -1,12 +1,14 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
 import ManagerDashboardLayout from '../../components/ManagerDashboardLayout';
+import useOwnerDashboardData from '../services/useOwnerDashboard';
 
 const ManagerDashboard = () => {
   const { user } = useContext(AuthContext);
   const [drivers, setDrivers] = useState([]);
   const [showGallery, setShowGallery] = useState(false);
-
+  const { pendingRequests = [], approveOrRejectClock } =
+    useOwnerDashboardData();
   useEffect(() => {
     const fetchDrivers = async () => {
       try {
@@ -50,6 +52,9 @@ const ManagerDashboard = () => {
       showGallery={showGallery}
       setShowGallery={setShowGallery}
       triggerInitialBonusFetch={true}
+      pendingRequests={pendingRequests}
+      onApprove={(id) => approveOrRejectClock(id, true)}
+      onReject={(id) => approveOrRejectClock(id, false)}
     />
   );
 };
