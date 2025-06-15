@@ -95,8 +95,7 @@ const OdometerAndDamageDisclosureForm = ({
         }
 
         if (data.seller.dateOfStatement) {
-          const date = new Date(data.seller.dateOfStatement);
-          setSellerDate(date.toISOString().split('T')[0]);
+          setSellerDate(data.seller.dateOfStatement);
         }
       }
 
@@ -115,8 +114,7 @@ const OdometerAndDamageDisclosureForm = ({
         }
 
         if (data.newOwner.dateOfStatement) {
-          const date = new Date(data.newOwner.dateOfStatement);
-          setNewOwnerDate(date.toISOString().split('T')[0]);
+          setNewOwnerDate(data.newOwner.dateOfStatement);
         }
       }
     }
@@ -160,8 +158,8 @@ const OdometerAndDamageDisclosureForm = ({
         status: damageStatus,
       },
       seller: {
-        signature: sellerSignatureData.signature,
-        proofPhoto: sellerSignatureData.proofPhoto,
+        signature: sellerSignatureData?.signature,
+        proofPhoto: sellerSignatureData?.proofPhoto,
         name: sellerName,
         address: {
           street: sellerAddress,
@@ -169,10 +167,10 @@ const OdometerAndDamageDisclosureForm = ({
           state: sellerState,
           zipCode: sellerZip,
         },
-        dateOfStatement: sellerDate ? new Date(sellerDate) : null,
+        dateOfStatement: sellerDate,
       },
       newOwner: {
-        signature: newOwnerSignatureData.signature,
+        signature: newOwnerSignatureData?.signature,
         name: newOwnerName,
         address: {
           street: newOwnerAddress,
@@ -180,7 +178,7 @@ const OdometerAndDamageDisclosureForm = ({
           state: newOwnerState,
           zipCode: newOwnerZip,
         },
-        dateOfStatement: newOwnerDate ? new Date(newOwnerDate) : null,
+        dateOfStatement: newOwnerDate,
       },
     };
 
@@ -889,9 +887,9 @@ const OdometerAndDamageDisclosureForm = ({
                     },
                   }}
                 >
-                  {sellerSignatureData ? (
+                  {sellerSignatureData?.signature ? (
                     <img
-                      src={sellerSignatureData.signature}
+                      src={sellerSignatureData?.signature}
                       alt="Seller Signature"
                       style={{
                         maxWidth: '100%',
@@ -1117,7 +1115,7 @@ const OdometerAndDamageDisclosureForm = ({
                 <TextField
                   fullWidth
                   size="small"
-                  type="date"
+                  type="text"
                   value={sellerDate}
                   onChange={(e) => setSellerDate(e.target.value)}
                   disabled={viewOnly}
@@ -1191,7 +1189,7 @@ const OdometerAndDamageDisclosureForm = ({
                     },
                   }}
                 >
-                  {newOwnerSignatureData ? (
+                  {newOwnerSignatureData?.signature ? (
                     <img
                       src={newOwnerSignatureData.signature}
                       alt="New Owner Signature"
@@ -1419,7 +1417,7 @@ const OdometerAndDamageDisclosureForm = ({
                 <TextField
                   fullWidth
                   size="small"
-                  type="date"
+                  type="text"
                   value={newOwnerDate}
                   onChange={(e) => setNewOwnerDate(e.target.value)}
                   disabled={viewOnly}
