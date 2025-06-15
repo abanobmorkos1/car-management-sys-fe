@@ -19,8 +19,9 @@ import {
   Snackbar,
   Alert,
   Button,
+  Collapse,
+  IconButton,
 } from '@mui/material';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import {
   Assignment,
   DirectionsCar,
@@ -29,6 +30,8 @@ import {
   Search,
   DateRange,
   AttachMoney,
+  ExpandMore,
+  ExpandLess,
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import Topbar from './Topbar';
@@ -68,6 +71,22 @@ const ManagerDashboardLayout = ({
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(5);
   const [totalPages, setTotalPages] = useState(0);
+
+  // Collapsible sections state
+  const [sectionsExpanded, setSectionsExpanded] = useState({
+    stats: false,
+    quickActions: false,
+    bonusUploads: false,
+    deliveries: false,
+    pendingClockIns: false,
+  });
+
+  const toggleSection = (section) => {
+    setSectionsExpanded((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
 
   const api = process.env.REACT_APP_API_URL;
 
@@ -223,7 +242,7 @@ const ManagerDashboardLayout = ({
         }}
       >
         <Container maxWidth="xl">
-          {/* Enhanced Header */}
+          {/* Enhanced Header - Always visible */}
           <Paper
             elevation={3}
             sx={{
@@ -250,316 +269,336 @@ const ManagerDashboardLayout = ({
             </Typography>
           </Paper>
 
-          {/* Enhanced Stats Cards */}
-          <Grid container spacing={3} sx={{ mb: 4 }}>
-            {[
-              {
-                title: 'Total Deliveries',
-                value: totalDeliveries,
-                icon: <Assignment />,
-                color: theme.gradients?.info,
-              },
-              {
-                title: 'Active Drivers',
-                value: drivers.length,
-                icon: <DirectionsCar />,
-                color: theme.gradients?.success,
-              },
-            ].map((stat, index) => (
-              <Grid item xs={12} sm={6} md={3} key={index}>
-                <Card
-                  sx={{
-                    borderRadius: 3,
-                    background: stat.color,
-                    color: 'white',
-                    '&:hover': {
-                      transform: 'translateY(-4px)',
-                    },
-                  }}
-                >
-                  <CardContent sx={{ textAlign: 'center', p: 3 }}>
-                    <Box sx={{ mb: 2 }}>{stat.icon}</Box>
-                    <Typography variant="h4" fontWeight={700}>
-                      {stat.value}
-                    </Typography>
-                    <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                      {stat.title}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
+          {/* Enhanced Stats Cards - Collapsible */}
           <Paper
             elevation={3}
             sx={{
-              p: 3,
               mb: 4,
               borderRadius: 3,
-              bgcolor: 'background.paper',
+              overflow: 'hidden',
             }}
           >
-            <Typography
-              variant="h6"
-              fontWeight="bold"
-              color="text.primary"
-              mb={3}
-              display="flex"
-              alignItems="center"
-              gap={1}
-            >
-              <Assignment color="primary" />
-              Quick Actions
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={4}>
-                <Button
-                  variant="contained"
-                  fullWidth
-                  size="large"
-                  startIcon={<DirectionsCar />}
-                  onClick={() => navigate('/new-car')}
-                  sx={{
-                    py: 2,
-                    borderRadius: 2,
-                    fontWeight: 'bold',
-                    background:
-                      'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
-                    '&:hover': {
-                      transform: 'translateY(-2px)',
-                      boxShadow: 4,
-                    },
-                    transition: 'all 0.3s ease',
-                  }}
-                >
-                  Post New Car
-                </Button>
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <Button
-                  variant="contained"
-                  fullWidth
-                  size="large"
-                  startIcon={<Assignment />}
-                  onClick={() => navigate('/lease/create')}
-                  sx={{
-                    py: 2,
-                    borderRadius: 2,
-                    fontWeight: 'bold',
-                    background:
-                      'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
-                    '&:hover': {
-                      transform: 'translateY(-2px)',
-                      boxShadow: 4,
-                    },
-                    transition: 'all 0.3s ease',
-                  }}
-                >
-                  Lease Return
-                </Button>
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <Button
-                  variant="contained"
-                  fullWidth
-                  size="large"
-                  startIcon={<AttachMoney />}
-                  onClick={() => navigate('/driver/cod/new')}
-                  sx={{
-                    py: 2,
-                    borderRadius: 2,
-                    fontWeight: 'bold',
-                    background:
-                      'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
-                    '&:hover': {
-                      transform: 'translateY(-2px)',
-                      boxShadow: 4,
-                    },
-                    transition: 'all 0.3s ease',
-                  }}
-                >
-                  Create COD
-                </Button>
-              </Grid>
-            </Grid>
-          </Paper>
-          {/* Enhanced Bonus Section */}
-          <Grid item xs={12} md={6}>
-            <Card
-              elevation={4}
+            <Box
               sx={{
-                borderRadius: 3,
-                background: 'linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%)',
-                height: '100%',
-                border: '1px solid rgba(33, 150, 243, 0.1)',
+                p: 3,
+                pb: 2,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                cursor: 'pointer',
+                background: theme.gradients?.info,
+                color: 'white',
+                '&:hover': { opacity: 0.9 },
               }}
+              onClick={() => toggleSection('stats')}
             >
-              <CardContent sx={{ p: 3 }}>
-                <Box display="flex" alignItems="center" mb={2}>
-                  <PhotoCamera
-                    sx={{ mr: 1, fontSize: '2rem', color: 'primary.main' }}
-                  />
-                  <Typography
-                    variant="h6"
-                    fontWeight="bold"
-                    color="text.primary"
-                  >
-                    Bonus Uploads
-                  </Typography>
-                </Box>
-
-                <Grid container spacing={2} mb={2}>
-                  <Grid item xs={6}>
-                    <Paper
-                      elevation={2}
-                      sx={{
-                        p: 2,
-                        textAlign: 'center',
-                        borderRadius: 2,
-                      }}
-                    >
-                      <ReviewsOutlined color="primary" sx={{ mb: 1 }} />
-                      <Typography
-                        variant="h5"
-                        fontWeight="bold"
-                        color="primary"
+              <Typography variant="h6" fontWeight="bold">
+                📊 Dashboard Statistics
+              </Typography>
+              <IconButton size="small" sx={{ color: 'white' }}>
+                {sectionsExpanded.stats ? <ExpandLess /> : <ExpandMore />}
+              </IconButton>
+            </Box>
+            <Collapse in={sectionsExpanded.stats}>
+              <Box sx={{ p: 3 }}>
+                <Grid container spacing={3}>
+                  {[
+                    {
+                      title: 'Total Deliveries',
+                      value: totalDeliveries,
+                      icon: <Assignment />,
+                      color: theme.gradients?.info,
+                    },
+                    {
+                      title: 'Active Drivers',
+                      value: drivers.length,
+                      icon: <DirectionsCar />,
+                      color: theme.gradients?.success,
+                    },
+                  ].map((stat, index) => (
+                    <Grid item xs={12} sm={6} md={3} key={index}>
+                      <Card
+                        sx={{
+                          borderRadius: 3,
+                          background: stat.color,
+                          color: 'white',
+                          '&:hover': {
+                            transform: 'translateY(-4px)',
+                          },
+                        }}
                       >
-                        {bonusCounts.review}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Reviews
-                      </Typography>
-                    </Paper>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Paper
-                      elevation={2}
-                      sx={{
-                        p: 2,
-                        textAlign: 'center',
-                        borderRadius: 2,
-                      }}
-                    >
-                      <PhotoCamera color="secondary" sx={{ mb: 1 }} />
-                      <Typography
-                        variant="h5"
-                        fontWeight="bold"
-                        color="secondary"
-                      >
-                        {bonusCounts.customer}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Customer Photos
-                      </Typography>
-                    </Paper>
-                  </Grid>
+                        <CardContent sx={{ textAlign: 'center', p: 3 }}>
+                          <Box sx={{ mb: 2 }}>{stat.icon}</Box>
+                          <Typography variant="h4" fontWeight={700}>
+                            {stat.value}
+                          </Typography>
+                          <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                            {stat.title}
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  ))}
                 </Grid>
-
-                <Paper
-                  elevation={2}
-                  sx={{
-                    p: 2,
-                    textAlign: 'center',
-                    borderRadius: 2,
-                    bgcolor: 'success.light',
-                    mb: 2,
-                  }}
-                >
-                  <Typography variant="h6" fontWeight="bold" color="black">
-                    Total Bonus: $
-                    {bonusCounts.review * 20 + bonusCounts.customer * 5}
-                  </Typography>
-                </Paper>
-
-                <BonusUpload
-                  onCountUpdate={(counts) => setBonusCounts(counts)}
-                />
-              </CardContent>
-            </Card>
-          </Grid>
-
-          {/* Date Filter Section */}
-          <Paper
-            elevation={2}
-            sx={{
-              p: 3,
-              mb: 4,
-              borderRadius: 3,
-              background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-            }}
-          >
-            <Stack spacing={3}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <DateRange color="primary" />
-                <Typography variant="h6" fontWeight={600}>
-                  Filter Deliveries by Date
-                </Typography>
               </Box>
+            </Collapse>
+          </Paper>
 
-              <LocalizationProvider dateAdapter={AdapterDateFns}>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    flexDirection: { xs: 'column', sm: 'row' },
-                    gap: 2,
-                    alignItems: { xs: 'stretch', sm: 'center' },
-                  }}
-                >
-                  <DatePicker
-                    label="Start Date"
-                    value={startDate}
-                    onChange={(newValue) => setStartDate(newValue)}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        size="small"
-                        fullWidth
-                        sx={{ minWidth: { xs: 'auto', sm: 200 } }}
-                      />
-                    )}
-                  />
-                  <DatePicker
-                    label="End Date"
-                    value={endDate}
-                    onChange={(newValue) => setEndDate(newValue)}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        size="small"
-                        fullWidth
-                        sx={{ minWidth: { xs: 'auto', sm: 200 } }}
-                      />
-                    )}
-                  />
-                </Box>
-              </LocalizationProvider>
-
-              <Box
+          <Grid container spacing={4}>
+            {/* Quick Actions - Collapsible */}
+            <Grid item xs={12} md={6}>
+              <Paper
+                elevation={3}
                 sx={{
-                  display: 'flex',
-                  flexDirection: { xs: 'column', sm: 'row' },
-                  justifyContent: 'space-between',
-                  alignItems: { xs: 'flex-start', sm: 'center' },
-                  gap: 1,
+                  borderRadius: 3,
+                  bgcolor: 'background.paper',
+                  overflow: 'hidden',
+                  height: 'fit-content',
                 }}
               >
-                <Typography variant="body2" color="text.secondary">
-                  Showing {deliveries.length} of {totalDeliveries} deliveries
-                  (Page {page} of {totalPages})
-                  {startDate &&
-                    endDate &&
-                    ` • Filtered: ${format(
-                      startDate,
-                      'MMM dd, yyyy'
-                    )} to ${format(endDate, 'MMM dd, yyyy')}`}
-                </Typography>
-                {loading && <CircularProgress size={20} />}
-              </Box>
-            </Stack>
-          </Paper>
+                <Box
+                  sx={{
+                    p: 3,
+                    pb: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: 'pointer',
+                    '&:hover': { bgcolor: 'rgba(0,0,0,0.02)' },
+                  }}
+                  onClick={() => toggleSection('quickActions')}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Assignment color="primary" />
+                    <Typography
+                      variant="h6"
+                      fontWeight="bold"
+                      color="text.primary"
+                    >
+                      Quick Actions
+                    </Typography>
+                  </Box>
+                  <IconButton size="small">
+                    {sectionsExpanded.quickActions ? (
+                      <ExpandLess />
+                    ) : (
+                      <ExpandMore />
+                    )}
+                  </IconButton>
+                </Box>
+                <Collapse in={sectionsExpanded.quickActions}>
+                  <Box sx={{ px: 3, pb: 3 }}>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} sm={4}>
+                        <Button
+                          variant="contained"
+                          fullWidth
+                          size="large"
+                          startIcon={<DirectionsCar />}
+                          onClick={() => navigate('/new-car')}
+                          sx={{
+                            py: 2,
+                            borderRadius: 2,
+                            fontWeight: 'bold',
+                            background:
+                              'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+                            '&:hover': {
+                              transform: 'translateY(-2px)',
+                              boxShadow: 4,
+                            },
+                            transition: 'all 0.3s ease',
+                          }}
+                        >
+                          Post New Car
+                        </Button>
+                      </Grid>
+                      <Grid item xs={12} sm={4}>
+                        <Button
+                          variant="contained"
+                          fullWidth
+                          size="large"
+                          startIcon={<Assignment />}
+                          onClick={() => navigate('/lease/create')}
+                          sx={{
+                            py: 2,
+                            borderRadius: 2,
+                            fontWeight: 'bold',
+                            background:
+                              'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+                            '&:hover': {
+                              transform: 'translateY(-2px)',
+                              boxShadow: 4,
+                            },
+                            transition: 'all 0.3s ease',
+                          }}
+                        >
+                          Lease Return
+                        </Button>
+                      </Grid>
+                      <Grid item xs={12} sm={4}>
+                        <Button
+                          variant="contained"
+                          fullWidth
+                          size="large"
+                          startIcon={<AttachMoney />}
+                          onClick={() => navigate('/driver/cod/new')}
+                          sx={{
+                            py: 2,
+                            borderRadius: 2,
+                            fontWeight: 'bold',
+                            background:
+                              'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+                            '&:hover': {
+                              transform: 'translateY(-2px)',
+                              boxShadow: 4,
+                            },
+                            transition: 'all 0.3s ease',
+                          }}
+                        >
+                          Create COD
+                        </Button>
+                      </Grid>
+                    </Grid>
+                  </Box>
+                </Collapse>
+              </Paper>
+            </Grid>
 
-          {/* Enhanced Deliveries Section */}
-          <Paper elevation={2} sx={{ borderRadius: 3, overflow: 'hidden' }}>
+            {/* Bonus Uploads - Collapsible */}
+            <Grid item xs={12} md={6}>
+              <Card
+                elevation={4}
+                sx={{
+                  borderRadius: 3,
+                  background:
+                    'linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%)',
+                  height: 'fit-content',
+                  border: '1px solid rgba(33, 150, 243, 0.1)',
+                }}
+              >
+                <Box
+                  sx={{
+                    p: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: 'pointer',
+                    '&:hover': { bgcolor: 'rgba(0,0,0,0.02)' },
+                  }}
+                  onClick={() => toggleSection('bonusUploads')}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <PhotoCamera
+                      sx={{ fontSize: '2rem', color: 'primary.main' }}
+                    />
+                    <Typography
+                      variant="h6"
+                      fontWeight="bold"
+                      color="text.primary"
+                    >
+                      Bonus Uploads
+                    </Typography>
+                  </Box>
+                  <IconButton size="small">
+                    {sectionsExpanded.bonusUploads ? (
+                      <ExpandLess />
+                    ) : (
+                      <ExpandMore />
+                    )}
+                  </IconButton>
+                </Box>
+                <Collapse in={sectionsExpanded.bonusUploads}>
+                  <CardContent sx={{ pt: 0 }}>
+                    <Box display="flex" alignItems="center" mb={2}>
+                      <PhotoCamera
+                        sx={{ mr: 1, fontSize: '2rem', color: 'primary.main' }}
+                      />
+                      <Typography
+                        variant="h6"
+                        fontWeight="bold"
+                        color="text.primary"
+                      >
+                        Bonus Uploads
+                      </Typography>
+                    </Box>
+
+                    <Grid container spacing={2} mb={2}>
+                      <Grid item xs={6}>
+                        <Paper
+                          elevation={2}
+                          sx={{
+                            p: 2,
+                            textAlign: 'center',
+                            borderRadius: 2,
+                          }}
+                        >
+                          <ReviewsOutlined color="primary" sx={{ mb: 1 }} />
+                          <Typography
+                            variant="h5"
+                            fontWeight="bold"
+                            color="primary"
+                          >
+                            {bonusCounts.review}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            Reviews
+                          </Typography>
+                        </Paper>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Paper
+                          elevation={2}
+                          sx={{
+                            p: 2,
+                            textAlign: 'center',
+                            borderRadius: 2,
+                          }}
+                        >
+                          <PhotoCamera color="secondary" sx={{ mb: 1 }} />
+                          <Typography
+                            variant="h5"
+                            fontWeight="bold"
+                            color="secondary"
+                          >
+                            {bonusCounts.customer}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            Customer Photos
+                          </Typography>
+                        </Paper>
+                      </Grid>
+                    </Grid>
+
+                    <Paper
+                      elevation={2}
+                      sx={{
+                        p: 2,
+                        textAlign: 'center',
+                        borderRadius: 2,
+                        bgcolor: 'success.light',
+                        mb: 2,
+                      }}
+                    >
+                      <Typography variant="h6" fontWeight="bold" color="black">
+                        Total Bonus: $
+                        {bonusCounts.review * 20 + bonusCounts.customer * 5}
+                      </Typography>
+                    </Paper>
+
+                    <BonusUpload
+                      onCountUpdate={(counts) => setBonusCounts(counts)}
+                    />
+                  </CardContent>
+                </Collapse>
+              </Card>
+            </Grid>
+          </Grid>
+
+          {/* Deliveries Section - Collapsible */}
+          <Paper
+            elevation={2}
+            sx={{ mt: 4, borderRadius: 3, overflow: 'hidden' }}
+          >
             <Box
               sx={{
                 p: 3,
@@ -568,7 +607,10 @@ const ManagerDashboardLayout = ({
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
+                cursor: 'pointer',
+                '&:hover': { opacity: 0.9 },
               }}
+              onClick={() => toggleSection('deliveries')}
             >
               <Typography variant="h5" fontWeight={600}>
                 Delivery Management
@@ -577,91 +619,130 @@ const ManagerDashboardLayout = ({
                 <Typography variant="body2" sx={{ opacity: 0.9 }}>
                   {totalDeliveries} total deliveries
                 </Typography>
+                <IconButton size="small" sx={{ color: 'white' }}>
+                  {sectionsExpanded.deliveries ? (
+                    <ExpandLess />
+                  ) : (
+                    <ExpandMore />
+                  )}
+                </IconButton>
               </Box>
             </Box>
-            <Box sx={{ p: 3 }}>
-              {loading ? (
-                <Grid container spacing={3} sx={{ alignItems: 'stretch' }}>
-                  {[...Array(4)].map((_, index) => (
-                    <Grid item xs={12} md={6} key={index}>
-                      <Card sx={{ height: 300, borderRadius: 3 }}>
-                        <CardContent>
-                          <Skeleton variant="text" height={32} />
-                          <Skeleton variant="text" height={24} />
-                          <Skeleton variant="text" height={24} />
-                          <Skeleton
-                            variant="rectangular"
-                            height={40}
-                            sx={{ mt: 2 }}
-                          />
-                        </CardContent>
-                      </Card>
-                    </Grid>
-                  ))}
-                </Grid>
-              ) : deliveries.length > 0 ? (
-                <Grid container spacing={3} sx={{ alignItems: 'stretch' }}>
-                  {deliveries.map((delivery) => (
-                    <Grid
-                      item
-                      xs={12}
-                      md={6}
-                      key={delivery._id}
-                      sx={{ display: 'flex' }}
-                    >
-                      <ManagerDeliveryCard
-                        user={user}
-                        delivery={delivery}
-                        drivers={drivers}
-                        onAssignDriver={onAssignDriver}
-                      />
-                    </Grid>
-                  ))}
-                </Grid>
-              ) : (
-                <Box sx={{ textAlign: 'center', py: 6 }}>
-                  <Assignment
-                    sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }}
-                  />
-                  <Typography variant="h6" color="text.secondary">
-                    No deliveries found
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {startDate || endDate
-                      ? 'Try adjusting your date filters'
-                      : 'No deliveries available'}
-                  </Typography>
-                </Box>
-              )}
+            <Collapse in={sectionsExpanded.deliveries}>
+              <Box sx={{ p: 3 }}>
+                {loading ? (
+                  <Grid container spacing={3} sx={{ alignItems: 'stretch' }}>
+                    {[...Array(4)].map((_, index) => (
+                      <Grid item xs={12} md={6} key={index}>
+                        <Card sx={{ height: 300, borderRadius: 3 }}>
+                          <CardContent>
+                            <Skeleton variant="text" height={32} />
+                            <Skeleton variant="text" height={24} />
+                            <Skeleton variant="text" height={24} />
+                            <Skeleton
+                              variant="rectangular"
+                              height={40}
+                              sx={{ mt: 2 }}
+                            />
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    ))}
+                  </Grid>
+                ) : deliveries.length > 0 ? (
+                  <Grid container spacing={3} sx={{ alignItems: 'stretch' }}>
+                    {deliveries.map((delivery) => (
+                      <Grid
+                        item
+                        xs={12}
+                        md={6}
+                        key={delivery._id}
+                        sx={{ display: 'flex' }}
+                      >
+                        <ManagerDeliveryCard
+                          user={user}
+                          delivery={delivery}
+                          drivers={drivers}
+                          onAssignDriver={onAssignDriver}
+                        />
+                      </Grid>
+                    ))}
+                  </Grid>
+                ) : (
+                  <Box sx={{ textAlign: 'center', py: 6 }}>
+                    <Assignment
+                      sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }}
+                    />
+                    <Typography variant="h6" color="text.secondary">
+                      No deliveries found
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {startDate || endDate
+                        ? 'Try adjusting your date filters'
+                        : 'No deliveries available'}
+                    </Typography>
+                  </Box>
+                )}
 
-              {/* Add Pagination Controls */}
-              {!loading && deliveries.length > 0 && totalPages > 1 && (
-                <Box
-                  sx={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    mt: 4,
-                    gap: 2,
-                  }}
-                >
-                  <Pagination
-                    count={totalPages}
-                    page={page}
-                    onChange={handlePageChange}
-                    color="primary"
-                    size="large"
-                    showFirstButton
-                    showLastButton
-                  />
-                </Box>
-              )}
+                {!loading && deliveries.length > 0 && totalPages > 1 && (
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      mt: 4,
+                      gap: 2,
+                    }}
+                  >
+                    <Pagination
+                      count={totalPages}
+                      page={page}
+                      onChange={handlePageChange}
+                      color="primary"
+                      size="large"
+                      showFirstButton
+                      showLastButton
+                    />
+                  </Box>
+                )}
+              </Box>
+            </Collapse>
+          </Paper>
+
+          {/* Pending Clock-Ins - Collapsible */}
+          <Paper
+            elevation={3}
+            sx={{
+              mt: 4,
+              borderRadius: 3,
+              overflow: 'hidden',
+            }}
+          >
+            <Box
+              sx={{
+                p: 3,
+                pb: 2,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                cursor: 'pointer',
+                '&:hover': { bgcolor: 'rgba(0,0,0,0.02)' },
+              }}
+              onClick={() => toggleSection('pendingClockIns')}
+            >
+              <Typography variant="h6" fontWeight="bold">
+                📝 Pending Clock-Ins ({pendingRequests?.length || 0})
+              </Typography>
+              <IconButton size="small">
+                {sectionsExpanded.pendingClockIns ? (
+                  <ExpandLess />
+                ) : (
+                  <ExpandMore />
+                )}
+              </IconButton>
             </Box>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" fontWeight="bold" gutterBottom>
-                  📝 Pending Clock-Ins ({pendingRequests?.length || 0})
-                </Typography>
+            <Collapse in={sectionsExpanded.pendingClockIns}>
+              <Box sx={{ px: 3, pb: 3 }}>
                 {Array.isArray(pendingRequests) &&
                 pendingRequests.length > 0 ? (
                   pendingRequests.map((req) => (
@@ -679,8 +760,8 @@ const ManagerDashboardLayout = ({
                     No pending clock-in requests.
                   </Typography>
                 )}
-              </CardContent>
-            </Card>
+              </Box>
+            </Collapse>
           </Paper>
         </Container>
       </Box>

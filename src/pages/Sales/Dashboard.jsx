@@ -14,6 +14,8 @@ import {
   Chip,
   Pagination,
   Grid,
+  Collapse,
+  IconButton,
 } from '@mui/material';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
@@ -29,6 +31,12 @@ import {
   Legend,
 } from 'chart.js';
 import { Bar, Line } from 'react-chartjs-2';
+import {
+  Assessment,
+  Business,
+  ExpandMore,
+  ExpandLess,
+} from '@mui/icons-material';
 import Topbar from '../../components/Topbar';
 import EditDeliveryForm from './EditDeliveryForm';
 import NewDeliveryForm from './CreateDelivery';
@@ -58,9 +66,20 @@ const SalesDashboard = () => {
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(new Date());
 
-  // Chart data states
   const [chartData, setChartData] = useState(null);
   const [chartLoading, setChartLoading] = useState(true);
+
+  const [sectionsExpanded, setSectionsExpanded] = useState({
+    charts: false,
+    deliveries: false,
+  });
+
+  const toggleSection = (section) => {
+    setSectionsExpanded((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
 
   const fetchDeliveries = async (
     pageNum = page,
@@ -301,235 +320,292 @@ const SalesDashboard = () => {
           </Box>
         ) : (
           <Stack spacing={4}>
-            {/* Charts Section - Moved above deliveries */}
-            <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
-              {chartLoading ? (
-                <Box
-                  display="flex"
-                  justifyContent="center"
-                  alignItems="center"
-                  minHeight="400px"
-                >
-                  <CircularProgress />
+            {/* Charts Section - Collapsible */}
+            <Paper
+              elevation={3}
+              sx={{
+                borderRadius: 2,
+                overflow: 'hidden',
+              }}
+            >
+              <Box
+                sx={{
+                  p: 3,
+                  pb: 2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  cursor: 'pointer',
+                  background: 'linear-gradient(45deg, #1976d2, #42a5f5)',
+                  color: 'white',
+                  '&:hover': { opacity: 0.9 },
+                }}
+                onClick={() => toggleSection('charts')}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Assessment />
+                  <Typography variant="h6" fontWeight="bold">
+                    Analytics & Charts
+                  </Typography>
                 </Box>
-              ) : chartData?.dailyCollections?.length ? (
-                <Grid
-                  container
-                  spacing={3}
-                  sx={{
-                    display: 'flex',
-
-                    justifyContent: 'space-between',
-                    alignItems: 'stretch',
-                    width: '100%',
-                  }}
-                >
-                  <Grid item xs={12} md={6}>
-                    <Card
-                      elevation={2}
-                      sx={{ p: 3, minWidth: isMobile ? '50px' : '540px' }}
+                <IconButton size="small" sx={{ color: 'white' }}>
+                  {sectionsExpanded.charts ? <ExpandLess /> : <ExpandMore />}
+                </IconButton>
+              </Box>
+              <Collapse in={sectionsExpanded.charts}>
+                <Box sx={{ p: 3 }}>
+                  {chartLoading ? (
+                    <Box
+                      display="flex"
+                      justifyContent="center"
+                      alignItems="center"
+                      minHeight="400px"
                     >
-                      <Typography variant="h6" gutterBottom>
-                        Daily COD Collections
-                      </Typography>
-                      <Box
-                        sx={{
-                          height: '400px',
-                        }}
-                      >
-                        {prepareChartData() && (
-                          <Bar
-                            data={prepareChartData()}
-                            options={{
-                              ...chartOptions,
-                              maintainAspectRatio: false,
-                            }}
-                          />
-                        )}
-                      </Box>
-                    </Card>
-                  </Grid>
-
-                  <Grid item xs={12} md={6}>
-                    <Card
-                      elevation={2}
-                      sx={{ p: 3, minWidth: isMobile ? '50px' : '540px' }}
-                    >
-                      <Typography variant="h6" gutterBottom>
-                        COD Trend Over Time
-                      </Typography>
-                      <Box
-                        sx={{
-                          height: '400px',
-                        }}
-                      >
-                        {prepareChartData() && (
-                          <Line
-                            data={prepareChartData()}
-                            options={{
-                              ...chartOptionsWithSecondAxis,
-                              maintainAspectRatio: false,
-                            }}
-                          />
-                        )}
-                      </Box>
-                    </Card>
-                  </Grid>
-                </Grid>
-              ) : (
-                <Typography variant="h6" color="text.secondary">
-                  No chart data available for the selected date range.
-                </Typography>
-              )}
+                      <CircularProgress />
+                    </Box>
+                  ) : chartData?.dailyCollections?.length ? (
+                    <Grid container spacing={3}>
+                      <Grid item xs={12} md={6}>
+                        <Card elevation={2} sx={{ p: 3 }}>
+                          <Typography variant="h6" gutterBottom>
+                            Daily COD Collections
+                          </Typography>
+                          <Box sx={{ height: '400px' }}>
+                            {prepareChartData() && (
+                              <Bar
+                                data={prepareChartData()}
+                                options={{
+                                  ...chartOptions,
+                                  maintainAspectRatio: false,
+                                }}
+                              />
+                            )}
+                          </Box>
+                        </Card>
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <Card elevation={2} sx={{ p: 3 }}>
+                          <Typography variant="h6" gutterBottom>
+                            COD Trend Over Time
+                          </Typography>
+                          <Box sx={{ height: '400px' }}>
+                            {prepareChartData() && (
+                              <Line
+                                data={prepareChartData()}
+                                options={{
+                                  ...chartOptionsWithSecondAxis,
+                                  maintainAspectRatio: false,
+                                }}
+                              />
+                            )}
+                          </Box>
+                        </Card>
+                      </Grid>
+                    </Grid>
+                  ) : (
+                    <Typography variant="h6" color="text.secondary">
+                      No chart data available for the selected date range.
+                    </Typography>
+                  )}
+                </Box>
+              </Collapse>
             </Paper>
 
-            {/* Deliveries Grid */}
-            <Grid container spacing={3}>
-              {deliveries.length ? (
-                deliveries.map((delivery) => (
-                  <Grid item xs={12} sm={6} md={4} lg={3} key={delivery._id}>
-                    <Card elevation={3} sx={{ borderRadius: 4, p: 2 }}>
-                      <CardContent>
-                        {/* Header: Customer Name + Status */}
-                        <Box
-                          display="flex"
-                          justifyContent="space-between"
-                          alignItems="center"
-                          mb={1}
+            {/* Deliveries Grid - Collapsible */}
+            <Paper
+              elevation={3}
+              sx={{
+                borderRadius: 2,
+                overflow: 'hidden',
+              }}
+            >
+              <Box
+                sx={{
+                  p: 3,
+                  pb: 2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  cursor: 'pointer',
+                  background: 'linear-gradient(45deg, #4caf50, #66bb6a)',
+                  color: 'white',
+                  '&:hover': { opacity: 0.9 },
+                }}
+                onClick={() => toggleSection('deliveries')}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Business />
+                  <Typography variant="h6" fontWeight="bold">
+                    Deliveries ({totalDeliveries})
+                  </Typography>
+                </Box>
+                <IconButton size="small" sx={{ color: 'white' }}>
+                  {sectionsExpanded.deliveries ? (
+                    <ExpandLess />
+                  ) : (
+                    <ExpandMore />
+                  )}
+                </IconButton>
+              </Box>
+              <Collapse in={sectionsExpanded.deliveries}>
+                <Box sx={{ p: 3 }}>
+                  <Grid container spacing={3}>
+                    {deliveries.length ? (
+                      deliveries.map((delivery) => (
+                        <Grid
+                          item
+                          xs={12}
+                          sm={6}
+                          md={4}
+                          lg={3}
+                          key={delivery._id}
                         >
-                          <Typography variant="h6" fontWeight={700} noWrap>
-                            {delivery.customerName || 'Unnamed Customer'}
-                          </Typography>
-                          <Chip
-                            label={delivery.status || 'No Status'}
-                            size="small"
-                            color={
-                              delivery.status === 'Delivered'
-                                ? 'success'
-                                : delivery.status === 'Heading to Customer'
-                                  ? 'primary'
-                                  : delivery.status === 'Waiting for Paperwork'
+                          <Card elevation={3} sx={{ borderRadius: 4, p: 2 }}>
+                            <CardContent>
+                              <Box
+                                display="flex"
+                                justifyContent="space-between"
+                                alignItems="center"
+                                mb={1}
+                              >
+                                <Typography
+                                  variant="h6"
+                                  fontWeight={700}
+                                  noWrap
+                                >
+                                  {delivery.customerName || 'Unnamed Customer'}
+                                </Typography>
+                                <Chip
+                                  label={delivery.status || 'No Status'}
+                                  size="small"
+                                  color={
+                                    delivery.status === 'Delivered'
+                                      ? 'success'
+                                      : delivery.status ===
+                                          'Heading to Customer'
+                                        ? 'primary'
+                                        : delivery.status ===
+                                            'Waiting for Paperwork'
+                                          ? 'warning'
+                                          : delivery.status ===
+                                              'In Route for Pick Up'
+                                            ? 'info'
+                                            : 'default'
+                                  }
+                                />
+                              </Box>
+
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                fontWeight={500}
+                              >
+                                Delivery Date:{' '}
+                                {new Date(
+                                  delivery.deliveryDate
+                                ).toLocaleString()}
+                              </Typography>
+
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                fontWeight={500}
+                              >
+                                Address: {delivery.address}
+                              </Typography>
+
+                              {delivery.driver?.name && (
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                  fontWeight={500}
+                                >
+                                  Driver: {delivery.driver.name}
+                                </Typography>
+                              )}
+
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                fontWeight={500}
+                              >
+                                Vehicle: {delivery.year} {delivery.make}{' '}
+                                {delivery.model} {delivery.trim} -{' '}
+                                {delivery.color}
+                              </Typography>
+
+                              <Typography
+                                variant="body2"
+                                fontWeight={600}
+                                color={
+                                  delivery.codCollected
+                                    ? 'success.main'
+                                    : 'error.main'
+                                }
+                              >
+                                COD: ${delivery.codAmount}{' '}
+                                {delivery.codCollected
+                                  ? `(via ${delivery.codMethod})`
+                                  : '(Pending)'}
+                              </Typography>
+
+                              <Chip
+                                label={
+                                  delivery.leaseReturn?.willReturn
+                                    ? 'Lease Return'
+                                    : 'No Lease Return'
+                                }
+                                color={
+                                  delivery.leaseReturn?.willReturn
                                     ? 'warning'
-                                    : delivery.status === 'In Route for Pick Up'
-                                      ? 'info'
-                                      : 'default'
-                            }
-                          />
-                        </Box>
+                                    : 'default'
+                                }
+                                size="small"
+                                sx={{ mt: 1 }}
+                              />
 
-                        {/* Delivery Date */}
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          fontWeight={500}
+                              <Button
+                                variant="contained"
+                                fullWidth
+                                size="small"
+                                sx={{ mt: 2, fontWeight: 600 }}
+                                onClick={() => handleOpenEdit(delivery)}
+                              >
+                                View Details
+                              </Button>
+                            </CardContent>
+                          </Card>
+                        </Grid>
+                      ))
+                    ) : (
+                      <Grid item xs={12}>
+                        <Paper
+                          elevation={3}
+                          sx={{
+                            p: 3,
+                            textAlign: 'center',
+                            borderRadius: 2,
+                          }}
                         >
-                          Delivery Date:{' '}
-                          {new Date(delivery.deliveryDate).toLocaleString()}
-                        </Typography>
-
-                        {/* Address */}
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          fontWeight={500}
-                        >
-                          Address: {delivery.address}
-                        </Typography>
-
-                        {/* Driver */}
-                        {delivery.driver?.name && (
-                          <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            fontWeight={500}
-                          >
-                            Driver: {delivery.driver.name}
+                          <Typography variant="h6" color="text.secondary">
+                            No deliveries found for the selected date range.
                           </Typography>
-                        )}
-
-                        {/* Vehicle */}
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          fontWeight={500}
-                        >
-                          Vehicle: {delivery.year} {delivery.make}{' '}
-                          {delivery.model} {delivery.trim} - {delivery.color}
-                        </Typography>
-
-                        {/* COD Info */}
-                        <Typography
-                          variant="body2"
-                          fontWeight={600}
-                          color={
-                            delivery.codCollected
-                              ? 'success.main'
-                              : 'error.main'
-                          }
-                        >
-                          COD: ${delivery.codAmount}{' '}
-                          {delivery.codCollected
-                            ? `(via ${delivery.codMethod})`
-                            : '(Pending)'}
-                        </Typography>
-
-                        {/* Lease Return */}
-                        <Chip
-                          label={
-                            delivery.leaseReturn?.willReturn
-                              ? 'Lease Return'
-                              : 'No Lease Return'
-                          }
-                          color={
-                            delivery.leaseReturn?.willReturn
-                              ? 'warning'
-                              : 'default'
-                          }
-                          size="small"
-                          sx={{ mt: 1 }}
-                        />
-
-                        {/* View Button */}
-                        <Button
-                          variant="contained"
-                          fullWidth
-                          size="small"
-                          sx={{ mt: 2, fontWeight: 600 }}
-                          onClick={() => handleOpenEdit(delivery)}
-                        >
-                          View Details
-                        </Button>
-                      </CardContent>
-                    </Card>
+                        </Paper>
+                      </Grid>
+                    )}
                   </Grid>
-                ))
-              ) : (
-                <Grid item xs={12}>
-                  <Paper
-                    elevation={3}
-                    sx={{
-                      p: 3,
-                      textAlign: 'center',
-                      borderRadius: 2,
-                    }}
-                  >
-                    <Typography variant="h6" color="text.secondary">
-                      No deliveries found for the selected date range.
-                    </Typography>
-                  </Paper>
-                </Grid>
-              )}
-            </Grid>
 
-            {/* Pagination */}
-            <Box display="flex" justifyContent="center">
-              <Pagination
-                count={Math.ceil(totalDeliveries / itemsPerPage)}
-                page={page}
-                onChange={handlePageChange}
-                color="primary"
-              />
-            </Box>
+                  <Box display="flex" justifyContent="center" mt={3}>
+                    <Pagination
+                      count={Math.ceil(totalDeliveries / itemsPerPage)}
+                      page={page}
+                      onChange={handlePageChange}
+                      color="primary"
+                    />
+                  </Box>
+                </Box>
+              </Collapse>
+            </Paper>
           </Stack>
         )}
 

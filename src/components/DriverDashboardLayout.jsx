@@ -18,6 +18,8 @@ import {
   Stack,
   Pagination,
   CircularProgress,
+  Collapse,
+  IconButton,
 } from '@mui/material';
 import {
   DirectionsCar,
@@ -28,6 +30,8 @@ import {
   PhotoCamera,
   ReviewsOutlined,
   DateRange,
+  ExpandMore,
+  ExpandLess,
 } from '@mui/icons-material';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
@@ -126,6 +130,22 @@ const DriverDashboardLayout = ({
   const bonus = bonusCounts.review * 20 + bonusCounts.customer * 5;
   const total = base + bonus;
 
+  const [sectionsExpanded, setSectionsExpanded] = useState({
+    quickActions: false,
+    timeEarnings: false,
+    bonusUploads: false,
+    deliveries: false,
+    weeklyBreakdown: false,
+    bonusGallery: false,
+  });
+
+  const toggleSection = (section) => {
+    setSectionsExpanded((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
+
   useEffect(() => {
     const fetchBonusCounts = async () => {
       try {
@@ -196,269 +216,113 @@ const DriverDashboardLayout = ({
           <Paper
             elevation={3}
             sx={{
-              p: 3,
               mb: 4,
               borderRadius: 3,
               bgcolor: 'background.paper',
+              overflow: 'hidden',
             }}
           >
-            <Typography
-              variant="h6"
-              fontWeight="bold"
-              color="text.primary"
-              mb={3}
-              display="flex"
-              alignItems="center"
-              gap={1}
-            >
-              <Assignment color="primary" />
-              Quick Actions
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={4}>
-                <Button
-                  variant="contained"
-                  fullWidth
-                  size="large"
-                  startIcon={<DirectionsCar />}
-                  onClick={() => navigate('/new-car')}
-                  sx={{
-                    py: 2,
-                    borderRadius: 2,
-                    fontWeight: 'bold',
-                    background:
-                      'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
-                    '&:hover': {
-                      transform: 'translateY(-2px)',
-                      boxShadow: 4,
-                    },
-                    transition: 'all 0.3s ease',
-                  }}
-                >
-                  Post New Car
-                </Button>
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <Button
-                  variant="contained"
-                  fullWidth
-                  size="large"
-                  startIcon={<Assignment />}
-                  onClick={() => navigate('/lease/create')}
-                  sx={{
-                    py: 2,
-                    borderRadius: 2,
-                    fontWeight: 'bold',
-                    background:
-                      'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
-                    '&:hover': {
-                      transform: 'translateY(-2px)',
-                      boxShadow: 4,
-                    },
-                    transition: 'all 0.3s ease',
-                  }}
-                >
-                  Lease Return
-                </Button>
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <Button
-                  variant="contained"
-                  fullWidth
-                  size="large"
-                  startIcon={<AttachMoney />}
-                  onClick={() => navigate('/driver/cod/new')}
-                  sx={{
-                    py: 2,
-                    borderRadius: 2,
-                    fontWeight: 'bold',
-                    background:
-                      'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
-                    '&:hover': {
-                      transform: 'translateY(-2px)',
-                      boxShadow: 4,
-                    },
-                    transition: 'all 0.3s ease',
-                  }}
-                >
-                  Create COD
-                </Button>
-              </Grid>
-            </Grid>
-          </Paper>
-
-          <Paper
-            elevation={3}
-            sx={{
-              p: 3,
-              mb: 4,
-              borderRadius: 3,
-              bgcolor: 'background.paper',
-            }}
-          >
-            <Typography
-              variant="h6"
-              fontWeight="bold"
-              color="text.primary"
-              mb={3}
-              display="flex"
-              alignItems="center"
-              gap={1}
-            >
-              <Assignment color="primary" />
-              Deliveries
-            </Typography>
-
-            <Paper
-              elevation={2}
+            <Box
               sx={{
                 p: 3,
-                mb: 3,
-                borderRadius: 3,
-                background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+                pb: 2,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                cursor: 'pointer',
+                '&:hover': { bgcolor: 'rgba(0,0,0,0.02)' },
               }}
+              onClick={() => toggleSection('quickActions')}
             >
-              <Box
-                sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}
-              >
-                <DateRange color="primary" />
-                <Typography variant="h6" fontWeight={600}>
-                  Filter Deliveries by Date
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Assignment color="primary" />
+                <Typography variant="h6" fontWeight="bold" color="text.primary">
+                  Quick Actions
                 </Typography>
               </Box>
-
-              <LocalizationProvider dateAdapter={AdapterDateFns}>
-                <Stack spacing={2}>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      flexDirection: { xs: 'column', sm: 'row' },
-                      gap: 2,
-                      alignItems: { xs: 'stretch', sm: 'center' },
-                    }}
-                  >
-                    <DatePicker
-                      label="Start Date"
-                      value={startDate}
-                      onChange={(newValue) => onDateChange(newValue, endDate)}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          size="small"
-                          fullWidth
-                          sx={{ minWidth: { xs: 'auto', sm: 200 } }}
-                        />
-                      )}
-                    />
-                    <DatePicker
-                      label="End Date"
-                      value={endDate}
-                      onChange={(newValue) => onDateChange(startDate, newValue)}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          size="small"
-                          fullWidth
-                          sx={{ minWidth: { xs: 'auto', sm: 200 } }}
-                        />
-                      )}
-                    />
-                  </Box>
-                </Stack>
-              </LocalizationProvider>
-            </Paper>
-
-            <Box display="flex" justifyContent="center" mb={3}>
-              <ToggleButtonGroup
-                value={filter}
-                exclusive
-                onChange={(e, val) => val && setFilter(val)}
-                sx={{
-                  '& .MuiToggleButton-root': {
-                    fontWeight: 'bold',
-                    px: 4,
-                    py: 1.5,
-                    borderRadius: 2,
-                    border: 'none',
-                    bgcolor: 'grey.100',
-                    '&.Mui-selected': {
-                      bgcolor: 'primary.main',
-                      color: 'white',
-                      '&:hover': {
-                        bgcolor: 'primary.dark',
-                      },
-                    },
-                    '&:hover': {
-                      bgcolor: 'grey.200',
-                    },
-                  },
-                }}
-              >
-                <ToggleButton value="assigned">
-                  Assigned ({counts?.assigned || 0})
-                </ToggleButton>
-                <ToggleButton value="all">
-                  All ({counts?.total || 0})
-                </ToggleButton>
-              </ToggleButtonGroup>
-            </Box>
-
-            {loading ? (
-              <Box
-                display="flex"
-                justifyContent="center"
-                alignItems="center"
-                minHeight="300px"
-              >
-                <CircularProgress />
-              </Box>
-            ) : deliveries.length > 0 ? (
-              <>
-                <Grid container spacing={2}>
-                  {deliveries.map((del) => (
-                    <Grid item xs={12} key={del._id}>
-                      <DriverDeliveryCard
-                        delivery={del}
-                        onStatusChange={handleStatusChange}
-                        userId={user?._id}
-                        navigate={navigate}
-                      />
-                    </Grid>
-                  ))}
-                </Grid>
-
-                {totalPages > 1 && (
-                  <Box display="flex" justifyContent="center" mt={3}>
-                    <Pagination
-                      count={totalPages}
-                      page={page}
-                      onChange={onPageChange}
-                      color="primary"
-                      size="large"
-                    />
-                  </Box>
+              <IconButton size="small">
+                {sectionsExpanded.quickActions ? (
+                  <ExpandLess />
+                ) : (
+                  <ExpandMore />
                 )}
-              </>
-            ) : (
-              <Paper
-                elevation={0}
-                sx={{
-                  p: 4,
-                  textAlign: 'center',
-                  bgcolor: 'grey.50',
-                  borderRadius: 2,
-                }}
-              >
-                <Typography variant="h6" color="text.secondary" mb={1}>
-                  No deliveries found
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {startDate || endDate
-                    ? 'Try adjusting your date filters'
-                    : 'Check back later for new assignments'}
-                </Typography>
-              </Paper>
-            )}
+              </IconButton>
+            </Box>
+            <Collapse in={sectionsExpanded.quickActions}>
+              <Box sx={{ px: 3, pb: 3 }}>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={4}>
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      size="large"
+                      startIcon={<DirectionsCar />}
+                      onClick={() => navigate('/new-car')}
+                      sx={{
+                        py: 2,
+                        borderRadius: 2,
+                        fontWeight: 'bold',
+                        background:
+                          'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          boxShadow: 4,
+                        },
+                        transition: 'all 0.3s ease',
+                      }}
+                    >
+                      Post New Car
+                    </Button>
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      size="large"
+                      startIcon={<Assignment />}
+                      onClick={() => navigate('/lease/create')}
+                      sx={{
+                        py: 2,
+                        borderRadius: 2,
+                        fontWeight: 'bold',
+                        background:
+                          'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          boxShadow: 4,
+                        },
+                        transition: 'all 0.3s ease',
+                      }}
+                    >
+                      Lease Return
+                    </Button>
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      size="large"
+                      startIcon={<AttachMoney />}
+                      onClick={() => navigate('/driver/cod/new')}
+                      sx={{
+                        py: 2,
+                        borderRadius: 2,
+                        fontWeight: 'bold',
+                        background:
+                          'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          boxShadow: 4,
+                        },
+                        transition: 'all 0.3s ease',
+                      }}
+                    >
+                      Create COD
+                    </Button>
+                  </Grid>
+                </Grid>
+              </Box>
+            </Collapse>
           </Paper>
 
           <Grid container spacing={3}>
@@ -469,14 +333,24 @@ const DriverDashboardLayout = ({
                   borderRadius: 3,
                   background:
                     'linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%)',
-                  height: '100%',
+                  height: 'fit-content',
                   border: '1px solid rgba(33, 150, 243, 0.1)',
                 }}
               >
-                <CardContent sx={{ p: 3 }}>
-                  <Box display="flex" alignItems="center" mb={2}>
+                <Box
+                  sx={{
+                    p: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: 'pointer',
+                    '&:hover': { bgcolor: 'rgba(0,0,0,0.02)' },
+                  }}
+                  onClick={() => toggleSection('timeEarnings')}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <AccessTime
-                      sx={{ mr: 1, fontSize: '2rem', color: 'primary.main' }}
+                      sx={{ fontSize: '2rem', color: 'primary.main' }}
                     />
                     <Typography
                       variant="h6"
@@ -486,90 +360,102 @@ const DriverDashboardLayout = ({
                       Time & Earnings
                     </Typography>
                   </Box>
-
-                  <Typography
-                    variant="h4"
-                    fontWeight="bold"
-                    mb={1}
-                    color="primary.main"
-                  >
-                    {isClockedIn
-                      ? `${Math.floor(secondsWorked / 3600)}h ${Math.floor(
-                          (secondsWorked % 3600) / 60
-                        )}m`
-                      : `${Number(totalHours || 0).toFixed(1)} hrs`}
-                  </Typography>
-
-                  <Box mb={3}>
-                    <Typography variant="h6" mb={1} color="text.primary">
-                      Weekly Earnings: ${total.toFixed(2)}
-                    </Typography>
-                    <Box display="flex" gap={1} flexWrap="wrap">
-                      <Chip
-                        label={`Base: $${base.toFixed(2)}`}
-                        size="small"
-                        sx={{
-                          bgcolor: 'primary.light',
-                          color: 'white',
-                        }}
-                      />
-                      <Chip
-                        label={`Bonus: $${bonus.toFixed(2)}`}
-                        size="small"
-                        sx={{
-                          bgcolor: 'success.light',
-                          color: 'black',
-                        }}
-                      />
-                    </Box>
-                  </Box>
-
-                  {lastSessionEarnings !== null && (
+                  <IconButton size="small">
+                    {sectionsExpanded.timeEarnings ? (
+                      <ExpandLess />
+                    ) : (
+                      <ExpandMore />
+                    )}
+                  </IconButton>
+                </Box>
+                <Collapse in={sectionsExpanded.timeEarnings}>
+                  <CardContent sx={{ pt: 0 }}>
                     <Typography
-                      variant="body2"
-                      sx={{ mb: 2, color: 'text.secondary' }}
+                      variant="h4"
+                      fontWeight="bold"
+                      mb={1}
+                      color="primary.main"
                     >
-                      🕓 Last session:{' '}
-                      <strong>${lastSessionEarnings.toFixed(2)}</strong>
+                      {isClockedIn
+                        ? `${Math.floor(secondsWorked / 3600)}h ${Math.floor(
+                            (secondsWorked % 3600) / 60
+                          )}m`
+                        : `${Number(totalHours || 0).toFixed(1)} hrs`}
                     </Typography>
-                  )}
-                  {clockInStatus?.status !== 'pending' && (
-                    <Button
-                      variant="contained"
-                      fullWidth
-                      size="large"
-                      onClick={handleClockInOut}
-                      disabled={
-                        submittingClockIn || clockInStatus?.status === 'pending'
-                      }
-                      sx={{
-                        py: 2,
-                        borderRadius: 2,
-                        fontWeight: 'bold',
-                        bgcolor: submittingClockIn
-                          ? 'grey.400'
-                          : isClockedIn && clockInStatus?.status === 'approved'
-                            ? 'error.main'
-                            : clockInStatus?.status === 'pending'
-                              ? 'warning.main'
-                              : 'success.main',
-                        '&:hover': {
-                          transform: submittingClockIn
-                            ? 'none'
-                            : 'translateY(-2px)',
-                          boxShadow: submittingClockIn ? 'none' : 4,
-                        },
-                        transition: 'all 0.3s ease',
-                      }}
-                    >
-                      {isClockedIn && clockInStatus?.status === 'approved'
-                        ? 'Clock Out'
-                        : 'Clock In'}
-                    </Button>
-                  )}
 
-                  <ClockStatusMessage clockInStatus={clockInStatus} />
-                </CardContent>
+                    <Box mb={3}>
+                      <Typography variant="h6" mb={1} color="text.primary">
+                        Weekly Earnings: ${total.toFixed(2)}
+                      </Typography>
+                      <Box display="flex" gap={1} flexWrap="wrap">
+                        <Chip
+                          label={`Base: $${base.toFixed(2)}`}
+                          size="small"
+                          sx={{
+                            bgcolor: 'primary.light',
+                            color: 'white',
+                          }}
+                        />
+                        <Chip
+                          label={`Bonus: $${bonus.toFixed(2)}`}
+                          size="small"
+                          sx={{
+                            bgcolor: 'success.light',
+                            color: 'black',
+                          }}
+                        />
+                      </Box>
+                    </Box>
+
+                    {lastSessionEarnings !== null && (
+                      <Typography
+                        variant="body2"
+                        sx={{ mb: 2, color: 'text.secondary' }}
+                      >
+                        🕓 Last session:{' '}
+                        <strong>${lastSessionEarnings.toFixed(2)}</strong>
+                      </Typography>
+                    )}
+                    {clockInStatus?.status !== 'pending' && (
+                      <Button
+                        variant="contained"
+                        fullWidth
+                        size="large"
+                        onClick={handleClockInOut}
+                        disabled={
+                          submittingClockIn ||
+                          clockInStatus?.status === 'pending'
+                        }
+                        sx={{
+                          py: 2,
+                          borderRadius: 2,
+                          fontWeight: 'bold',
+                          bgcolor: submittingClockIn
+                            ? 'grey.400'
+                            : isClockedIn &&
+                                clockInStatus?.status === 'approved'
+                              ? 'error.main'
+                              : clockInStatus?.status === 'pending'
+                                ? 'warning.main'
+                                : 'success.main',
+                          '&:hover': {
+                            transform: submittingClockIn
+                              ? 'none'
+                              : 'translateY(-2px)',
+                            boxShadow: submittingClockIn ? 'none' : 4,
+                          },
+                          transition: 'all 0.3s ease',
+                        }}
+                      >
+                        {isClockedIn && clockInStatus?.status === 'approved'
+                          ? 'Clock Out'
+                          : 'Clock In'}
+                      </Button>
+                    )}
+
+                    <ClockStatusMessage clockInStatus={clockInStatus} />
+                  </CardContent>
+                </Collapse>
               </Card>
             </Grid>
 
@@ -580,14 +466,24 @@ const DriverDashboardLayout = ({
                   borderRadius: 3,
                   background:
                     'linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%)',
-                  height: '100%',
+                  height: 'fit-content',
                   border: '1px solid rgba(33, 150, 243, 0.1)',
                 }}
               >
-                <CardContent sx={{ p: 3 }}>
-                  <Box display="flex" alignItems="center" mb={2}>
+                <Box
+                  sx={{
+                    p: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: 'pointer',
+                    '&:hover': { bgcolor: 'rgba(0,0,0,0.02)' },
+                  }}
+                  onClick={() => toggleSection('bonusUploads')}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <PhotoCamera
-                      sx={{ mr: 1, fontSize: '2rem', color: 'primary.main' }}
+                      sx={{ fontSize: '2rem', color: 'primary.main' }}
                     />
                     <Typography
                       variant="h6"
@@ -597,74 +493,84 @@ const DriverDashboardLayout = ({
                       Bonus Uploads
                     </Typography>
                   </Box>
-
-                  <Grid container spacing={2} mb={2}>
-                    <Grid item xs={6}>
-                      <Paper
-                        elevation={2}
-                        sx={{
-                          p: 2,
-                          textAlign: 'center',
-                          borderRadius: 2,
-                        }}
-                      >
-                        <ReviewsOutlined color="primary" sx={{ mb: 1 }} />
-                        <Typography
-                          variant="h5"
-                          fontWeight="bold"
-                          color="primary"
+                  <IconButton size="small">
+                    {sectionsExpanded.bonusUploads ? (
+                      <ExpandLess />
+                    ) : (
+                      <ExpandMore />
+                    )}
+                  </IconButton>
+                </Box>
+                <Collapse in={sectionsExpanded.bonusUploads}>
+                  <CardContent sx={{ pt: 0 }}>
+                    <Grid container spacing={2} mb={2}>
+                      <Grid item xs={6}>
+                        <Paper
+                          elevation={2}
+                          sx={{
+                            p: 2,
+                            textAlign: 'center',
+                            borderRadius: 2,
+                          }}
                         >
-                          {bonusCounts.review}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Reviews
-                        </Typography>
-                      </Paper>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Paper
-                        elevation={2}
-                        sx={{
-                          p: 2,
-                          textAlign: 'center',
-                          borderRadius: 2,
-                        }}
-                      >
-                        <PhotoCamera color="secondary" sx={{ mb: 1 }} />
-                        <Typography
-                          variant="h5"
-                          fontWeight="bold"
-                          color="secondary"
+                          <ReviewsOutlined color="primary" sx={{ mb: 1 }} />
+                          <Typography
+                            variant="h5"
+                            fontWeight="bold"
+                            color="primary"
+                          >
+                            {bonusCounts.review}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            Reviews
+                          </Typography>
+                        </Paper>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Paper
+                          elevation={2}
+                          sx={{
+                            p: 2,
+                            textAlign: 'center',
+                            borderRadius: 2,
+                          }}
                         >
-                          {bonusCounts.customer}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Customer Photos
-                        </Typography>
-                      </Paper>
+                          <PhotoCamera color="secondary" sx={{ mb: 1 }} />
+                          <Typography
+                            variant="h5"
+                            fontWeight="bold"
+                            color="secondary"
+                          >
+                            {bonusCounts.customer}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            Customer Photos
+                          </Typography>
+                        </Paper>
+                      </Grid>
                     </Grid>
-                  </Grid>
 
-                  <Paper
-                    elevation={2}
-                    sx={{
-                      p: 2,
-                      textAlign: 'center',
-                      borderRadius: 2,
-                      bgcolor: 'success.light',
-                      mb: 2,
-                    }}
-                  >
-                    <Typography variant="h6" fontWeight="bold" color="black">
-                      Total Bonus: $
-                      {bonusCounts.review * 20 + bonusCounts.customer * 5}
-                    </Typography>
-                  </Paper>
+                    <Paper
+                      elevation={2}
+                      sx={{
+                        p: 2,
+                        textAlign: 'center',
+                        borderRadius: 2,
+                        bgcolor: 'success.light',
+                        mb: 2,
+                      }}
+                    >
+                      <Typography variant="h6" fontWeight="bold" color="black">
+                        Total Bonus: $
+                        {bonusCounts.review * 20 + bonusCounts.customer * 5}
+                      </Typography>
+                    </Paper>
 
-                  <BonusUpload
-                    onCountUpdate={(counts) => setBonusCounts(counts)}
-                  />
-                </CardContent>
+                    <BonusUpload
+                      onCountUpdate={(counts) => setBonusCounts(counts)}
+                    />
+                  </CardContent>
+                </Collapse>
               </Card>
             </Grid>
           </Grid>
@@ -672,92 +578,350 @@ const DriverDashboardLayout = ({
           <Paper
             elevation={3}
             sx={{
-              p: 3,
               mt: 4,
               borderRadius: 3,
               bgcolor: 'background.paper',
+              overflow: 'hidden',
             }}
           >
-            <Typography
-              variant="h6"
-              fontWeight="bold"
-              mb={3}
-              display="flex"
-              alignItems="center"
-              gap={1}
+            <Box
+              sx={{
+                p: 3,
+                pb: 2,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                cursor: 'pointer',
+                '&:hover': { bgcolor: 'rgba(0,0,0,0.02)' },
+              }}
+              onClick={() => toggleSection('deliveries')}
             >
-              <TrendingUp color="primary" />
-              Weekly Breakdown
-            </Typography>
-
-            {dailyBreakdown.length === 0 ? (
-              <Paper
-                elevation={0}
-                sx={{
-                  p: 3,
-                  textAlign: 'center',
-                  bgcolor: 'grey.50',
-                  borderRadius: 2,
-                }}
-              >
-                <Typography variant="body1" color="text.secondary">
-                  No data available for this week
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Assignment color="primary" />
+                <Typography variant="h6" fontWeight="bold" color="text.primary">
+                  Deliveries
                 </Typography>
-              </Paper>
-            ) : (
-              <Grid container spacing={2}>
-                {dailyBreakdown.map((day) => (
-                  <Grid item xs={12} sm={6} md={4} key={day.date}>
-                    <Card
-                      elevation={2}
-                      sx={{ borderRadius: 2, height: '100%' }}
-                    >
-                      <CardContent>
-                        <Typography
-                          variant="subtitle1"
-                          fontWeight="bold"
-                          mb={1}
+              </Box>
+              <IconButton size="small">
+                {sectionsExpanded.deliveries ? <ExpandLess /> : <ExpandMore />}
+              </IconButton>
+            </Box>
+            <Collapse in={sectionsExpanded.deliveries}>
+              <Box sx={{ px: 3, pb: 3 }}>
+                <Paper
+                  elevation={2}
+                  sx={{
+                    p: 3,
+                    mb: 3,
+                    borderRadius: 3,
+                    background:
+                      'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      mb: 2,
+                    }}
+                  >
+                    <DateRange color="primary" />
+                    <Typography variant="h6" fontWeight={600}>
+                      Filter Deliveries by Date
+                    </Typography>
+                  </Box>
+
+                  <LocalizationProvider dateAdapter={AdapterDateFns}>
+                    <Stack spacing={2}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          flexDirection: { xs: 'column', sm: 'row' },
+                          gap: 2,
+                          alignItems: { xs: 'stretch', sm: 'center' },
+                        }}
+                      >
+                        <DatePicker
+                          label="Start Date"
+                          value={startDate}
+                          onChange={(newValue) =>
+                            onDateChange(newValue, endDate)
+                          }
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              size="small"
+                              fullWidth
+                              sx={{ minWidth: { xs: 'auto', sm: 200 } }}
+                            />
+                          )}
+                        />
+                        <DatePicker
+                          label="End Date"
+                          value={endDate}
+                          onChange={(newValue) =>
+                            onDateChange(startDate, newValue)
+                          }
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              size="small"
+                              fullWidth
+                              sx={{ minWidth: { xs: 'auto', sm: 200 } }}
+                            />
+                          )}
+                        />
+                      </Box>
+                    </Stack>
+                  </LocalizationProvider>
+                </Paper>
+
+                <Box display="flex" justifyContent="center" mb={3}>
+                  <ToggleButtonGroup
+                    value={filter}
+                    exclusive
+                    onChange={(e, val) => val && setFilter(val)}
+                    sx={{
+                      '& .MuiToggleButton-root': {
+                        fontWeight: 'bold',
+                        px: 4,
+                        py: 1.5,
+                        borderRadius: 2,
+                        border: 'none',
+                        bgcolor: 'grey.100',
+                        '&.Mui-selected': {
+                          bgcolor: 'primary.main',
+                          color: 'white',
+                          '&:hover': {
+                            bgcolor: 'primary.dark',
+                          },
+                        },
+                        '&:hover': {
+                          bgcolor: 'grey.200',
+                        },
+                      },
+                    }}
+                  >
+                    <ToggleButton value="assigned">
+                      Assigned ({counts?.assigned || 0})
+                    </ToggleButton>
+                    <ToggleButton value="all">
+                      All ({counts?.total || 0})
+                    </ToggleButton>
+                  </ToggleButtonGroup>
+                </Box>
+
+                {loading ? (
+                  <Box
+                    display="flex"
+                    justifyContent="center"
+                    alignItems="center"
+                    minHeight="300px"
+                  >
+                    <CircularProgress />
+                  </Box>
+                ) : deliveries.length > 0 ? (
+                  <>
+                    <Grid container spacing={2}>
+                      {deliveries.map((del) => (
+                        <Grid item xs={12} key={del._id}>
+                          <DriverDeliveryCard
+                            delivery={del}
+                            onStatusChange={handleStatusChange}
+                            userId={user?._id}
+                            navigate={navigate}
+                          />
+                        </Grid>
+                      ))}
+                    </Grid>
+
+                    {totalPages > 1 && (
+                      <Box display="flex" justifyContent="center" mt={3}>
+                        <Pagination
+                          count={totalPages}
+                          page={page}
+                          onChange={onPageChange}
+                          color="primary"
+                          size="large"
+                        />
+                      </Box>
+                    )}
+                  </>
+                ) : (
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 4,
+                      textAlign: 'center',
+                      bgcolor: 'grey.50',
+                      borderRadius: 2,
+                    }}
+                  >
+                    <Typography variant="h6" color="text.secondary" mb={1}>
+                      No deliveries found
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {startDate || endDate
+                        ? 'Try adjusting your date filters'
+                        : 'Check back later for new assignments'}
+                    </Typography>
+                  </Paper>
+                )}
+              </Box>
+            </Collapse>
+          </Paper>
+
+          <Paper
+            elevation={3}
+            sx={{
+              mt: 4,
+              borderRadius: 3,
+              bgcolor: 'background.paper',
+              overflow: 'hidden',
+            }}
+          >
+            <Box
+              sx={{
+                p: 3,
+                pb: 2,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                cursor: 'pointer',
+                '&:hover': { bgcolor: 'rgba(0,0,0,0.02)' },
+              }}
+              onClick={() => toggleSection('weeklyBreakdown')}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <TrendingUp color="primary" />
+                <Typography variant="h6" fontWeight="bold">
+                  Weekly Breakdown
+                </Typography>
+              </Box>
+              <IconButton size="small">
+                {sectionsExpanded.weeklyBreakdown ? (
+                  <ExpandLess />
+                ) : (
+                  <ExpandMore />
+                )}
+              </IconButton>
+            </Box>
+            <Collapse in={sectionsExpanded.weeklyBreakdown}>
+              <Box sx={{ px: 3, pb: 3 }}>
+                {dailyBreakdown.length === 0 ? (
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 3,
+                      textAlign: 'center',
+                      bgcolor: 'grey.50',
+                      borderRadius: 2,
+                    }}
+                  >
+                    <Typography variant="body1" color="text.secondary">
+                      No data available for this week
+                    </Typography>
+                  </Paper>
+                ) : (
+                  <Grid container spacing={2}>
+                    {dailyBreakdown.map((day) => (
+                      <Grid item xs={12} sm={6} md={4} key={day.date}>
+                        <Card
+                          elevation={2}
+                          sx={{ borderRadius: 2, height: '100%' }}
                         >
-                          {day.date}
-                        </Typography>
-                        <Box display="flex" flexDirection="column" gap={0.5}>
-                          <Typography variant="body2" color="text.secondary">
-                            ⏱ {day.totalHours} hours
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            💰 ${day.baseEarnings.toFixed(2)} base
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            🎁 ${day.bonus.toFixed(2)} bonus
-                          </Typography>
-                          <Divider sx={{ my: 1 }} />
-                          <Typography
-                            variant="h6"
-                            fontWeight="bold"
-                            color="primary"
-                          >
-                            ${day.totalEarnings.toFixed(2)}
-                          </Typography>
-                        </Box>
-                      </CardContent>
-                    </Card>
+                          <CardContent>
+                            <Typography
+                              variant="subtitle1"
+                              fontWeight="bold"
+                              mb={1}
+                            >
+                              {day.date}
+                            </Typography>
+                            <Box
+                              display="flex"
+                              flexDirection="column"
+                              gap={0.5}
+                            >
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                ⏱ {day.totalHours} hours
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                💰 ${day.baseEarnings.toFixed(2)} base
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                🎁 ${day.bonus.toFixed(2)} bonus
+                              </Typography>
+                              <Divider sx={{ my: 1 }} />
+                              <Typography
+                                variant="h6"
+                                fontWeight="bold"
+                                color="primary"
+                              >
+                                ${day.totalEarnings.toFixed(2)}
+                              </Typography>
+                            </Box>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    ))}
                   </Grid>
-                ))}
-              </Grid>
-            )}
+                )}
+              </Box>
+            </Collapse>
           </Paper>
 
           {showGallery && (
             <Paper
               elevation={3}
               sx={{
-                p: 3,
                 mt: 4,
                 borderRadius: 3,
                 bgcolor: 'background.paper',
+                overflow: 'hidden',
               }}
             >
-              <BonusGallery />
+              <Box
+                sx={{
+                  p: 3,
+                  pb: 2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  cursor: 'pointer',
+                  '&:hover': { bgcolor: 'rgba(0,0,0,0.02)' },
+                }}
+                onClick={() => toggleSection('bonusGallery')}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <PhotoCamera color="primary" />
+                  <Typography variant="h6" fontWeight="bold">
+                    Bonus Gallery
+                  </Typography>
+                </Box>
+                <IconButton size="small">
+                  {sectionsExpanded.bonusGallery ? (
+                    <ExpandLess />
+                  ) : (
+                    <ExpandMore />
+                  )}
+                </IconButton>
+              </Box>
+              <Collapse in={sectionsExpanded.bonusGallery}>
+                <Box sx={{ px: 3, pb: 3 }}>
+                  <BonusGallery />
+                </Box>
+              </Collapse>
             </Paper>
           )}
         </Container>
