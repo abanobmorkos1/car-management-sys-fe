@@ -18,6 +18,7 @@ const SignatureModal = ({ open, onClose, onSave, title = 'Signature' }) => {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
   const [error, setError] = useState('');
+
   const [canvasDimensions, setCanvasDimensions] = useState({
     width: 600,
     height: 200,
@@ -60,6 +61,7 @@ const SignatureModal = ({ open, onClose, onSave, title = 'Signature' }) => {
 
       onSave({
         signature: signatureCanvas.toDataURL('image/png'),
+        proofPhoto: '',
       });
       handleClose();
     } catch (err) {

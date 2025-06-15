@@ -30,10 +30,7 @@ const OdometerAndDamageDisclosureForm = ({
   const [actualMileage, setActualMileage] = useState(false);
   const [exceedsMechanicalLimits, setExceedsMechanicalLimits] = useState(false);
   const [odometerDiscrepancy, setOdometerDiscrepancy] = useState(false);
-
   const [damageStatus, setDamageStatus] = useState('');
-
-  const [sellerSignature, setSellerSignature] = useState('');
   const [sellerSignatureData, setSellerSignatureData] = useState(null);
   const [sellerName, setSellerName] = useState('');
   const [sellerAddress, setSellerAddress] = useState('');
@@ -41,8 +38,6 @@ const OdometerAndDamageDisclosureForm = ({
   const [sellerState, setSellerState] = useState('');
   const [sellerZip, setSellerZip] = useState('');
   const [sellerDate, setSellerDate] = useState('');
-
-  const [newOwnerSignature, setNewOwnerSignature] = useState('');
   const [newOwnerSignatureData, setNewOwnerSignatureData] = useState(null);
   const [newOwnerName, setNewOwnerName] = useState('');
   const [newOwnerAddress, setNewOwnerAddress] = useState('');
@@ -86,8 +81,10 @@ const OdometerAndDamageDisclosureForm = ({
       }
 
       if (data.seller) {
-        setSellerSignature(data.seller.signature || '');
-        setSellerSignatureData(data.seller.signatureData || null);
+        setSellerSignatureData({
+          signature: data.seller.signature,
+          proofPhoto: data.seller.proofPhoto,
+        });
         setSellerName(data.seller.name || '');
 
         if (data.seller.address) {
@@ -104,8 +101,10 @@ const OdometerAndDamageDisclosureForm = ({
       }
 
       if (data.newOwner) {
-        setNewOwnerSignature(data.newOwner.signature || '');
-        setNewOwnerSignatureData(data.newOwner.signatureData || null);
+        setNewOwnerSignatureData({
+          signature: data.newOwner.signature,
+          proofPhoto: '',
+        });
         setNewOwnerName(data.newOwner.name || '');
 
         if (data.newOwner.address) {
@@ -132,10 +131,8 @@ const OdometerAndDamageDisclosureForm = ({
   const handleSignatureSave = (signatureData) => {
     if (currentSignatureType === 'seller') {
       setSellerSignatureData(signatureData);
-      setSellerSignature('Signed');
     } else if (currentSignatureType === 'newOwner') {
       setNewOwnerSignatureData(signatureData);
-      setNewOwnerSignature('Signed');
     }
     setSignatureModalOpen(false);
     setCurrentSignatureType('');
@@ -163,8 +160,8 @@ const OdometerAndDamageDisclosureForm = ({
         status: damageStatus,
       },
       seller: {
-        signature: sellerSignature,
-        signatureData: sellerSignatureData,
+        signature: sellerSignatureData.signature,
+        proofPhoto: sellerSignatureData.proofPhoto,
         name: sellerName,
         address: {
           street: sellerAddress,
@@ -175,8 +172,7 @@ const OdometerAndDamageDisclosureForm = ({
         dateOfStatement: sellerDate ? new Date(sellerDate) : null,
       },
       newOwner: {
-        signature: newOwnerSignature,
-        signatureData: newOwnerSignatureData,
+        signature: newOwnerSignatureData.signature,
         name: newOwnerName,
         address: {
           street: newOwnerAddress,
@@ -912,7 +908,7 @@ const OdometerAndDamageDisclosureForm = ({
                         fontStyle: 'italic',
                       }}
                     >
-                      {viewOnly ? '' : 'Click to sign'}
+                      {viewOnly ? '' : 'X'}
                     </Typography>
                   )}
                 </Box>
@@ -1214,7 +1210,7 @@ const OdometerAndDamageDisclosureForm = ({
                         fontStyle: 'italic',
                       }}
                     >
-                      {viewOnly ? '' : 'Click to sign'}
+                      {viewOnly ? '' : 'X'}
                     </Typography>
                   )}
                 </Box>
