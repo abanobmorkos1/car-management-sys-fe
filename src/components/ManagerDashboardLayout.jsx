@@ -41,6 +41,7 @@ import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { format } from 'date-fns';
 import ClockApprovalCard from './ClockApprovalCard';
 import { useNavigate } from 'react-router-dom';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 
 const ManagerDashboardLayout = ({
   drivers = [],
@@ -272,6 +273,8 @@ const ManagerDashboardLayout = ({
             elevation={2}
             sx={{ mt: 4, mb: 4, borderRadius: 3, overflow: 'hidden' }}
           >
+            {/* Date Filter Section */}
+
             <Box
               sx={{
                 p: 3,
@@ -302,6 +305,82 @@ const ManagerDashboardLayout = ({
               </Box>
             </Box>
             <Collapse in={sectionsExpanded.deliveries}>
+              <Paper
+                elevation={2}
+                sx={{
+                  p: 3,
+                  mb: 4,
+                }}
+              >
+                <Stack spacing={3}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <DateRange color="primary" />
+                    <Typography variant="h6" fontWeight={600}>
+                      Filter Deliveries by Date
+                    </Typography>
+                  </Box>
+
+                  <LocalizationProvider dateAdapter={AdapterDateFns}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        gap: 2,
+                        alignItems: { xs: 'stretch', sm: 'center' },
+                      }}
+                    >
+                      <DatePicker
+                        label="Start Date"
+                        value={startDate}
+                        onChange={(newValue) => setStartDate(newValue)}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            size="small"
+                            fullWidth
+                            sx={{ minWidth: { xs: 'auto', sm: 200 } }}
+                          />
+                        )}
+                      />
+                      <DatePicker
+                        label="End Date"
+                        value={endDate}
+                        onChange={(newValue) => setEndDate(newValue)}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            size="small"
+                            fullWidth
+                            sx={{ minWidth: { xs: 'auto', sm: 200 } }}
+                          />
+                        )}
+                      />
+                    </Box>
+                  </LocalizationProvider>
+
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: { xs: 'column', sm: 'row' },
+                      justifyContent: 'space-between',
+                      alignItems: { xs: 'flex-start', sm: 'center' },
+                      gap: 1,
+                    }}
+                  >
+                    <Typography variant="body2" color="text.secondary">
+                      Showing {deliveries.length} of {totalDeliveries}{' '}
+                      deliveries (Page {page} of {totalPages})
+                      {startDate &&
+                        endDate &&
+                        ` • Filtered: ${format(
+                          startDate,
+                          'MMM dd, yyyy'
+                        )} to ${format(endDate, 'MMM dd, yyyy')}`}
+                    </Typography>
+                    {loading && <CircularProgress size={20} />}
+                  </Box>
+                </Stack>
+              </Paper>
               <Box sx={{ p: 3 }}>
                 {loading ? (
                   <Grid container spacing={3} sx={{ alignItems: 'stretch' }}>
