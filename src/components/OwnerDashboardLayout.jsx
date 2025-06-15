@@ -176,11 +176,12 @@ const OwnerDashboardLayout = ({
       },
     },
   };
+  const isMobile = window.innerWidth < 600;
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
       <Topbar />
       <Box sx={{ backgroundColor: '#f9fafb', minHeight: '100vh', py: 4 }}>
-        <Container maxWidth="md">
+        <Container maxWidth="lg">
           <Typography
             variant="h4"
             fontWeight="bold"
@@ -190,7 +191,141 @@ const OwnerDashboardLayout = ({
           >
             Owner Dashboard
           </Typography>
+          <LocalizationProvider dateAdapter={AdapterDateFns}>
+            <Box
+              display="flex"
+              flexDirection={{ xs: 'column', sm: 'row' }}
+              flexWrap="wrap"
+              justifyContent="space-between"
+              alignItems={{ xs: 'stretch', sm: 'center' }}
+              gap={2}
+              mb={3}
+            >
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                spacing={2}
+                alignItems={{ xs: 'stretch', sm: 'center' }}
+                sx={{ width: { xs: '100%', sm: 'auto' } }}
+              >
+                <DatePicker
+                  label="Start Date"
+                  value={startDate}
+                  onChange={(newValue) => onDateRangeChange(newValue, endDate)}
+                  renderInput={(params) => (
+                    <TextField {...params} size="small" fullWidth />
+                  )}
+                />
+                <DatePicker
+                  label="End Date"
+                  value={endDate}
+                  onChange={(newValue) =>
+                    onDateRangeChange(startDate, newValue)
+                  }
+                  renderInput={(params) => (
+                    <TextField {...params} size="small" fullWidth />
+                  )}
+                />
+              </Stack>
+            </Box>
+          </LocalizationProvider>
+          {loading ? (
+            <Box
+              display="flex"
+              justifyContent="center"
+              alignItems="center"
+              minHeight="300px"
+            >
+              <CircularProgress />
+            </Box>
+          ) : (
+            <Paper
+              elevation={3}
+              sx={{ p: 3, borderRadius: 2, marginBottom: 4 }}
+            >
+              {chartLoading ? (
+                <Box
+                  display="flex"
+                  justifyContent="center"
+                  alignItems="center"
+                  minHeight="400px"
+                >
+                  <CircularProgress />
+                </Box>
+              ) : chartData?.dailyCollections?.length ? (
+                <Grid
+                  container
+                  spacing={3}
+                  sx={{
+                    display: 'flex',
 
+                    justifyContent: 'space-between',
+                    alignItems: 'stretch',
+                    width: '100%',
+                  }}
+                >
+                  <Grid item xs={12} md={6}>
+                    <Card
+                      elevation={2}
+                      sx={{ p: 3, minWidth: isMobile ? '50px' : '540px' }}
+                    >
+                      <Typography variant="h6" gutterBottom>
+                        Daily COD Collections
+                      </Typography>
+                      <Box
+                        sx={{
+                          height: '400px',
+                        }}
+                      >
+                        {prepareChartData() && (
+                          <Bar
+                            data={prepareChartData()}
+                            options={{
+                              ...chartOptions,
+                              maintainAspectRatio: false,
+                            }}
+                          />
+                        )}
+                      </Box>
+                    </Card>
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <Card
+                      elevation={2}
+                      sx={{ p: 3, minWidth: isMobile ? '50px' : '540px' }}
+                    >
+                      <Typography variant="h6" gutterBottom>
+                        COD Trend Over Time
+                      </Typography>
+                      <Box
+                        sx={{
+                          height: '400px',
+                        }}
+                      >
+                        {prepareChartData() && (
+                          <Line
+                            data={prepareChartData()}
+                            options={{
+                              ...chartOptionsWithSecondAxis,
+                              maintainAspectRatio: false,
+                            }}
+                          />
+                        )}
+                      </Box>
+                    </Card>
+                  </Grid>
+                </Grid>
+              ) : (
+                <Typography
+                  variant="h6"
+                  color="text.secondary"
+                  sx={{ textAlign: 'center', p: 2 }}
+                >
+                  No chart data available for the selected date range.
+                </Typography>
+              )}
+            </Paper>
+          )}
           {/* Deliveries Section */}
           <Card sx={{ mb: 4 }}>
             <CardContent>
@@ -198,107 +333,6 @@ const OwnerDashboardLayout = ({
                 🚗 Deliveries ({totalDeliveries})
               </Typography>
 
-              <LocalizationProvider dateAdapter={AdapterDateFns}>
-                <Box
-                  display="flex"
-                  flexWrap="wrap"
-                  justifyContent="space-between"
-                  alignItems="center"
-                  gap={2}
-                  mb={3}
-                >
-                  <Stack direction="row" spacing={2} alignItems="center">
-                    <DatePicker
-                      label="Start Date"
-                      value={startDate}
-                      onChange={(newValue) =>
-                        onDateRangeChange(newValue, endDate)
-                      }
-                      renderInput={(params) => (
-                        <TextField {...params} size="small" />
-                      )}
-                    />
-                    <DatePicker
-                      label="End Date"
-                      value={endDate}
-                      onChange={(newValue) =>
-                        onDateRangeChange(startDate, newValue)
-                      }
-                      renderInput={(params) => (
-                        <TextField {...params} size="small" />
-                      )}
-                    />
-                  </Stack>
-                </Box>
-              </LocalizationProvider>
-              {loading ? (
-                <Box
-                  display="flex"
-                  justifyContent="center"
-                  alignItems="center"
-                  minHeight="300px"
-                >
-                  <CircularProgress />
-                </Box>
-              ) : (
-                <Stack spacing={4}>
-                  {/* Charts Section - Moved above deliveries */}
-                  <Paper elevation={3} sx={{ p: 3, borderRadius: 2 }}>
-                    {chartLoading ? (
-                      <Box
-                        display="flex"
-                        justifyContent="center"
-                        alignItems="center"
-                        minHeight="400px"
-                      >
-                        <CircularProgress />
-                      </Box>
-                    ) : chartData?.dailyCollections?.length ? (
-                      <Grid display="flex" spacing={3} columns={2}>
-                        <Card elevation={2} sx={{ p: 3 }}>
-                          <Typography variant="h6" gutterBottom>
-                            Daily COD Collections
-                          </Typography>
-                          <Box sx={{ height: '400px' }}>
-                            {prepareChartData() && (
-                              <Bar
-                                data={prepareChartData()}
-                                options={{
-                                  ...chartOptions,
-                                  maintainAspectRatio: false,
-                                }}
-                              />
-                            )}
-                          </Box>
-                        </Card>
-
-                        <Card elevation={2} sx={{ p: 3 }}>
-                          <Typography variant="h6" gutterBottom>
-                            COD Trend Over Time
-                          </Typography>
-                          <Box sx={{ height: '400px' }}>
-                            {prepareChartData() && (
-                              <Line
-                                data={prepareChartData()}
-                                options={{
-                                  ...chartOptionsWithSecondAxis,
-                                  maintainAspectRatio: false,
-                                }}
-                              />
-                            )}
-                          </Box>
-                        </Card>
-                      </Grid>
-                    ) : (
-                      <Paper elevation={1} sx={{ p: 3, textAlign: 'center' }}>
-                        <Typography variant="h6" color="text.secondary">
-                          No chart data available for the selected date range.
-                        </Typography>
-                      </Paper>
-                    )}
-                  </Paper>
-                </Stack>
-              )}
               {loading ? (
                 <Box
                   display="flex"

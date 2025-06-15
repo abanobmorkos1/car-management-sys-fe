@@ -489,59 +489,58 @@ const ManagerDashboardLayout = ({
             }}
           >
             <Stack spacing={3}>
-              <Box
-                sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}
-              >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <DateRange color="primary" />
                 <Typography variant="h6" fontWeight={600}>
                   Filter Deliveries by Date
                 </Typography>
               </Box>
 
-              <Box
-                sx={{
-                  display: 'flex',
-                  flexDirection: { xs: 'column', md: 'row' },
-                  gap: 2,
-                  alignItems: 'center',
-                }}
-              >
-                <LocalizationProvider dateAdapter={AdapterDateFns}>
-                  <Box
-                    display="flex"
-                    flexWrap="wrap"
-                    justifyContent="space-between"
-                    alignItems="center"
-                    gap={2}
-                    mb={3}
-                  >
-                    <Stack direction="row" spacing={2} alignItems="center">
-                      <DatePicker
-                        label="Start Date"
-                        value={startDate}
-                        onChange={(newValue) => setStartDate(newValue)}
-                        renderInput={(params) => (
-                          <TextField {...params} size="small" />
-                        )}
+              <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    gap: 2,
+                    alignItems: { xs: 'stretch', sm: 'center' },
+                  }}
+                >
+                  <DatePicker
+                    label="Start Date"
+                    value={startDate}
+                    onChange={(newValue) => setStartDate(newValue)}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        size="small"
+                        fullWidth
+                        sx={{ minWidth: { xs: 'auto', sm: 200 } }}
                       />
-                      <DatePicker
-                        label="End Date"
-                        value={endDate}
-                        onChange={(newValue) => setEndDate(newValue)}
-                        renderInput={(params) => (
-                          <TextField {...params} size="small" />
-                        )}
+                    )}
+                  />
+                  <DatePicker
+                    label="End Date"
+                    value={endDate}
+                    onChange={(newValue) => setEndDate(newValue)}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        size="small"
+                        fullWidth
+                        sx={{ minWidth: { xs: 'auto', sm: 200 } }}
                       />
-                    </Stack>
-                  </Box>
-                </LocalizationProvider>
-              </Box>
+                    )}
+                  />
+                </Box>
+              </LocalizationProvider>
 
               <Box
                 sx={{
                   display: 'flex',
+                  flexDirection: { xs: 'column', sm: 'row' },
                   justifyContent: 'space-between',
-                  alignItems: 'center',
+                  alignItems: { xs: 'flex-start', sm: 'center' },
+                  gap: 1,
                 }}
               >
                 <Typography variant="body2" color="text.secondary">

@@ -237,7 +237,7 @@ const SalesDashboard = () => {
       },
     },
   };
-
+  const isMobile = window.innerWidth < 600;
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
       <Topbar />
@@ -249,30 +249,41 @@ const SalesDashboard = () => {
         <LocalizationProvider dateAdapter={AdapterDateFns}>
           <Box
             display="flex"
+            flexDirection={{ xs: 'column', sm: 'row' }}
             flexWrap="wrap"
             justifyContent="space-between"
-            alignItems="center"
+            alignItems={{ xs: 'stretch', sm: 'center' }}
             gap={2}
             mb={3}
           >
-            <Stack direction="row" spacing={2} alignItems="center">
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              spacing={2}
+              alignItems={{ xs: 'stretch', sm: 'center' }}
+              sx={{ width: { xs: '100%', sm: 'auto' } }}
+            >
               <DatePicker
                 label="Start Date"
                 value={startDate}
                 onChange={(newValue) => setStartDate(newValue)}
-                renderInput={(params) => <TextField {...params} size="small" />}
+                renderInput={(params) => (
+                  <TextField {...params} size="small" fullWidth />
+                )}
               />
               <DatePicker
                 label="End Date"
                 value={endDate}
                 onChange={(newValue) => setEndDate(newValue)}
-                renderInput={(params) => <TextField {...params} size="small" />}
+                renderInput={(params) => (
+                  <TextField {...params} size="small" fullWidth />
+                )}
               />
             </Stack>
             <Button
               variant="contained"
               color="primary"
               onClick={() => setCreateOpen(true)}
+              sx={{ width: { xs: '100%', sm: 'auto' } }}
             >
               ➕ Create Delivery
             </Button>
@@ -302,47 +313,73 @@ const SalesDashboard = () => {
                   <CircularProgress />
                 </Box>
               ) : chartData?.dailyCollections?.length ? (
-                <Grid display="flex" spacing={3} columns={2}>
-                  <Card elevation={2} sx={{ p: 3 }}>
-                    <Typography variant="h6" gutterBottom>
-                      Daily COD Collections
-                    </Typography>
-                    <Box sx={{ height: '400px' }}>
-                      {prepareChartData() && (
-                        <Bar
-                          data={prepareChartData()}
-                          options={{
-                            ...chartOptions,
-                            maintainAspectRatio: false,
-                          }}
-                        />
-                      )}
-                    </Box>
-                  </Card>
+                <Grid
+                  container
+                  spacing={3}
+                  sx={{
+                    display: 'flex',
 
-                  <Card elevation={2} sx={{ p: 3 }}>
-                    <Typography variant="h6" gutterBottom>
-                      COD Trend Over Time
-                    </Typography>
-                    <Box sx={{ height: '400px' }}>
-                      {prepareChartData() && (
-                        <Line
-                          data={prepareChartData()}
-                          options={{
-                            ...chartOptionsWithSecondAxis,
-                            maintainAspectRatio: false,
-                          }}
-                        />
-                      )}
-                    </Box>
-                  </Card>
+                    justifyContent: 'space-between',
+                    alignItems: 'stretch',
+                    width: '100%',
+                  }}
+                >
+                  <Grid item xs={12} md={6}>
+                    <Card
+                      elevation={2}
+                      sx={{ p: 3, minWidth: isMobile ? '50px' : '540px' }}
+                    >
+                      <Typography variant="h6" gutterBottom>
+                        Daily COD Collections
+                      </Typography>
+                      <Box
+                        sx={{
+                          height: '400px',
+                        }}
+                      >
+                        {prepareChartData() && (
+                          <Bar
+                            data={prepareChartData()}
+                            options={{
+                              ...chartOptions,
+                              maintainAspectRatio: false,
+                            }}
+                          />
+                        )}
+                      </Box>
+                    </Card>
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <Card
+                      elevation={2}
+                      sx={{ p: 3, minWidth: isMobile ? '50px' : '540px' }}
+                    >
+                      <Typography variant="h6" gutterBottom>
+                        COD Trend Over Time
+                      </Typography>
+                      <Box
+                        sx={{
+                          height: '400px',
+                        }}
+                      >
+                        {prepareChartData() && (
+                          <Line
+                            data={prepareChartData()}
+                            options={{
+                              ...chartOptionsWithSecondAxis,
+                              maintainAspectRatio: false,
+                            }}
+                          />
+                        )}
+                      </Box>
+                    </Card>
+                  </Grid>
                 </Grid>
               ) : (
-                <Paper elevation={1} sx={{ p: 3, textAlign: 'center' }}>
-                  <Typography variant="h6" color="text.secondary">
-                    No chart data available for the selected date range.
-                  </Typography>
-                </Paper>
+                <Typography variant="h6" color="text.secondary">
+                  No chart data available for the selected date range.
+                </Typography>
               )}
             </Paper>
 

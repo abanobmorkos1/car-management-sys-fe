@@ -328,21 +328,26 @@ const DriverDashboardLayout = ({
               </Box>
 
               <LocalizationProvider dateAdapter={AdapterDateFns}>
-                <Box
-                  display="flex"
-                  flexWrap="wrap"
-                  justifyContent="space-between"
-                  alignItems="center"
-                  gap={2}
-                  mb={3}
-                >
-                  <Stack direction="row" spacing={2} alignItems="center">
+                <Stack spacing={2}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: { xs: 'column', sm: 'row' },
+                      gap: 2,
+                      alignItems: { xs: 'stretch', sm: 'center' },
+                    }}
+                  >
                     <DatePicker
                       label="Start Date"
                       value={startDate}
                       onChange={(newValue) => onDateChange(newValue, endDate)}
                       renderInput={(params) => (
-                        <TextField {...params} size="small" />
+                        <TextField
+                          {...params}
+                          size="small"
+                          fullWidth
+                          sx={{ minWidth: { xs: 'auto', sm: 200 } }}
+                        />
                       )}
                     />
                     <DatePicker
@@ -350,11 +355,16 @@ const DriverDashboardLayout = ({
                       value={endDate}
                       onChange={(newValue) => onDateChange(startDate, newValue)}
                       renderInput={(params) => (
-                        <TextField {...params} size="small" />
+                        <TextField
+                          {...params}
+                          size="small"
+                          fullWidth
+                          sx={{ minWidth: { xs: 'auto', sm: 200 } }}
+                        />
                       )}
                     />
-                  </Stack>
-                </Box>
+                  </Box>
+                </Stack>
               </LocalizationProvider>
             </Paper>
 
