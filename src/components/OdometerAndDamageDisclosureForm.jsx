@@ -12,6 +12,7 @@ import {
   TableContainer,
   TableRow,
 } from '@mui/material';
+import SignatureModal from './SignatureModal';
 
 const OdometerAndDamageDisclosureForm = ({
   data = null,
@@ -33,6 +34,7 @@ const OdometerAndDamageDisclosureForm = ({
   const [damageStatus, setDamageStatus] = useState('');
 
   const [sellerSignature, setSellerSignature] = useState('');
+  const [sellerSignatureData, setSellerSignatureData] = useState(null);
   const [sellerName, setSellerName] = useState('');
   const [sellerAddress, setSellerAddress] = useState('');
   const [sellerCity, setSellerCity] = useState('');
@@ -41,12 +43,16 @@ const OdometerAndDamageDisclosureForm = ({
   const [sellerDate, setSellerDate] = useState('');
 
   const [newOwnerSignature, setNewOwnerSignature] = useState('');
+  const [newOwnerSignatureData, setNewOwnerSignatureData] = useState(null);
   const [newOwnerName, setNewOwnerName] = useState('');
   const [newOwnerAddress, setNewOwnerAddress] = useState('');
   const [newOwnerCity, setNewOwnerCity] = useState('');
   const [newOwnerState, setNewOwnerState] = useState('');
   const [newOwnerZip, setNewOwnerZip] = useState('');
   const [newOwnerDate, setNewOwnerDate] = useState('');
+
+  const [signatureModalOpen, setSignatureModalOpen] = useState(false);
+  const [currentSignatureType, setCurrentSignatureType] = useState('');
 
   useEffect(() => {
     if (data) {
@@ -81,6 +87,7 @@ const OdometerAndDamageDisclosureForm = ({
 
       if (data.seller) {
         setSellerSignature(data.seller.signature || '');
+        setSellerSignatureData(data.seller.signatureData || null);
         setSellerName(data.seller.name || '');
 
         if (data.seller.address) {
@@ -98,6 +105,7 @@ const OdometerAndDamageDisclosureForm = ({
 
       if (data.newOwner) {
         setNewOwnerSignature(data.newOwner.signature || '');
+        setNewOwnerSignatureData(data.newOwner.signatureData || null);
         setNewOwnerName(data.newOwner.name || '');
 
         if (data.newOwner.address) {
@@ -114,6 +122,24 @@ const OdometerAndDamageDisclosureForm = ({
       }
     }
   }, [data]);
+
+  const handleSignatureClick = (type) => {
+    if (viewOnly) return;
+    setCurrentSignatureType(type);
+    setSignatureModalOpen(true);
+  };
+
+  const handleSignatureSave = (signatureData) => {
+    if (currentSignatureType === 'seller') {
+      setSellerSignatureData(signatureData);
+      setSellerSignature('Signed');
+    } else if (currentSignatureType === 'newOwner') {
+      setNewOwnerSignatureData(signatureData);
+      setNewOwnerSignature('Signed');
+    }
+    setSignatureModalOpen(false);
+    setCurrentSignatureType('');
+  };
 
   const handleSubmit = () => {
     const formData = {
@@ -138,6 +164,7 @@ const OdometerAndDamageDisclosureForm = ({
       },
       seller: {
         signature: sellerSignature,
+        signatureData: sellerSignatureData,
         name: sellerName,
         address: {
           street: sellerAddress,
@@ -149,6 +176,7 @@ const OdometerAndDamageDisclosureForm = ({
       },
       newOwner: {
         signature: newOwnerSignature,
+        signatureData: newOwnerSignatureData,
         name: newOwnerName,
         address: {
           street: newOwnerAddress,
@@ -848,24 +876,46 @@ const OdometerAndDamageDisclosureForm = ({
                   height: '35px',
                 }}
               >
-                <TextField
-                  fullWidth
-                  size="small"
-                  placeholder="X"
-                  value={sellerSignature}
-                  onChange={(e) => setSellerSignature(e.target.value)}
-                  disabled={viewOnly}
+                <Box
+                  onClick={() => handleSignatureClick('seller')}
                   sx={{
-                    '& .MuiInputBase-input': {
-                      fontSize: '12pt',
-                      fontFamily: 'cursive',
-                      p: 0.1,
-                    },
-                    '& .MuiOutlinedInput-root': {
-                      '& fieldset': { border: 'none' },
+                    width: '100%',
+                    height: '100%',
+                    cursor: viewOnly ? 'default' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    height: '32px',
+                    backgroundColor: viewOnly ? 'transparent' : '#fafafa',
+                    border: viewOnly ? 'none' : '1px dashed #ccc',
+                    '&:hover': {
+                      backgroundColor: viewOnly ? 'transparent' : '#f0f0f0',
                     },
                   }}
-                />
+                >
+                  {sellerSignatureData ? (
+                    <img
+                      src={sellerSignatureData.signature}
+                      alt="Seller Signature"
+                      style={{
+                        maxWidth: '100%',
+                        maxHeight: '100%',
+                        objectFit: 'contain',
+                      }}
+                    />
+                  ) : (
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontSize: '9pt',
+                        color: viewOnly ? 'transparent' : '#666',
+                        fontStyle: 'italic',
+                      }}
+                    >
+                      {viewOnly ? '' : 'Click to sign'}
+                    </Typography>
+                  )}
+                </Box>
               </TableCell>
               <TableCell
                 sx={{
@@ -1128,24 +1178,46 @@ const OdometerAndDamageDisclosureForm = ({
                   height: '35px',
                 }}
               >
-                <TextField
-                  fullWidth
-                  size="small"
-                  placeholder="X"
-                  value={newOwnerSignature}
-                  onChange={(e) => setNewOwnerSignature(e.target.value)}
-                  disabled={viewOnly}
+                <Box
+                  onClick={() => handleSignatureClick('newOwner')}
                   sx={{
-                    '& .MuiInputBase-input': {
-                      fontSize: '12pt',
-                      fontFamily: 'cursive',
-                      p: 0.1,
-                    },
-                    '& .MuiOutlinedInput-root': {
-                      '& fieldset': { border: 'none' },
+                    width: '100%',
+                    height: '100%',
+                    cursor: viewOnly ? 'default' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    height: '32px',
+                    backgroundColor: viewOnly ? 'transparent' : '#fafafa',
+                    border: viewOnly ? 'none' : '1px dashed #ccc',
+                    '&:hover': {
+                      backgroundColor: viewOnly ? 'transparent' : '#f0f0f0',
                     },
                   }}
-                />
+                >
+                  {newOwnerSignatureData ? (
+                    <img
+                      src={newOwnerSignatureData.signature}
+                      alt="New Owner Signature"
+                      style={{
+                        maxWidth: '100%',
+                        maxHeight: '100%',
+                        objectFit: 'contain',
+                      }}
+                    />
+                  ) : (
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontSize: '9pt',
+                        color: viewOnly ? 'transparent' : '#666',
+                        fontStyle: 'italic',
+                      }}
+                    >
+                      {viewOnly ? '' : 'Click to sign'}
+                    </Typography>
+                  )}
+                </Box>
               </TableCell>
               <TableCell
                 sx={{
@@ -1384,6 +1456,20 @@ const OdometerAndDamageDisclosureForm = ({
           </Button>
         </Box>
       )}
+
+      <SignatureModal
+        open={signatureModalOpen}
+        onClose={() => {
+          setSignatureModalOpen(false);
+          setCurrentSignatureType('');
+        }}
+        onSave={handleSignatureSave}
+        title={
+          currentSignatureType === 'seller'
+            ? "Seller's Signature"
+            : "New Owner's Signature"
+        }
+      />
     </Paper>
   );
 };

@@ -21,6 +21,7 @@
     "@mui/material": "^7.1.0",
     "@mui/x-date-pickers": "^8.5.0",
     "@mui/x-date-pickers-pro": "^8.5.0",
+    "browser-image-compression": "^2.0.2",
     "chart.js": "^4.4.9",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
@@ -30,7 +31,10 @@
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.1",
     "react-scripts": "^5.0.1",
+    "react-signature-canvas": "^1.1.0-alpha.2",
+    "react-signature-pad-wrapper": "^4.1.0",
     "recharts": "^2.15.3",
+    "trim-canvas": "^0.1.2",
     "web-vitals": "^5.0.2",
     "xlsx": "^0.18.5"
   },

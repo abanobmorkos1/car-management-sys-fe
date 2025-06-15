@@ -218,94 +218,57 @@ const NewLeaseForm = ({ prefill, fromDelivery = false }) => {
     setLoading(true);
 
     try {
-      const titleKey = form.title
-        ? await uploadToS3(form.title, 'lease-return', form.customerName)
-        : null;
-
-      const leaseReturnMediaKeys = [];
-      for (const file of form.leaseReturnMedia) {
-        const key = await uploadToS3(file, 'lease-return', form.customerName);
-        leaseReturnMediaKeys.push(key);
-      }
-
-      const res = await fetch(`${api}/lease/createlr`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          ...form,
-          titleKey,
-          leaseReturnMediaKeys,
-        }),
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        setSnack({
-          open: true,
-          msg: 'Lease return created successfully!',
-          severity: 'success',
-        });
-
-        const disclosureData = {
-          leaseReturnId: data._id,
-          vehicleInfo: {
-            vehicleYear: form.year,
-            make: form.make,
-            model: form.model,
-            bodyType: form.bodyStyle,
-            vin: form.vin,
+      const disclosureData = {
+        vehicleInfo: {
+          vehicleYear: form.year,
+          make: form.make,
+          model: form.model,
+          bodyType: form.bodyStyle,
+          vin: form.vin,
+        },
+        odometerInfo: {
+          odometerReading: form.miles,
+          odometerDigits: form.miles?.length.toString(),
+          certification: {
+            actualMileage: false,
+            exceedsMechanicalLimits: false,
+            odometerDiscrepancy: false,
           },
-          odometerInfo: {
-            odometerReading: '000000',
-            odometerDigits: 'six',
-            certification: {
-              actualMileage: false,
-              exceedsMechanicalLimits: false,
-              odometerDiscrepancy: false,
-            },
+        },
+        damageDisclosure: {
+          status: 'has_not_been',
+        },
+        seller: {
+          signature: '',
+          name: form.customerName,
+          address: {
+            street: form.address,
+            city: form.city,
+            state: form.state,
+            zipCode: form.zip,
           },
-          damageDisclosure: {
-            status: 'has_not_been',
+          dateOfStatement: new Date().toISOString(),
+        },
+        newOwner: {
+          signature: '',
+          name: '',
+          address: {
+            street: '',
+            city: '',
+            state: '',
+            zipCode: '',
           },
-          seller: {
-            signature: '',
-            name: form.customerName,
-            address: {
-              street: form.address,
-              city: form.city,
-              state: form.state,
-              zipCode: form.zip,
-            },
-            dateOfStatement: new Date().toISOString(),
-          },
-          newOwner: {
-            signature: '',
-            name: '',
-            address: {
-              street: '',
-              city: '',
-              state: '',
-              zipCode: '',
-            },
-            dateOfStatement: new Date().toISOString(),
-          },
-        };
+          dateOfStatement: new Date().toISOString(),
+        },
+      };
 
-        setSubmissionData(disclosureData);
-        setShowModal(true);
-      } else {
-        setSnack({
-          open: true,
-          msg: data.message || 'Submission failed',
-          severity: 'error',
-        });
-      }
+      setSubmissionData(disclosureData);
+      setShowModal(true);
     } catch (err) {
-      console.error('Lease submit error:', err);
+      console.error('Error preparing form:', err);
       setSnack({
         open: true,
-        msg: 'Error during lease return',
+        msg: 'Error preparing form data',
         severity: 'error',
       });
     } finally {
@@ -362,37 +325,83 @@ const NewLeaseForm = ({ prefill, fromDelivery = false }) => {
 
   const handleDisclosureSubmit = async (disclosureFormData) => {
     console.log('Disclosure form data:', disclosureFormData);
-    let res = await fetch(`${api}/lease/odometer-disclosure`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({
-        ...disclosureFormData,
-        leaseReturnId: submissionData.leaseReturnId,
-      }),
-    });
 
-    if (res.ok) {
-      setSnack({
-        open: true,
-        msg: 'Odometer and Damage Disclosure submitted successfully!',
-        severity: 'success',
-      });
-      setShowModal(false);
+    try {
+      // First, submit the lease return
+      const titleKey = form.title
+        ? await uploadToS3(form.title, 'lease-return', form.customerName)
+        : null;
 
-      if (user.role === 'Management') {
-        navigate('/management/dashboard');
-      } else {
-        navigate('/driver/dashboard');
+      const leaseReturnMediaKeys = [];
+      for (const file of form.leaseReturnMedia) {
+        const key = await uploadToS3(file, 'lease-return', form.customerName);
+        leaseReturnMediaKeys.push(key);
       }
-    } else {
-      const data = await res.json();
+
+      const leaseRes = await fetch(`${api}/lease/createlr`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          ...form,
+          titleKey,
+          leaseReturnMediaKeys,
+        }),
+      });
+
+      const leaseData = await leaseRes.json();
+      if (!leaseRes.ok) {
+        setSnack({
+          open: true,
+          msg: leaseData.message || 'Failed to submit lease return',
+          severity: 'error',
+        });
+        setShowModal(false);
+        return;
+      }
+
+      // If lease return successful, submit disclosure
+      const disclosureRes = await fetch(`${api}/lease/odometer-disclosure`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          ...disclosureFormData,
+          leaseReturnId: leaseData._id,
+        }),
+      });
+
+      if (disclosureRes.ok) {
+        setSnack({
+          open: true,
+          msg: 'Lease return and disclosure submitted successfully!',
+          severity: 'success',
+        });
+        setShowModal(false);
+
+        if (user.role === 'Management') {
+          navigate('/management/dashboard');
+        } else {
+          navigate('/driver/dashboard');
+        }
+      } else {
+        const disclosureData = await disclosureRes.json();
+        setSnack({
+          open: true,
+          msg: disclosureData.message || 'Failed to submit disclosure',
+          severity: 'error',
+        });
+        console.error('Disclosure submission error:', disclosureData);
+        // Keep modal open for disclosure errors
+      }
+    } catch (err) {
+      console.error('Submission error:', err);
       setSnack({
         open: true,
-        msg: data.message || 'Failed to submit disclosure',
+        msg: 'Error during submission',
         severity: 'error',
       });
-      console.error('Disclosure submission error:', data);
+      // Keep modal open for unexpected errors
     }
   };
 
