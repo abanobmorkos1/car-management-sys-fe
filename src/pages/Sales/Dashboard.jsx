@@ -63,8 +63,14 @@ const SalesDashboard = () => {
   const [selectedDelivery, setSelectedDelivery] = useState(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [page, setPage] = useState(1);
-  const [startDate, setStartDate] = useState(new Date());
-  const [endDate, setEndDate] = useState(new Date());
+
+  // Calculate max date (today) and min date (5 days back)
+  const today = new Date();
+  const fiveDaysBack = new Date(today);
+  fiveDaysBack.setDate(today.getDate() - 5);
+
+  const [startDate, setStartDate] = useState(fiveDaysBack);
+  const [endDate, setEndDate] = useState(today);
 
   const [chartData, setChartData] = useState(null);
   const [chartLoading, setChartLoading] = useState(true);
@@ -285,6 +291,8 @@ const SalesDashboard = () => {
                 label="Start Date"
                 value={startDate}
                 onChange={(newValue) => setStartDate(newValue)}
+                minDate={fiveDaysBack}
+                maxDate={today}
                 renderInput={(params) => (
                   <TextField {...params} size="small" fullWidth />
                 )}
@@ -293,6 +301,8 @@ const SalesDashboard = () => {
                 label="End Date"
                 value={endDate}
                 onChange={(newValue) => setEndDate(newValue)}
+                minDate={fiveDaysBack}
+                maxDate={today}
                 renderInput={(params) => (
                   <TextField {...params} size="small" fullWidth />
                 )}

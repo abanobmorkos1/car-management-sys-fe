@@ -150,7 +150,7 @@ const BonusUpload = ({ onCountUpdate }) => {
             label="Type"
             onChange={(e) => setType(e.target.value)}
           >
-            <MenuItem value="review">Review Photo ($25)</MenuItem>
+            <MenuItem value="review">Review Photo ($20)</MenuItem>
             <MenuItem value="customer">Customer Photo ($5)</MenuItem>
           </Select>
         </FormControl>

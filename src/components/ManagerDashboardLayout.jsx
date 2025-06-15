@@ -242,7 +242,6 @@ const ManagerDashboardLayout = ({
         }}
       >
         <Container maxWidth="xl">
-          {/* Enhanced Header - Always visible */}
           <Paper
             elevation={3}
             sx={{
@@ -269,7 +268,120 @@ const ManagerDashboardLayout = ({
             </Typography>
           </Paper>
 
-          {/* Enhanced Stats Cards - Collapsible */}
+          <Paper
+            elevation={2}
+            sx={{ mt: 4, mb: 4, borderRadius: 3, overflow: 'hidden' }}
+          >
+            <Box
+              sx={{
+                p: 3,
+                background: theme.gradients?.success,
+                color: 'white',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                cursor: 'pointer',
+                '&:hover': { opacity: 0.9 },
+              }}
+              onClick={() => toggleSection('deliveries')}
+            >
+              <Typography variant="h5" fontWeight={600}>
+                Delivery Management
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                  {totalDeliveries} total deliveries
+                </Typography>
+                <IconButton size="small" sx={{ color: 'white' }}>
+                  {sectionsExpanded.deliveries ? (
+                    <ExpandLess />
+                  ) : (
+                    <ExpandMore />
+                  )}
+                </IconButton>
+              </Box>
+            </Box>
+            <Collapse in={sectionsExpanded.deliveries}>
+              <Box sx={{ p: 3 }}>
+                {loading ? (
+                  <Grid container spacing={3} sx={{ alignItems: 'stretch' }}>
+                    {[...Array(4)].map((_, index) => (
+                      <Grid item xs={12} md={6} key={index}>
+                        <Card sx={{ height: 300, borderRadius: 3 }}>
+                          <CardContent>
+                            <Skeleton variant="text" height={32} />
+                            <Skeleton variant="text" height={24} />
+                            <Skeleton variant="text" height={24} />
+                            <Skeleton
+                              variant="rectangular"
+                              height={40}
+                              sx={{ mt: 2 }}
+                            />
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    ))}
+                  </Grid>
+                ) : deliveries.length > 0 ? (
+                  <Grid container spacing={3} sx={{ alignItems: 'stretch' }}>
+                    {deliveries.map((delivery) => (
+                      <Grid
+                        item
+                        xs={12}
+                        md={6}
+                        key={delivery._id}
+                        sx={{ display: 'flex' }}
+                      >
+                        <ManagerDeliveryCard
+                          user={user}
+                          delivery={delivery}
+                          drivers={drivers}
+                          onAssignDriver={onAssignDriver}
+                        />
+                      </Grid>
+                    ))}
+                  </Grid>
+                ) : (
+                  <Box sx={{ textAlign: 'center', py: 6 }}>
+                    <Assignment
+                      sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }}
+                    />
+                    <Typography variant="h6" color="text.secondary">
+                      No deliveries found
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {startDate || endDate
+                        ? 'Try adjusting your date filters'
+                        : 'No deliveries available'}
+                    </Typography>
+                  </Box>
+                )}
+
+                {!loading && deliveries.length > 0 && totalPages > 1 && (
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      mt: 4,
+                      gap: 2,
+                    }}
+                  >
+                    <Pagination
+                      count={totalPages}
+                      page={page}
+                      onChange={handlePageChange}
+                      color="primary"
+                      size="large"
+                      showFirstButton
+                      showLastButton
+                    />
+                  </Box>
+                )}
+              </Box>
+            </Collapse>
+          </Paper>
+
           <Paper
             elevation={3}
             sx={{
@@ -594,122 +706,6 @@ const ManagerDashboardLayout = ({
             </Grid>
           </Grid>
 
-          {/* Deliveries Section - Collapsible */}
-          <Paper
-            elevation={2}
-            sx={{ mt: 4, borderRadius: 3, overflow: 'hidden' }}
-          >
-            <Box
-              sx={{
-                p: 3,
-                background: theme.gradients?.success,
-                color: 'white',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                cursor: 'pointer',
-                '&:hover': { opacity: 0.9 },
-              }}
-              onClick={() => toggleSection('deliveries')}
-            >
-              <Typography variant="h5" fontWeight={600}>
-                Delivery Management
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                  {totalDeliveries} total deliveries
-                </Typography>
-                <IconButton size="small" sx={{ color: 'white' }}>
-                  {sectionsExpanded.deliveries ? (
-                    <ExpandLess />
-                  ) : (
-                    <ExpandMore />
-                  )}
-                </IconButton>
-              </Box>
-            </Box>
-            <Collapse in={sectionsExpanded.deliveries}>
-              <Box sx={{ p: 3 }}>
-                {loading ? (
-                  <Grid container spacing={3} sx={{ alignItems: 'stretch' }}>
-                    {[...Array(4)].map((_, index) => (
-                      <Grid item xs={12} md={6} key={index}>
-                        <Card sx={{ height: 300, borderRadius: 3 }}>
-                          <CardContent>
-                            <Skeleton variant="text" height={32} />
-                            <Skeleton variant="text" height={24} />
-                            <Skeleton variant="text" height={24} />
-                            <Skeleton
-                              variant="rectangular"
-                              height={40}
-                              sx={{ mt: 2 }}
-                            />
-                          </CardContent>
-                        </Card>
-                      </Grid>
-                    ))}
-                  </Grid>
-                ) : deliveries.length > 0 ? (
-                  <Grid container spacing={3} sx={{ alignItems: 'stretch' }}>
-                    {deliveries.map((delivery) => (
-                      <Grid
-                        item
-                        xs={12}
-                        md={6}
-                        key={delivery._id}
-                        sx={{ display: 'flex' }}
-                      >
-                        <ManagerDeliveryCard
-                          user={user}
-                          delivery={delivery}
-                          drivers={drivers}
-                          onAssignDriver={onAssignDriver}
-                        />
-                      </Grid>
-                    ))}
-                  </Grid>
-                ) : (
-                  <Box sx={{ textAlign: 'center', py: 6 }}>
-                    <Assignment
-                      sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }}
-                    />
-                    <Typography variant="h6" color="text.secondary">
-                      No deliveries found
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {startDate || endDate
-                        ? 'Try adjusting your date filters'
-                        : 'No deliveries available'}
-                    </Typography>
-                  </Box>
-                )}
-
-                {!loading && deliveries.length > 0 && totalPages > 1 && (
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      mt: 4,
-                      gap: 2,
-                    }}
-                  >
-                    <Pagination
-                      count={totalPages}
-                      page={page}
-                      onChange={handlePageChange}
-                      color="primary"
-                      size="large"
-                      showFirstButton
-                      showLastButton
-                    />
-                  </Box>
-                )}
-              </Box>
-            </Collapse>
-          </Paper>
-
-          {/* Pending Clock-Ins - Collapsible */}
           <Paper
             elevation={3}
             sx={{
