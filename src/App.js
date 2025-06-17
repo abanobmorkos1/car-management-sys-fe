@@ -16,39 +16,51 @@ import NewCarForm from './pages/Driver/NewCarUpload';
 import CarGallery from './pages/CarGallery';
 import NewDeliveryForm from './pages/Sales/CreateDelivery';
 import ManDashboard from './pages/DriverManagement/Dashboard';
-import PrefilledCODWrapper from './components/PrefilledCODWrapper'; 
+import PrefilledCODWrapper from './components/PrefilledCODWrapper';
 import EditDeliveryForm from './pages/Sales/EditDeliveryForm';
-import PrefilledLeaseReturnWrapper from './components/PrefilledLeaseReturnWrapper'
+import PrefilledLeaseReturnWrapper from './components/PrefilledLeaseReturnWrapper';
 import theme from './components/Theme/theme';
-
+import PDFDoc from './components/PDFDoc';
 
 function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-    <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<Login />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/sales/dashboard" element={<SalesDashboard />} />
-          <Route path="/owner/dashboard" element={<OwnerDashboard />} />
-          <Route path="/driver/dashboard" element={<DriverDashboard />} />
-          <Route path="/driver/cod/new" element={<NewCOD />} />
-          <Route path="/allcods" element={<CODList />} />
-          <Route path="/lease/create" element={<NewLeaseForm />} />
-          <Route path="/driver/lease-returns" element={<LeaseReturnsList />} />
-          <Route path="/new-car" element={<NewCarForm />} />
-          <Route path="/cars" element={<CarGallery />} />
-          <Route path="/sales/post-delivery" element={<NewDeliveryForm />} />
-          <Route path="/management/dashboard" element={<ManDashboard />} />
-          <Route path="/driver/cod/from-delivery/:id" element={<PrefilledCODWrapper />}  />
-          <Route path="/sales/edit-delivery/:id" element={<EditDeliveryForm />} />
-          <Route path="/driver/lease-return/from-delivery/:id" element={<PrefilledLeaseReturnWrapper />} />
-        </Routes>
-      </Router>
-    </AuthProvider>
+      <AuthProvider>
+        <Router>
+          <Routes>
+            <Route path="/" element={<Login />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/sales/dashboard" element={<SalesDashboard />} />
+            <Route path="/owner/dashboard" element={<OwnerDashboard />} />
+            <Route path="/driver/dashboard" element={<DriverDashboard />} />
+            <Route path="/driver/cod/new" element={<NewCOD />} />
+            <Route path="/allcods" element={<CODList />} />
+            <Route path="/lease/create" element={<NewLeaseForm />} />
+            <Route
+              path="/driver/lease-returns"
+              element={<LeaseReturnsList />}
+            />
+            <Route path="/new-car" element={<NewCarForm />} />
+            <Route path="/cars" element={<CarGallery />} />
+            <Route path="/sales/post-delivery" element={<NewDeliveryForm />} />
+            <Route path="/management/dashboard" element={<ManDashboard />} />
+            <Route
+              path="/driver/cod/from-delivery/:id"
+              element={<PrefilledCODWrapper />}
+            />
+            <Route
+              path="/sales/edit-delivery/:id"
+              element={<EditDeliveryForm />}
+            />
+            <Route
+              path="/driver/lease-return/from-delivery/:id"
+              element={<PrefilledLeaseReturnWrapper />}
+            />
+          </Routes>
+        </Router>
+      </AuthProvider>
     </ThemeProvider>
   );
 }
