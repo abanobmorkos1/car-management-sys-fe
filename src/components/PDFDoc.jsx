@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Typography, TextField, Button } from '@mui/material';
 import SignatureModal from './SignatureModal';
-import ownerSignature from '../assets/ownersing.png';
+import ownerSignature from '../assets/ownersign.png';
 
 function Page({ children, id }) {
   return (
@@ -14,13 +14,9 @@ function Page({ children, id }) {
         padding: '20mm',
         margin: '0 auto',
         backgroundColor: 'white',
-        boxShadow: '0 0 10px rgba(0,0,0,0.1)',
+        boxShadow: '0px 1px 10px 10px rgba(0,0,0,0.2)',
         display: 'flex',
         flexDirection: 'column',
-        // '@media print': {
-        //   boxShadow: 'none',
-        //   margin: 0,
-        // },
       }}
     >
       {children}
@@ -30,7 +26,7 @@ function Page({ children, id }) {
 
 export default function PDFDoc({ data, onSubmit, viewOnly = false }) {
   const [formData, setFormData] = useState({
-    nameOfConsumer: 'Hussnain Qureshi',
+    nameOfConsumer: '',
     addressOfConsumer: '',
     leaseOrPurchase: '',
     make: '',
@@ -45,22 +41,18 @@ export default function PDFDoc({ data, onSubmit, viewOnly = false }) {
     estimatedDeliveryDate: '',
     placeOfDelivery: '',
     consumerSignature: '',
-    vipSignature: '',
     signatureDate: '',
   });
 
   const [signatureModalOpen, setSignatureModalOpen] = useState(false);
-
   const [currentSignatureType, setCurrentSignatureType] = useState('');
-  const [signatures, setSignatures] = useState({
-    consumer: null,
-  });
 
   const handleInputChange = (field) => (event) => {
     setFormData({ ...formData, [field]: event.target.value });
   };
 
   const handleSignatureClick = (type) => {
+    if (viewOnly) return; // Prevent signature clicks in view-only mode
     setCurrentSignatureType(type);
     setSignatureModalOpen(true);
   };
@@ -72,11 +64,6 @@ export default function PDFDoc({ data, onSubmit, viewOnly = false }) {
   }, [data]);
 
   const handleSignatureSave = (signatureData) => {
-    setSignatures((prev) => ({
-      ...prev,
-      [currentSignatureType]: signatureData.signature,
-    }));
-
     const signatureField = `${currentSignatureType}Signature`;
     setFormData((prev) => ({
       ...prev,
@@ -88,12 +75,7 @@ export default function PDFDoc({ data, onSubmit, viewOnly = false }) {
   };
 
   const saveDocument = () => {
-    const pdfData = {
-      formData,
-      signatures,
-      timestamp: new Date().toISOString(),
-    };
-    onSubmit && onSubmit(pdfData);
+    onSubmit && onSubmit(formData);
   };
 
   const underlineInputStyle = {
@@ -109,6 +91,11 @@ export default function PDFDoc({ data, onSubmit, viewOnly = false }) {
     '& .MuiInput-input': {
       fontSize: '14px',
       padding: '2px 0',
+    },
+    // Ensure disabled fields look the same as enabled ones
+    '& .Mui-disabled': {
+      color: 'black !important',
+      WebkitTextFillColor: 'black !important',
     },
   };
 
@@ -131,6 +118,11 @@ export default function PDFDoc({ data, onSubmit, viewOnly = false }) {
       backgroundImage:
         'repeating-linear-gradient(transparent, transparent 21px, #000 21px, #000 22px)',
       backgroundAttachment: 'local',
+    },
+    // Ensure disabled fields look the same as enabled ones
+    '& .Mui-disabled': {
+      color: 'black !important',
+      WebkitTextFillColor: 'black !important',
     },
   };
 
@@ -183,6 +175,7 @@ export default function PDFDoc({ data, onSubmit, viewOnly = false }) {
               <TextField
                 variant="standard"
                 value={formData.nameOfConsumer}
+                disabled={viewOnly}
                 autoComplete="new-password"
                 autoCorrect="off"
                 autoCapitalize="off"
@@ -208,6 +201,7 @@ export default function PDFDoc({ data, onSubmit, viewOnly = false }) {
               <TextField
                 variant="standard"
                 value={formData.addressOfConsumer}
+                disabled={viewOnly}
                 autoComplete="new-password"
                 autoCorrect="off"
                 autoCapitalize="off"
@@ -236,6 +230,7 @@ export default function PDFDoc({ data, onSubmit, viewOnly = false }) {
                 autoCorrect="off"
                 autoCapitalize="off"
                 spellCheck="false"
+                disabled={viewOnly}
                 value={formData.leaseOrPurchase}
                 onChange={handleInputChange('leaseOrPurchase')}
                 sx={{ ...underlineInputStyle, flexGrow: 1 }}
@@ -273,6 +268,7 @@ export default function PDFDoc({ data, onSubmit, viewOnly = false }) {
                 autoCorrect="off"
                 autoCapitalize="off"
                 spellCheck="false"
+                disabled={viewOnly}
                 value={formData.make}
                 onChange={handleInputChange('make')}
                 sx={{ ...underlineInputStyle, flexGrow: 1 }}
@@ -299,6 +295,7 @@ export default function PDFDoc({ data, onSubmit, viewOnly = false }) {
                 autoCorrect="off"
                 autoCapitalize="off"
                 spellCheck="false"
+                disabled={viewOnly}
                 value={formData.model}
                 onChange={handleInputChange('model')}
                 sx={{ ...underlineInputStyle, flexGrow: 1 }}
@@ -325,6 +322,7 @@ export default function PDFDoc({ data, onSubmit, viewOnly = false }) {
                 autoCorrect="off"
                 autoCapitalize="off"
                 spellCheck="false"
+                disabled={viewOnly}
                 value={formData.year}
                 onChange={handleInputChange('year')}
                 sx={{ ...underlineInputStyle, flexGrow: 1 }}
@@ -351,6 +349,7 @@ export default function PDFDoc({ data, onSubmit, viewOnly = false }) {
                 autoCorrect="off"
                 autoCapitalize="off"
                 spellCheck="false"
+                disabled={viewOnly}
                 value={formData.vin}
                 onChange={handleInputChange('vin')}
                 sx={{ ...underlineInputStyle, flexGrow: 1 }}
@@ -375,6 +374,7 @@ export default function PDFDoc({ data, onSubmit, viewOnly = false }) {
                 autoCorrect="off"
                 autoCapitalize="off"
                 spellCheck="false"
+                disabled={viewOnly}
                 multiline
                 rows={3}
                 maxRows={3}
@@ -404,6 +404,7 @@ export default function PDFDoc({ data, onSubmit, viewOnly = false }) {
                 autoCorrect="off"
                 autoCapitalize="off"
                 spellCheck="false"
+                disabled={viewOnly}
                 multiline
                 rows={3}
                 maxRows={3}
@@ -436,6 +437,7 @@ export default function PDFDoc({ data, onSubmit, viewOnly = false }) {
                 autoCorrect="off"
                 autoCapitalize="off"
                 spellCheck="false"
+                disabled={viewOnly}
                 multiline
                 rows={3}
                 maxRows={3}
@@ -473,6 +475,7 @@ export default function PDFDoc({ data, onSubmit, viewOnly = false }) {
               <TextField
                 variant="standard"
                 value={formData.priceOfVehicle}
+                disabled={viewOnly}
                 autoComplete="new-password"
                 autoCorrect="off"
                 autoCapitalize="off"
@@ -496,6 +499,7 @@ export default function PDFDoc({ data, onSubmit, viewOnly = false }) {
               <TextField
                 variant="standard"
                 value={formData.estimatedPrice}
+                disabled={viewOnly}
                 autoComplete="new-password"
                 autoCorrect="off"
                 autoCapitalize="off"
@@ -548,6 +552,7 @@ export default function PDFDoc({ data, onSubmit, viewOnly = false }) {
               <TextField
                 variant="standard"
                 value={formData.estimatedDeliveryDate}
+                disabled={viewOnly}
                 autoComplete="new-password"
                 autoCorrect="off"
                 autoCapitalize="off"
@@ -574,6 +579,7 @@ export default function PDFDoc({ data, onSubmit, viewOnly = false }) {
               <TextField
                 variant="standard"
                 value={formData.placeOfDelivery}
+                disabled={viewOnly}
                 autoComplete="new-password"
                 autoCorrect="off"
                 autoCapitalize="off"
@@ -772,14 +778,14 @@ export default function PDFDoc({ data, onSubmit, viewOnly = false }) {
                 sx={{
                   width: '100%',
                   height: '20px',
-                  cursor: 'pointer',
+                  cursor: viewOnly ? 'default' : 'pointer',
                   position: 'relative',
                   borderBottom: '1px solid black',
                 }}
               >
-                {signatures.consumer && (
+                {formData.consumerSignature && (
                   <img
-                    src={signatures.consumer}
+                    src={formData.consumerSignature}
                     alt="Consumer Signature"
                     style={{
                       position: 'absolute',
@@ -823,9 +829,9 @@ export default function PDFDoc({ data, onSubmit, viewOnly = false }) {
                   alt="VIP Auto Group Inc. Signature"
                   style={{
                     position: 'absolute',
-                    top: '-63px',
+                    top: '-13px',
                     left: '50px',
-                    height: '100px',
+                    height: '30px',
                     maxWidth: '300px',
                     objectFit: 'contain',
                   }}
@@ -847,6 +853,7 @@ export default function PDFDoc({ data, onSubmit, viewOnly = false }) {
               <TextField
                 variant="standard"
                 value={formData.signatureDate}
+                disabled={viewOnly}
                 autoComplete="new-password"
                 autoCorrect="off"
                 autoCapitalize="off"
@@ -939,18 +946,18 @@ export default function PDFDoc({ data, onSubmit, viewOnly = false }) {
 
             <Box mb={4}>
               <Box
-                onClick={() => handleSignatureClick('section2Consumer')}
+                onClick={() => handleSignatureClick('consumer')}
                 sx={{
                   height: '20px',
                   maxWidth: '250px',
-                  cursor: 'pointer',
+                  cursor: viewOnly ? 'default' : 'pointer',
                   position: 'relative',
                   borderBottom: '1px solid black',
                 }}
               >
-                {signatures.consumer && (
+                {formData.consumerSignature && (
                   <img
-                    src={signatures.consumer}
+                    src={formData.consumerSignature}
                     alt="Consumer Signature"
                     style={{
                       position: 'absolute',
@@ -975,6 +982,7 @@ export default function PDFDoc({ data, onSubmit, viewOnly = false }) {
               <TextField
                 variant="standard"
                 value={formData.signatureDate}
+                disabled={viewOnly}
                 autoComplete="new-password"
                 autoCorrect="off"
                 autoCapitalize="off"
@@ -1073,18 +1081,18 @@ export default function PDFDoc({ data, onSubmit, viewOnly = false }) {
 
             <Box mb={4}>
               <Box
-                onClick={() => handleSignatureClick('section3Consumer')}
+                onClick={() => handleSignatureClick('consumer')}
                 sx={{
                   height: '20px',
                   maxWidth: '250px',
-                  cursor: 'pointer',
+                  cursor: viewOnly ? 'default' : 'pointer',
                   position: 'relative',
                   borderBottom: '1px solid black',
                 }}
               >
-                {signatures.consumer && (
+                {formData.consumerSignature && (
                   <img
-                    src={signatures.consumer}
+                    src={formData.consumerSignature}
                     alt="Consumer Signature"
                     style={{
                       position: 'absolute',
@@ -1109,6 +1117,7 @@ export default function PDFDoc({ data, onSubmit, viewOnly = false }) {
               <TextField
                 variant="standard"
                 value={formData.signatureDate}
+                disabled={viewOnly}
                 autoComplete="new-password"
                 autoCorrect="off"
                 autoCapitalize="off"
@@ -1147,28 +1156,32 @@ export default function PDFDoc({ data, onSubmit, viewOnly = false }) {
           sx={{
             borderRadius: '8px',
             backgroundColor: '#fff',
+            margin: '0 auto',
+            padding: '20px',
           }}
         >
           {page.content}
         </Box>
       ))}
-      <Box
-        className=".no-print"
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          marginTop: '20px',
-        }}
-      >
-        <Button
+      {!viewOnly && (
+        <Box
           className=".no-print"
-          variant="contained"
-          color="primary"
-          onClick={saveDocument}
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            marginTop: '20px',
+          }}
         >
-          Save
-        </Button>
-      </Box>
+          <Button
+            className=".no-print"
+            variant="contained"
+            color="primary"
+            onClick={saveDocument}
+          >
+            Save
+          </Button>
+        </Box>
+      )}
     </Box>
   );
 }

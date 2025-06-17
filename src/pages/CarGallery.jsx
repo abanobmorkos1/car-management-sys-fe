@@ -34,9 +34,12 @@ import {
   ArrowForwardIos,
   PlayCircleOutline,
   Image as ImageIcon,
+  Close as CloseIcon,
+  Description as DescriptionIcon,
 } from '@mui/icons-material';
 import { fetchWithSession } from '../utils/fetchWithSession';
 import Topbar from '../components/Topbar';
+import PDFDoc from '../components/PDFDoc';
 
 const api = process.env.REACT_APP_API_URL;
 
@@ -68,6 +71,8 @@ const CarGallery = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [selectedCar, setSelectedCar] = useState(null);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
+  const [pdfModalOpen, setPdfModalOpen] = useState(false);
+  const [pdfData, setPdfData] = useState(null);
   const itemsPerPage = 6;
 
   // Debounced search function
@@ -193,6 +198,16 @@ const CarGallery = () => {
       fetchCars(1, debouncedSearch, selectedDriver);
     }
   }, [debouncedSearch, selectedDriver]);
+
+  const handleViewPDF = (carUploadDoc) => {
+    setPdfData(carUploadDoc);
+    setPdfModalOpen(true);
+  };
+
+  const handleClosePDFModal = () => {
+    setPdfModalOpen(false);
+    setPdfData(null);
+  };
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
@@ -760,6 +775,36 @@ const CarGallery = () => {
                 </Box>
               </Box>
 
+              {/* PDF Document Section */}
+              {selectedCar.carUploadDoc && (
+                <>
+                  <Divider />
+                  <Box sx={{ p: 4 }}>
+                    <Typography
+                      variant="h6"
+                      fontWeight={600}
+                      gutterBottom
+                      sx={{ mb: 3 }}
+                    >
+                      Vehicle Purchase Agreement
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      startIcon={<DescriptionIcon />}
+                      onClick={() => handleViewPDF(selectedCar.carUploadDoc)}
+                      sx={{
+                        borderRadius: 2,
+                        textTransform: 'none',
+                        px: 3,
+                        py: 1.5,
+                      }}
+                    >
+                      View Purchase Agreement
+                    </Button>
+                  </Box>
+                </>
+              )}
+
               {/* Media Section */}
               {(selectedCar.signedUrls?.length > 0 || selectedCar.videoUrl) && (
                 <>
@@ -1079,6 +1124,35 @@ const CarGallery = () => {
             Close
           </Button>
         </DialogActions>
+      </Dialog>
+
+      {/* PDF Modal */}
+      <Dialog
+        open={pdfModalOpen}
+        onClose={handleClosePDFModal}
+        maxWidth="lg"
+        fullWidth
+        sx={{ '& .MuiDialog-paper': { height: '90vh' } }}
+      >
+        <DialogTitle>
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+          >
+            <Typography variant="h6">Vehicle Purchase Agreement</Typography>
+            <IconButton onClick={handleClosePDFModal}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ p: 0, overflow: 'auto' }}>
+          {pdfData && (
+            <Box sx={{ p: 2, backgroundColor: 'white' }}>
+              <PDFDoc data={pdfData} viewOnly={true} />
+            </Box>
+          )}
+        </DialogContent>
       </Dialog>
     </Container>
   );

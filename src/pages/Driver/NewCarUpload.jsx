@@ -363,7 +363,7 @@ const NewCarForm = () => {
       const pdfFormData = {
         nameOfConsumer: form.customerName,
         addressOfConsumer: form.customerAddress,
-        leaseOrPurchase: 'Purchase',
+        leaseOrPurchase: 'purchase',
         make: form.make,
         model: form.model,
         year: form.year,
@@ -373,10 +373,9 @@ const NewCarForm = () => {
         automobilePurchasedFrom: '',
         priceOfVehicle: '',
         estimatedPrice: '',
-        estimatedDeliveryDate: '',
+        estimatedDeliveryDate: new Date().toISOString().split('T')[0],
         placeOfDelivery: form.customerAddress,
         consumerSignature: '',
-        vipSignature: '',
         signatureDate: new Date().toISOString().split('T')[0],
       };
 
