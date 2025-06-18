@@ -3,6 +3,77 @@ import { Box, Typography, TextField, Button } from '@mui/material';
 import SignatureModal from './SignatureModal';
 import ownerSignature from '../assets/ownersign.png';
 
+// Custom lined textarea component
+function LinedTextArea({ value, onChange, disabled, rows = 3 }) {
+  const lineHeight = 22;
+  const lines = Array.from({ length: rows }, (_, i) => i);
+
+  return (
+    <Box sx={{ position: 'relative', width: '100%' }}>
+      {/* Render actual lines */}
+      {lines.map((line) => (
+        <Box
+          key={line}
+          sx={{
+            position: 'absolute',
+            top: `${(line + 1) * lineHeight - 1}px`,
+            left: 0,
+            right: 0,
+            height: '1px',
+            backgroundColor: '#000',
+            zIndex: 1,
+          }}
+        />
+      ))}
+      <TextField
+        variant="standard"
+        autoComplete="new-password"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck="false"
+        disabled={disabled}
+        multiline
+        rows={rows}
+        value={value}
+        onChange={onChange}
+        sx={{
+          width: '100%',
+          '& .MuiInput-root': {
+            '&:before': {
+              borderBottom: 'none',
+            },
+            '&:hover:not(.Mui-disabled):before': {
+              borderBottom: 'none',
+            },
+            '&:after': {
+              borderBottom: 'none',
+            },
+          },
+          '& .MuiInput-input': {
+            fontSize: '14px',
+            padding: '2px 0',
+            lineHeight: `${lineHeight}px`,
+            backgroundColor: 'transparent',
+            position: 'relative',
+            zIndex: 2,
+          },
+          '& .Mui-disabled': {
+            color: 'black !important',
+            WebkitTextFillColor: 'black !important',
+          },
+        }}
+        slotProps={{
+          htmlInput: {
+            disableUnderline: false,
+            autoComplete: 'new-password',
+            'data-form-type': 'other',
+          },
+        }}
+      />
+    </Box>
+  );
+}
+
 function Page({ children, id }) {
   return (
     <Box
@@ -52,7 +123,7 @@ export default function PDFDoc({ data, onSubmit, viewOnly = false }) {
   };
 
   const handleSignatureClick = (type) => {
-    if (viewOnly) return; // Prevent signature clicks in view-only mode
+    if (viewOnly) return;
     setCurrentSignatureType(type);
     setSignatureModalOpen(true);
   };
@@ -92,7 +163,7 @@ export default function PDFDoc({ data, onSubmit, viewOnly = false }) {
       fontSize: '14px',
       padding: '2px 0',
     },
-    // Ensure disabled fields look the same as enabled ones
+
     '& .Mui-disabled': {
       color: 'black !important',
       WebkitTextFillColor: 'black !important',
@@ -115,11 +186,8 @@ export default function PDFDoc({ data, onSubmit, viewOnly = false }) {
       fontSize: '14px',
       padding: '2px 0',
       lineHeight: '22px',
-      backgroundImage:
-        'repeating-linear-gradient(transparent, transparent 21px, #000 21px, #000 22px)',
-      backgroundAttachment: 'local',
+      backgroundColor: 'transparent',
     },
-    // Ensure disabled fields look the same as enabled ones
     '& .Mui-disabled': {
       color: 'black !important',
       WebkitTextFillColor: 'black !important',
@@ -368,29 +436,11 @@ export default function PDFDoc({ data, onSubmit, viewOnly = false }) {
                 Custom Options or Modifications and Further Description of
                 Automobile (if applicable):
               </Typography>
-              <TextField
-                variant="standard"
-                autoComplete="new-password"
-                autoCorrect="off"
-                autoCapitalize="off"
-                spellCheck="false"
-                disabled={viewOnly}
-                multiline
-                rows={3}
-                maxRows={3}
+              <LinedTextArea
                 value={formData.customOptions}
+                disabled={viewOnly}
                 onChange={handleInputChange('customOptions')}
-                sx={{
-                  ...multilineInputStyle,
-                  width: '100%',
-                }}
-                slotProps={{
-                  htmlInput: {
-                    disableUnderline: false,
-                    autoComplete: 'new-password',
-                    'data-form-type': 'other',
-                  },
-                }}
+                rows={3}
               />
             </Box>
 
@@ -398,29 +448,11 @@ export default function PDFDoc({ data, onSubmit, viewOnly = false }) {
               <Typography variant="body1" sx={{ fontSize: '14px', mb: 1 }}>
                 Name and Address of Modification Facility (if applicable):
               </Typography>
-              <TextField
-                variant="standard"
-                autoComplete="new-password"
-                autoCorrect="off"
-                autoCapitalize="off"
-                spellCheck="false"
-                disabled={viewOnly}
-                multiline
-                rows={3}
-                maxRows={3}
+              <LinedTextArea
                 value={formData.modificationFacility}
+                disabled={viewOnly}
                 onChange={handleInputChange('modificationFacility')}
-                sx={{
-                  ...multilineInputStyle,
-                  width: '100%',
-                }}
-                slotProps={{
-                  htmlInput: {
-                    disableUnderline: false,
-                    autoComplete: 'new-password',
-                    'data-form-type': 'other',
-                  },
-                }}
+                rows={3}
               />
             </Box>
 
@@ -431,29 +463,11 @@ export default function PDFDoc({ data, onSubmit, viewOnly = false }) {
                 GROUP INC., for arranging the sale between the consumer and
                 dealer):
               </Typography>
-              <TextField
-                variant="standard"
-                autoComplete="new-password"
-                autoCorrect="off"
-                autoCapitalize="off"
-                spellCheck="false"
-                disabled={viewOnly}
-                multiline
-                rows={3}
-                maxRows={3}
+              <LinedTextArea
                 value={formData.automobilePurchasedFrom}
+                disabled={viewOnly}
                 onChange={handleInputChange('automobilePurchasedFrom')}
-                sx={{
-                  ...multilineInputStyle,
-                  width: '100%',
-                }}
-                slotProps={{
-                  htmlInput: {
-                    disableUnderline: false,
-                    autoComplete: 'new-password',
-                    'data-form-type': 'other',
-                  },
-                }}
+                rows={3}
               />
             </Box>
           </Box>
