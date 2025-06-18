@@ -301,7 +301,9 @@ const OdometerAndDamageDisclosureForm = ({
                     newReading[index] = e.target.value.slice(-1);
                     setOdometerReading(newReading.join(''));
                   }}
-                  disabled={viewOnly}
+                  slotProps={{
+                    input: { readOnly: viewOnly },
+                  }}
                   sx={{
                     '& .MuiInputBase-input': {
                       textAlign: 'center',
@@ -732,7 +734,9 @@ const OdometerAndDamageDisclosureForm = ({
                   size="small"
                   value={vehicleYear}
                   onChange={(e) => setVehicleYear(e.target.value)}
-                  disabled={viewOnly}
+                  slotProps={{
+                    input: { readOnly: viewOnly },
+                  }}
                   sx={{
                     '& .MuiInputBase-input': { fontSize: '9pt', p: 0.1 },
                     '& .MuiOutlinedInput-root': {
@@ -753,7 +757,9 @@ const OdometerAndDamageDisclosureForm = ({
                   size="small"
                   value={make}
                   onChange={(e) => setMake(e.target.value)}
-                  disabled={viewOnly}
+                  slotProps={{
+                    input: { readOnly: viewOnly },
+                  }}
                   sx={{
                     '& .MuiInputBase-input': { fontSize: '9pt', p: 0.1 },
                     '& .MuiOutlinedInput-root': {
@@ -774,7 +780,9 @@ const OdometerAndDamageDisclosureForm = ({
                   size="small"
                   value={model}
                   onChange={(e) => setModel(e.target.value)}
-                  disabled={viewOnly}
+                  slotProps={{
+                    input: { readOnly: viewOnly },
+                  }}
                   sx={{
                     '& .MuiInputBase-input': { fontSize: '9pt', p: 0.1 },
                     '& .MuiOutlinedInput-root': {
@@ -795,7 +803,9 @@ const OdometerAndDamageDisclosureForm = ({
                   size="small"
                   value={bodyType}
                   onChange={(e) => setBodyType(e.target.value)}
-                  disabled={viewOnly}
+                  slotProps={{
+                    input: { readOnly: viewOnly },
+                  }}
                   sx={{
                     '& .MuiInputBase-input': { fontSize: '9pt', p: 0.1 },
                     '& .MuiOutlinedInput-root': {
@@ -816,7 +826,9 @@ const OdometerAndDamageDisclosureForm = ({
                   size="small"
                   value={vin}
                   onChange={(e) => setVin(e.target.value)}
-                  disabled={viewOnly}
+                  slotProps={{
+                    input: { readOnly: viewOnly },
+                  }}
                   sx={{
                     '& .MuiInputBase-input': { fontSize: '9pt', p: 0.1 },
                     '& .MuiOutlinedInput-root': {
@@ -880,10 +892,11 @@ const OdometerAndDamageDisclosureForm = ({
                     alignItems: 'center',
                     justifyContent: 'center',
                     height: '32px',
-                    backgroundColor: viewOnly ? 'transparent' : '#fafafa',
-                    border: viewOnly ? 'none' : '1px dashed #ccc',
+                    backgroundColor: '#fafafa',
+                    border: '1px dashed #ccc',
+                    pointerEvents: viewOnly ? 'none' : 'auto',
                     '&:hover': {
-                      backgroundColor: viewOnly ? 'transparent' : '#f0f0f0',
+                      backgroundColor: viewOnly ? '#fafafa' : '#f0f0f0',
                     },
                   }}
                 >
@@ -902,11 +915,11 @@ const OdometerAndDamageDisclosureForm = ({
                       variant="body2"
                       sx={{
                         fontSize: '9pt',
-                        color: viewOnly ? 'transparent' : '#666',
+                        color: '#666',
                         fontStyle: 'italic',
                       }}
                     >
-                      {viewOnly ? '' : 'X'}
+                      X
                     </Typography>
                   )}
                 </Box>
@@ -923,7 +936,9 @@ const OdometerAndDamageDisclosureForm = ({
                   size="small"
                   value={sellerName}
                   onChange={(e) => setSellerName(e.target.value)}
-                  disabled={viewOnly}
+                  slotProps={{
+                    input: { readOnly: viewOnly },
+                  }}
                   sx={{
                     '& .MuiInputBase-input': { fontSize: '9pt', p: 0.1 },
                     '& .MuiOutlinedInput-root': {
@@ -969,7 +984,9 @@ const OdometerAndDamageDisclosureForm = ({
                   size="small"
                   value={sellerAddress}
                   onChange={(e) => setSellerAddress(e.target.value)}
-                  disabled={viewOnly}
+                  slotProps={{
+                    input: { readOnly: viewOnly },
+                  }}
                   sx={{
                     '& .MuiInputBase-input': { fontSize: '9pt', p: 0.1 },
                     '& .MuiOutlinedInput-root': {
@@ -1054,7 +1071,9 @@ const OdometerAndDamageDisclosureForm = ({
                   size="small"
                   value={sellerCity}
                   onChange={(e) => setSellerCity(e.target.value)}
-                  disabled={viewOnly}
+                  slotProps={{
+                    input: { readOnly: viewOnly },
+                  }}
                   sx={{
                     '& .MuiInputBase-input': { fontSize: '9pt', p: 0.1 },
                     '& .MuiOutlinedInput-root': {
@@ -1075,7 +1094,9 @@ const OdometerAndDamageDisclosureForm = ({
                   size="small"
                   value={sellerState}
                   onChange={(e) => setSellerState(e.target.value)}
-                  disabled={viewOnly}
+                  slotProps={{
+                    input: { readOnly: viewOnly },
+                  }}
                   sx={{
                     '& .MuiInputBase-input': { fontSize: '9pt', p: 0.1 },
                     '& .MuiOutlinedInput-root': {
@@ -1096,7 +1117,9 @@ const OdometerAndDamageDisclosureForm = ({
                   size="small"
                   value={sellerZip}
                   onChange={(e) => setSellerZip(e.target.value)}
-                  disabled={viewOnly}
+                  slotProps={{
+                    input: { readOnly: viewOnly },
+                  }}
                   sx={{
                     '& .MuiInputBase-input': { fontSize: '9pt', p: 0.1 },
                     '& .MuiOutlinedInput-root': {
@@ -1118,7 +1141,9 @@ const OdometerAndDamageDisclosureForm = ({
                   type="text"
                   value={sellerDate}
                   onChange={(e) => setSellerDate(e.target.value)}
-                  disabled={viewOnly}
+                  slotProps={{
+                    input: { readOnly: viewOnly },
+                  }}
                   sx={{
                     '& .MuiInputBase-input': { fontSize: '9pt', p: 0.1 },
                     '& .MuiOutlinedInput-root': {
@@ -1182,10 +1207,11 @@ const OdometerAndDamageDisclosureForm = ({
                     alignItems: 'center',
                     justifyContent: 'center',
                     height: '32px',
-                    backgroundColor: viewOnly ? 'transparent' : '#fafafa',
-                    border: viewOnly ? 'none' : '1px dashed #ccc',
+                    backgroundColor: '#fafafa',
+                    border: '1px dashed #ccc',
+                    pointerEvents: viewOnly ? 'none' : 'auto',
                     '&:hover': {
-                      backgroundColor: viewOnly ? 'transparent' : '#f0f0f0',
+                      backgroundColor: viewOnly ? '#fafafa' : '#f0f0f0',
                     },
                   }}
                 >
@@ -1204,11 +1230,11 @@ const OdometerAndDamageDisclosureForm = ({
                       variant="body2"
                       sx={{
                         fontSize: '9pt',
-                        color: viewOnly ? 'transparent' : '#666',
+                        color: '#666',
                         fontStyle: 'italic',
                       }}
                     >
-                      {viewOnly ? '' : 'X'}
+                      X
                     </Typography>
                   )}
                 </Box>
@@ -1225,7 +1251,9 @@ const OdometerAndDamageDisclosureForm = ({
                   size="small"
                   value={newOwnerName}
                   onChange={(e) => setNewOwnerName(e.target.value)}
-                  disabled={viewOnly}
+                  slotProps={{
+                    input: { readOnly: viewOnly },
+                  }}
                   sx={{
                     '& .MuiInputBase-input': { fontSize: '9pt', p: 0.1 },
                     '& .MuiOutlinedInput-root': {
@@ -1271,7 +1299,9 @@ const OdometerAndDamageDisclosureForm = ({
                   size="small"
                   value={newOwnerAddress}
                   onChange={(e) => setNewOwnerAddress(e.target.value)}
-                  disabled={viewOnly}
+                  slotProps={{
+                    input: { readOnly: viewOnly },
+                  }}
                   sx={{
                     '& .MuiInputBase-input': { fontSize: '9pt', p: 0.1 },
                     '& .MuiOutlinedInput-root': {
@@ -1356,7 +1386,9 @@ const OdometerAndDamageDisclosureForm = ({
                   size="small"
                   value={newOwnerCity}
                   onChange={(e) => setNewOwnerCity(e.target.value)}
-                  disabled={viewOnly}
+                  slotProps={{
+                    input: { readOnly: viewOnly },
+                  }}
                   sx={{
                     '& .MuiInputBase-input': { fontSize: '9pt', p: 0.1 },
                     '& .MuiOutlinedInput-root': {
@@ -1377,7 +1409,9 @@ const OdometerAndDamageDisclosureForm = ({
                   size="small"
                   value={newOwnerState}
                   onChange={(e) => setNewOwnerState(e.target.value)}
-                  disabled={viewOnly}
+                  slotProps={{
+                    input: { readOnly: viewOnly },
+                  }}
                   sx={{
                     '& .MuiInputBase-input': { fontSize: '9pt', p: 0.1 },
                     '& .MuiOutlinedInput-root': {
@@ -1398,7 +1432,9 @@ const OdometerAndDamageDisclosureForm = ({
                   size="small"
                   value={newOwnerZip}
                   onChange={(e) => setNewOwnerZip(e.target.value)}
-                  disabled={viewOnly}
+                  slotProps={{
+                    input: { readOnly: viewOnly },
+                  }}
                   sx={{
                     '& .MuiInputBase-input': { fontSize: '9pt', p: 0.1 },
                     '& .MuiOutlinedInput-root': {
@@ -1420,7 +1456,9 @@ const OdometerAndDamageDisclosureForm = ({
                   type="text"
                   value={newOwnerDate}
                   onChange={(e) => setNewOwnerDate(e.target.value)}
-                  disabled={viewOnly}
+                  slotProps={{
+                    input: { readOnly: viewOnly },
+                  }}
                   sx={{
                     '& .MuiInputBase-input': { fontSize: '9pt', p: 0.1 },
                     '& .MuiOutlinedInput-root': {
