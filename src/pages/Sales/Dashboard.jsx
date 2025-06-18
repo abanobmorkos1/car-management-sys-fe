@@ -292,7 +292,7 @@ const SalesDashboard = () => {
                 value={startDate}
                 onChange={(newValue) => setStartDate(newValue)}
                 minDate={fiveDaysBack}
-                maxDate={today}
+                maxDate={endDate}
                 renderInput={(params) => (
                   <TextField {...params} size="small" fullWidth />
                 )}
@@ -302,7 +302,6 @@ const SalesDashboard = () => {
                 value={endDate}
                 onChange={(newValue) => setEndDate(newValue)}
                 minDate={fiveDaysBack}
-                maxDate={today}
                 renderInput={(params) => (
                   <TextField {...params} size="small" fullWidth />
                 )}
@@ -581,7 +580,7 @@ const SalesDashboard = () => {
                                 sx={{ mt: 2, fontWeight: 600 }}
                                 onClick={() => handleOpenEdit(delivery)}
                               >
-                                View Details
+                                Edit Delivery
                               </Button>
                             </CardContent>
                           </Card>
