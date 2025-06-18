@@ -128,15 +128,16 @@ const ManagerDeliveryCard = ({
         {delivery.phoneNumber && (
           <Typography variant="body2">
             <PhoneIcon fontSize="small" sx={{ mr: 1 }} />
-            {delivery.phoneNumber}
+            <strong>Phone:</strong> {delivery.phoneNumber}
           </Typography>
         )}
         <Typography variant="body2">
           <LocationOnIcon fontSize="small" sx={{ mr: 1 }} />
-          {delivery.address}
+          <strong>Address:</strong> {delivery.address}
         </Typography>
         <Typography variant="body2">
           <AccessTimeIcon fontSize="small" sx={{ mr: 1 }} />
+          <strong>Delivery Date:</strong>{' '}
           {format(new Date(delivery.deliveryDate), 'MMM dd, yyyy hh:mm a')}{' '}
         </Typography>
 
@@ -145,14 +146,14 @@ const ManagerDeliveryCard = ({
         </Typography>
         <Typography variant="body2">
           <DirectionsCarIcon fontSize="small" sx={{ mr: 1 }} />
-          {delivery.year} {delivery.make} {delivery.model} {delivery.trim} -{' '}
-          {delivery.color}
+          <strong>Vehicle:</strong> {delivery.year} {delivery.make}{' '}
+          {delivery.model} {delivery.trim} - {delivery.color}
         </Typography>
 
         {delivery.notes && (
           <Typography variant="body2">
             <NotesIcon fontSize="small" sx={{ mr: 1 }} />
-            {delivery.notes}
+            <strong>Notes:</strong> {delivery.notes}
           </Typography>
         )}
 
@@ -160,8 +161,8 @@ const ManagerDeliveryCard = ({
           COD
         </Typography>
         <Typography variant="body2">
-          <LocalAtmIcon fontSize="small" sx={{ mr: 1 }} />$
-          {delivery.codAmount || 0}{' '}
+          <LocalAtmIcon fontSize="small" sx={{ mr: 1 }} />
+          <strong>COD Amount:</strong> ${delivery.codAmount || 0}{' '}
           {delivery.codCollected ? (
             <Chip
               label={`Collected via ${delivery.codMethod}`}
