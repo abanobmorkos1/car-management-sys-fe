@@ -36,6 +36,7 @@ import {
   Image as ImageIcon,
   Close as CloseIcon,
   Description as DescriptionIcon,
+  Print,
 } from '@mui/icons-material';
 import { fetchWithSession } from '../utils/fetchWithSession';
 import Topbar from '../components/Topbar';
@@ -111,6 +112,63 @@ const CarGallery = () => {
 
     fetchUsers();
   }, []);
+  const handleDownloadPdf = async () => {
+    try {
+      const pages = [
+        document.querySelector('#page-1'),
+        document.querySelector('#page-2'),
+        document.querySelector('#page-3'),
+        document.querySelector('#page-4'),
+        document.querySelector('#page-5'),
+      ].filter((page) => page !== null);
+
+      if (pages.length === 0) {
+        throw new Error('No PDF pages found');
+      }
+
+      // Import jsPDF and html2canvas
+      const { jsPDF } = await import('jspdf');
+      const html2canvas = (await import('html2canvas')).default;
+
+      // Create new PDF document
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'in',
+        format: 'letter',
+      });
+
+      // Process each page
+      for (let i = 0; i < pages.length; i++) {
+        if (i > 0) {
+          pdf.addPage();
+        }
+
+        const canvas = await html2canvas(pages[i], {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: '#ffffff',
+          scrollX: 0,
+          scrollY: 0,
+        });
+
+        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        const imgWidth = 8.5;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+        // Add image to PDF, ensuring it fits on the page
+        const maxHeight = 11; // Letter size height
+        const finalHeight = imgHeight > maxHeight ? maxHeight : imgHeight;
+
+        pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, finalHeight);
+      }
+
+      // Save the PDF
+      pdf.save(`Vehicle_Purchase_Agreement_${pdfData.vin || 'draft'}.pdf`);
+    } catch (error) {
+      console.error('PDF generation error:', error);
+    }
+  };
 
   const fetchCars = async (
     currentPage = 1,
@@ -1141,9 +1199,19 @@ const CarGallery = () => {
             alignItems="center"
           >
             <Typography variant="h6">Vehicle Purchase Agreement</Typography>
-            <IconButton onClick={handleClosePDFModal}>
-              <CloseIcon />
-            </IconButton>
+            <Box>
+              <Button
+                startIcon={<Print />}
+                onClick={handleDownloadPdf}
+                variant="outlined"
+                sx={{ mr: 1 }}
+              >
+                Print
+              </Button>
+              <IconButton onClick={handleClosePDFModal}>
+                <CloseIcon />
+              </IconButton>
+            </Box>
           </Box>
         </DialogTitle>
         <DialogContent sx={{ p: 0, overflow: 'auto' }}>
