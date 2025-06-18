@@ -228,7 +228,7 @@ const NewLeaseForm = ({ prefill, fromDelivery = false }) => {
         },
         odometerInfo: {
           odometerReading: form.miles,
-          odometerDigits: form.miles?.length.toString(),
+          odometerDigits: 'five',
           certification: {
             actualMileage: false,
             exceedsMechanicalLimits: false,
@@ -247,7 +247,7 @@ const NewLeaseForm = ({ prefill, fromDelivery = false }) => {
             state: form.state,
             zipCode: form.zip,
           },
-          dateOfStatement: new Date().toISOString(),
+          dateOfStatement: new Date().toISOString().split('T')[0],
         },
         newOwner: {
           signature: '',
@@ -258,7 +258,7 @@ const NewLeaseForm = ({ prefill, fromDelivery = false }) => {
             state: '',
             zipCode: '',
           },
-          dateOfStatement: new Date().toISOString(),
+          dateOfStatement: new Date().toISOString().split('T')[0],
         },
       };
 

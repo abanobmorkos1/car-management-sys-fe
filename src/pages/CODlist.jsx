@@ -2,37 +2,36 @@ import React, { useEffect, useState, useContext, useCallback } from 'react';
 import {
   Container,
   Typography,
-  Grid,
-  Card,
-  CardContent,
-  CardMedia,
+  Paper,
+  Box,
+  TextField,
+  Stack,
+  CircularProgress,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Button,
+  Pagination,
+  Snackbar,
+  Alert,
+  Chip,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button,
-  Box,
-  TextField,
-  MenuItem,
-  Pagination,
-  IconButton,
-  Skeleton,
+  Grid,
   Divider,
-  Paper,
-  Chip,
-  Stack,
-  CircularProgress,
 } from '@mui/material';
 import {
+  Search,
+  FileDownload,
   Visibility,
-  Image,
+  AttachMoney,
   Person,
   LocalShipping,
-  AttachMoney,
-  CalendarToday,
-  LocationOn,
-  DriveEta,
-  Search,
 } from '@mui/icons-material';
 import { AuthContext } from '../contexts/AuthContext';
 import Topbar from '../components/Topbar';
@@ -41,15 +40,17 @@ const CODList = () => {
   const [cods, setCODs] = useState([]);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [searchField, setSearchField] = useState('All');
-  const [imageMap, setImageMap] = useState({});
-  const [selectedCOD, setSelectedCOD] = useState(null);
   const [page, setPage] = useState(1);
   const [totalCODs, setTotalCODs] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
+  const [exportMessage, setExportMessage] = useState('');
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [selectedCOD, setSelectedCOD] = useState(null);
+  const [imageMap, setImageMap] = useState({});
 
-  const itemsPerPage = 6;
+  const itemsPerPage = 10;
   const api = process.env.REACT_APP_API_URL;
 
   const debounceSearch = useCallback(() => {
@@ -64,44 +65,6 @@ const CODList = () => {
     const cleanup = debounceSearch();
     return cleanup;
   }, [debounceSearch]);
-
-  const fetchCODs = async (currentPage = 1, searchTerm = '') => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({
-        page: currentPage.toString(),
-        perPage: itemsPerPage.toString(),
-      });
-
-      if (searchTerm.trim()) {
-        params.append('searchText', searchTerm.trim());
-      }
-
-      const res = await fetch(`${api}/cod/all?${params.toString()}`, {
-        credentials: 'include',
-      });
-      const data = await res.json();
-
-      // Expect backend to return { cods, total, totalPages, currentPage }
-      const {
-        cods: codsData = data.cods || data,
-        total = data.total,
-        totalPages: pages = Math.ceil(total / itemsPerPage),
-      } = data;
-
-      setCODs(codsData);
-      setTotalCODs(total);
-      setTotalPages(pages);
-      fetchImages(codsData);
-    } catch (err) {
-      console.error('❌ Failed to fetch CODs:', err);
-      setCODs([]);
-      setTotalCODs(0);
-      setTotalPages(0);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const fetchImages = async (codList) => {
     const urls = await Promise.all(
@@ -122,6 +85,43 @@ const CODList = () => {
     setImageMap(map);
   };
 
+  const fetchCODs = async (currentPage = 1, searchTerm = '') => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        perPage: itemsPerPage.toString(),
+      });
+
+      if (searchTerm.trim()) {
+        params.append('searchText', searchTerm.trim());
+      }
+
+      const res = await fetch(`${api}/cod/all?${params.toString()}`, {
+        credentials: 'include',
+      });
+      const data = await res.json();
+
+      const {
+        cods: codsData = data.cods || data,
+        total = data.total,
+        totalPages: pages = Math.ceil(total / itemsPerPage),
+      } = data;
+
+      setCODs(codsData);
+      setTotalCODs(total);
+      setTotalPages(pages);
+      fetchImages(codsData);
+    } catch (err) {
+      console.error('❌ Failed to fetch CODs:', err);
+      setCODs([]);
+      setTotalCODs(0);
+      setTotalPages(0);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchCODs(1, debouncedSearch);
   }, []);
@@ -130,19 +130,60 @@ const CODList = () => {
     fetchCODs(page, debouncedSearch);
   }, [page, debouncedSearch]);
 
-  // Reset page when search changes
   useEffect(() => {
     if (page !== 1) {
       setPage(1);
     } else {
       fetchCODs(1, debouncedSearch);
     }
-  }, [debouncedSearch, searchField]);
+  }, [debouncedSearch]);
 
-  const handleOpen = (cod) => setSelectedCOD(cod);
-  const handleClose = () => setSelectedCOD(null);
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const params = new URLSearchParams();
+      if (debouncedSearch.trim()) {
+        params.append('searchText', debouncedSearch.trim());
+      }
 
-  // Utility to highlight matching text
+      const response = await fetch(`${api}/cod/export?${params.toString()}`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Export failed');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `cod-records-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      setExportMessage('Export completed successfully');
+    } catch (error) {
+      console.error('Export error:', error);
+      setExportMessage('Export failed. Please try again.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleViewDetails = (cod) => {
+    setSelectedCOD(cod);
+    setViewDialogOpen(true);
+  };
+
+  const handleCloseViewDialog = () => {
+    setViewDialogOpen(false);
+    setSelectedCOD(null);
+  };
+
   const highlightText = (text, searchTerm) => {
     if (!searchTerm) return text;
     const parts = text.split(new RegExp(`(${searchTerm})`, 'gi'));
@@ -179,7 +220,6 @@ const CODList = () => {
           </Typography>
         </Box>
 
-        {/* Enhanced Search Section */}
         <Paper
           elevation={2}
           sx={{
@@ -195,6 +235,23 @@ const CODList = () => {
               <Typography variant="h6" fontWeight={600}>
                 Search Collections
               </Typography>
+              <Box sx={{ ml: 'auto' }}>
+                <Button
+                  variant="contained"
+                  startIcon={
+                    exporting ? (
+                      <CircularProgress size={20} />
+                    ) : (
+                      <FileDownload />
+                    )
+                  }
+                  onClick={handleExport}
+                  disabled={exporting}
+                  sx={{ borderRadius: 2 }}
+                >
+                  {exporting ? 'Exporting...' : 'Export All'}
+                </Button>
+              </Box>
             </Box>
 
             <Box
@@ -206,11 +263,7 @@ const CODList = () => {
             >
               <TextField
                 fullWidth
-                label={
-                  searchField === 'All'
-                    ? 'Search by Customer or Method'
-                    : `Search by ${searchField}`
-                }
+                label="Search by Customer or Method"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 variant="outlined"
@@ -223,7 +276,6 @@ const CODList = () => {
               />
             </Box>
 
-            {/* Results Counter */}
             <Box
               sx={{
                 display: 'flex',
@@ -234,129 +286,97 @@ const CODList = () => {
               <Typography variant="body2" color="text.secondary">
                 Showing {cods.length} of {totalCODs} collections
                 {debouncedSearch && ` • Search: "${debouncedSearch}"`}
+                {debouncedSearch && (
+                  <Typography
+                    component="span"
+                    variant="body2"
+                    color="primary"
+                    sx={{ ml: 1 }}
+                  >
+                    (Export will include all {totalCODs} matching records)
+                  </Typography>
+                )}
               </Typography>
               {loading && <CircularProgress size={20} />}
             </Box>
           </Stack>
         </Paper>
 
-        {loading ? (
-          <Grid container spacing={3} justifyContent="center">
-            {[...Array(6)].map((_, index) => (
-              <Grid item xs={12} sm={6} md={4} key={index}>
-                <Card sx={{ height: 400, borderRadius: 3 }}>
-                  <Skeleton variant="rectangular" height={200} />
-                  <CardContent>
-                    <Skeleton variant="text" height={32} />
-                    <Skeleton variant="text" height={24} />
-                    <Skeleton variant="text" height={24} />
-                    <Skeleton
-                      variant="rectangular"
-                      height={40}
-                      sx={{ mt: 2 }}
+        <TableContainer component={Paper} sx={{ borderRadius: 3, mb: 4 }}>
+          <Table>
+            <TableHead>
+              <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                <TableCell sx={{ fontWeight: 'bold' }}>Customer</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Amount</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Date</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Method</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Phone</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {loading ? (
+                [...Array(10)].map((_, index) => (
+                  <TableRow key={index}>
+                    <TableCell>
+                      <CircularProgress size={20} />
+                    </TableCell>
+                    <TableCell>
+                      <CircularProgress size={20} />
+                    </TableCell>
+                    <TableCell>
+                      <CircularProgress size={20} />
+                    </TableCell>
+                    <TableCell>
+                      <CircularProgress size={20} />
+                    </TableCell>
+                    <TableCell>
+                      <CircularProgress size={20} />
+                    </TableCell>
+                    <TableCell>
+                      <CircularProgress size={20} />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : cods.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} sx={{ textAlign: 'center', py: 4 }}>
+                    <AttachMoney
+                      sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }}
                     />
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        ) : cods.length === 0 ? (
-          <Paper sx={{ p: 6, textAlign: 'center', mt: 4 }}>
-            <AttachMoney
-              sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }}
-            />
-            <Typography variant="h5" color="text.secondary" gutterBottom>
-              No collections found
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              {debouncedSearch
-                ? 'Try adjusting your search criteria'
-                : 'No COD collections available'}
-            </Typography>
-          </Paper>
-        ) : (
-          <Grid container spacing={3} justifyContent="center">
-            {cods.map((cod) => (
-              <Grid item xs={12} sm={6} md={4} key={cod._id}>
-                <Card
-                  sx={{
-                    height: 400,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    borderRadius: 3,
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    overflow: 'hidden',
-                    '&:hover': {
-                      transform: 'translateY(-8px)',
-                      boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
-                    },
-                  }}
-                >
-                  <Box sx={{ height: 200, position: 'relative' }}>
-                    {imageMap[cod._id] ? (
-                      <CardMedia
-                        component="img"
-                        height="200"
-                        image={imageMap[cod._id]}
-                        alt="Contract"
-                        sx={{
-                          objectFit: 'cover',
-                          transition: 'transform 0.3s ease',
-                          '&:hover': { transform: 'scale(1.05)' },
-                        }}
-                      />
-                    ) : (
-                      <Box
-                        sx={{
-                          height: 200,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          background:
-                            'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                          color: 'white',
-                        }}
-                      >
-                        <Image sx={{ fontSize: 60 }} />
-                      </Box>
-                    )}
-                  </Box>
-
-                  <CardContent
-                    sx={{
-                      flexGrow: 1,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'space-between',
-                      p: 3,
-                    }}
-                  >
-                    <Box>
-                      <Typography
-                        variant="h6"
-                        sx={{
-                          mb: 1,
-                          fontWeight: 'bold',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
+                    <Typography
+                      variant="h6"
+                      color="text.secondary"
+                      gutterBottom
+                    >
+                      No collections found
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {debouncedSearch
+                        ? 'Try adjusting your search criteria'
+                        : 'No COD collections available'}
+                    </Typography>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                cods.map((cod) => (
+                  <TableRow key={cod._id} hover>
+                    <TableCell>
+                      <Typography variant="body1" fontWeight="medium">
                         {highlightText(cod.customerName, debouncedSearch)}
                       </Typography>
+                    </TableCell>
+                    <TableCell>
                       <Typography
-                        variant="h6"
+                        variant="body1"
                         color="primary"
-                        sx={{ mb: 1, fontWeight: 'bold' }}
+                        fontWeight="bold"
                       >
                         ${cod.amount.toFixed(2)}
                       </Typography>
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ mb: 0.5 }}
-                      >
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">
                         {new Date(cod.dateCollected).toLocaleDateString(
                           'en-US',
                           {
@@ -366,46 +386,40 @@ const CODList = () => {
                           }
                         )}
                       </Typography>
+                    </TableCell>
+                    <TableCell>
                       <Chip
                         label={highlightText(cod.method, debouncedSearch)}
                         size="small"
                         color="primary"
                         variant="outlined"
                       />
-                    </Box>
-
-                    <Box
-                      sx={{ display: 'flex', justifyContent: 'center', mt: 0 }}
-                    >
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">
+                        {cod.phoneNumber || 'N/A'}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
                       <Button
-                        onClick={() => handleOpen(cod)}
-                        variant="contained"
+                        onClick={() => handleViewDetails(cod)}
+                        variant="outlined"
+                        size="small"
                         startIcon={<Visibility />}
-                        sx={{
-                          borderRadius: 3,
-                          px: 3,
-                          py: 1,
-                          background:
-                            'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
-                          '&:hover': {
-                            background:
-                              'linear-gradient(45deg, #1565c0 30%, #1976d2 90%)',
-                          },
-                        }}
+                        sx={{ borderRadius: 2 }}
                       >
-                        View Details
+                        View
                       </Button>
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        )}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
 
-        {/* Enhanced Pagination */}
         {totalPages > 1 && (
-          <Box mt={6} display="flex" justifyContent="center">
+          <Box mt={4} display="flex" justifyContent="center">
             <Paper elevation={2} sx={{ p: 2, borderRadius: 3 }}>
               <Stack spacing={2} alignItems="center">
                 <Pagination
@@ -426,9 +440,21 @@ const CODList = () => {
           </Box>
         )}
 
+        <Snackbar
+          open={!!exportMessage}
+          autoHideDuration={4000}
+          onClose={() => setExportMessage('')}
+        >
+          <Alert
+            severity={exportMessage.includes('failed') ? 'error' : 'success'}
+          >
+            {exportMessage}
+          </Alert>
+        </Snackbar>
+
         <Dialog
-          open={!!selectedCOD}
-          onClose={handleClose}
+          open={viewDialogOpen && selectedCOD !== null}
+          onClose={handleCloseViewDialog}
           fullWidth
           maxWidth="md"
           PaperProps={{
@@ -661,7 +687,7 @@ const CODList = () => {
 
           <DialogActions sx={{ p: 3, backgroundColor: '#f8f9fa' }}>
             <Button
-              onClick={handleClose}
+              onClick={handleCloseViewDialog}
               variant="contained"
               sx={{
                 px: 4,
