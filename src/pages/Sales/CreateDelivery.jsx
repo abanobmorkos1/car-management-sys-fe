@@ -9,15 +9,14 @@ import {
   Snackbar,
   Alert,
   Box,
+  Autocomplete,
 } from '@mui/material';
 import { AuthContext } from '../../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
 
 const api = process.env.REACT_APP_API_URL;
 
 const NewDeliveryForm = ({ onSuccess }) => {
   const { user } = useContext(AuthContext);
-  const navigate = useNavigate();
   const [form, setForm] = useState({
     customerName: '',
     phoneNumber: '',
@@ -35,6 +34,9 @@ const NewDeliveryForm = ({ onSuccess }) => {
     trim: '',
     color: '',
     year: '',
+    transactionType: '', // lease or purchase
+    dealershipName: '',
+    deliveryPrice: '',
     leaseReturn: {
       willReturn: false,
       carYear: '',
@@ -49,6 +51,9 @@ const NewDeliveryForm = ({ onSuccess }) => {
     msg: '',
     severity: 'success',
   });
+
+  const [dealerships, setDealerships] = useState([]);
+  const [dealershipLoading, setDealershipLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -90,6 +95,26 @@ const NewDeliveryForm = ({ onSuccess }) => {
     }
   };
 
+  const searchDealerships = async (searchTerm = '') => {
+    setDealershipLoading(true);
+    try {
+      const res = await fetch(
+        `${api}/api/delivery/dealerships?q=${encodeURIComponent(searchTerm)}`,
+        {
+          credentials: 'include',
+        }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setDealerships(data);
+      }
+    } catch (err) {
+      console.error('Error searching dealerships:', err);
+    } finally {
+      setDealershipLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -104,6 +129,7 @@ const NewDeliveryForm = ({ onSuccess }) => {
         delete payload.codCollectionDate;
       }
       payload.deliveryDate = new Date(form.deliveryDate).toISOString();
+
       const res = await fetch(`${api}/api/delivery`, {
         method: 'POST',
         credentials: 'include',
@@ -133,6 +159,9 @@ const NewDeliveryForm = ({ onSuccess }) => {
         model: '',
         trim: '',
         color: '',
+        transactionType: '',
+        dealershipName: '',
+        deliveryPrice: '',
       });
     } catch (err) {
       setSnack({ open: true, msg: err.message, severity: 'error' });
@@ -155,6 +184,10 @@ const NewDeliveryForm = ({ onSuccess }) => {
           onChange={handleChange}
           margin="normal"
           required
+          autoComplete="new-password"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck="false"
         />
         <TextField
           fullWidth
@@ -164,6 +197,10 @@ const NewDeliveryForm = ({ onSuccess }) => {
           onChange={handleChange}
           margin="normal"
           required
+          autoComplete="new-password"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck="false"
         />
         <TextField
           fullWidth
@@ -173,6 +210,10 @@ const NewDeliveryForm = ({ onSuccess }) => {
           onChange={handleChange}
           margin="normal"
           required
+          autoComplete="new-password"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck="false"
         />
         <TextField
           fullWidth
@@ -182,6 +223,10 @@ const NewDeliveryForm = ({ onSuccess }) => {
           onChange={handleChange}
           margin="normal"
           required
+          autoComplete="new-password"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck="false"
         />
         <TextField
           fullWidth
@@ -191,9 +236,14 @@ const NewDeliveryForm = ({ onSuccess }) => {
           value={form.deliveryDate}
           onChange={handleChange}
           margin="normal"
-          InputLabelProps={{ shrink: true }}
+          slotProps={{ inputLabel: { shrink: true } }}
           required
+          autoComplete="new-password"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck="false"
         />
+
         <TextField
           fullWidth
           name="codAmount"
@@ -203,6 +253,10 @@ const NewDeliveryForm = ({ onSuccess }) => {
           onChange={handleChange}
           margin="normal"
           required
+          autoComplete="new-password"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck="false"
         />
 
         <TextField
@@ -220,6 +274,10 @@ const NewDeliveryForm = ({ onSuccess }) => {
             })
           }
           margin="normal"
+          autoComplete="new-password"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck="false"
         >
           <MenuItem value="false">No</MenuItem>
           <MenuItem value="true">Yes</MenuItem>
@@ -236,6 +294,10 @@ const NewDeliveryForm = ({ onSuccess }) => {
               onChange={handleChange}
               margin="normal"
               required
+              autoComplete="new-password"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck="false"
             >
               <MenuItem value="Cash">Cash</MenuItem>
               <MenuItem value="Zelle">Zelle</MenuItem>
@@ -249,11 +311,100 @@ const NewDeliveryForm = ({ onSuccess }) => {
               type="date"
               value={form.codCollectionDate}
               onChange={handleChange}
-              InputLabelProps={{ shrink: true }}
+              slotProps={{ inputLabel: { shrink: true } }}
               margin="normal"
+              autoComplete="new-password"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck="false"
             />
           </>
         )}
+
+        <TextField
+          select
+          fullWidth
+          name="transactionType"
+          label="LeaseOrPurchase"
+          value={form.transactionType}
+          onChange={handleChange}
+          margin="normal"
+          required
+          autoComplete="new-password"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck="false"
+        >
+          <MenuItem value="lease">Lease</MenuItem>
+          <MenuItem value="purchase">Purchase</MenuItem>
+        </TextField>
+
+        <Autocomplete
+          fullWidth
+          options={dealerships}
+          getOptionLabel={(option) =>
+            typeof option === 'string' ? option : option.name
+          }
+          freeSolo
+          value={form.dealershipName}
+          onInputChange={(event, newValue) => {
+            setForm((prev) => ({ ...prev, dealershipName: newValue }));
+            searchDealerships(newValue);
+          }}
+          onChange={(event, newValue) => {
+            const dealershipName =
+              typeof newValue === 'string' ? newValue : newValue?.name || '';
+            setForm((prev) => ({ ...prev, dealershipName }));
+          }}
+          loading={dealershipLoading}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              name="dealershipName"
+              label="Dealership Name"
+              margin="normal"
+              required
+              autoComplete="new-password"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck="false"
+              helperText="Type to search existing dealerships or add new"
+              InputProps={{
+                ...params.InputProps,
+                endAdornment: (
+                  <>
+                    {dealershipLoading ? (
+                      <CircularProgress color="inherit" size={20} />
+                    ) : null}
+                    {params.InputProps.endAdornment}
+                  </>
+                ),
+              }}
+              inputProps={{
+                ...params.inputProps,
+                autoComplete: 'new-password',
+                autoCorrect: 'off',
+                autoCapitalize: 'off',
+                spellCheck: 'false',
+              }}
+            />
+          )}
+        />
+
+        <TextField
+          fullWidth
+          name="deliveryPrice"
+          label="Price of Delivery / Estimated Price"
+          type="number"
+          value={form.deliveryPrice}
+          onChange={handleChange}
+          margin="normal"
+          required
+          autoComplete="new-password"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck="false"
+        />
 
         <Typography variant="h6" sx={{ mt: 3 }}>
           Lease Return
@@ -273,6 +424,10 @@ const NewDeliveryForm = ({ onSuccess }) => {
               },
             })
           }
+          autoComplete="new-password"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck="false"
         >
           <MenuItem value="false">No</MenuItem>
           <MenuItem value="true">Yes</MenuItem>
@@ -286,6 +441,10 @@ const NewDeliveryForm = ({ onSuccess }) => {
               value={form.leaseReturn.carYear}
               onChange={handleChange}
               margin="dense"
+              autoComplete="new-password"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck="false"
             />
             <TextField
               fullWidth
@@ -294,6 +453,10 @@ const NewDeliveryForm = ({ onSuccess }) => {
               value={form.leaseReturn.carMake}
               onChange={handleChange}
               margin="dense"
+              autoComplete="new-password"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck="false"
             />
             <TextField
               fullWidth
@@ -302,6 +465,10 @@ const NewDeliveryForm = ({ onSuccess }) => {
               value={form.leaseReturn.carModel}
               onChange={handleChange}
               margin="dense"
+              autoComplete="new-password"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck="false"
             />
           </Box>
         )}
@@ -313,7 +480,10 @@ const NewDeliveryForm = ({ onSuccess }) => {
           value={form.vin}
           onChange={handleChange}
           margin="normal"
-          required
+          autoComplete="new-password"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck="false"
         />
         <TextField
           fullWidth
@@ -322,6 +492,10 @@ const NewDeliveryForm = ({ onSuccess }) => {
           value={form.make}
           onChange={handleChange}
           margin="dense"
+          autoComplete="new-password"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck="false"
         />
         <TextField
           fullWidth
@@ -330,6 +504,10 @@ const NewDeliveryForm = ({ onSuccess }) => {
           value={form.model}
           onChange={handleChange}
           margin="dense"
+          autoComplete="new-password"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck="false"
         />
         <TextField
           fullWidth
@@ -338,6 +516,10 @@ const NewDeliveryForm = ({ onSuccess }) => {
           value={form.trim}
           onChange={handleChange}
           margin="dense"
+          autoComplete="new-password"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck="false"
         />
         <TextField
           fullWidth
@@ -346,6 +528,10 @@ const NewDeliveryForm = ({ onSuccess }) => {
           value={form.color}
           onChange={handleChange}
           margin="dense"
+          autoComplete="new-password"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck="false"
         />
         <TextField
           fullWidth
@@ -354,6 +540,10 @@ const NewDeliveryForm = ({ onSuccess }) => {
           value={form.year}
           onChange={handleChange}
           margin="dense"
+          autoComplete="new-password"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck="false"
         />
         <TextField
           fullWidth
@@ -364,6 +554,10 @@ const NewDeliveryForm = ({ onSuccess }) => {
           value={form.notes}
           onChange={handleChange}
           margin="normal"
+          autoComplete="new-password"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck="false"
         />
 
         <Button
