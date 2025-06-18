@@ -89,8 +89,8 @@ const OwnerDeliveryCard = ({ delivery }) => {
                 Vehicle Info
               </Typography>
               <Typography variant="body2">
-                {delivery.year} {delivery.make} {delivery.model} {delivery.trim}{' '}
-                — {delivery.color}
+                <strong>Vehicle:</strong> {delivery.year} {delivery.make}{' '}
+                {delivery.model} {delivery.trim} — {delivery.color}
               </Typography>
               <Typography variant="body2">
                 <strong>VIN:</strong> {delivery.vin}
@@ -104,7 +104,7 @@ const OwnerDeliveryCard = ({ delivery }) => {
                 COD Info
               </Typography>
               <Typography variant="body2">
-                <strong>Amount:</strong> ${delivery.codAmount || 0}
+                <strong>COD Amount:</strong> ${delivery.codAmount || 0}
               </Typography>
               <Typography variant="body2">
                 <strong>Collected:</strong>{' '}
@@ -112,7 +112,7 @@ const OwnerDeliveryCard = ({ delivery }) => {
               </Typography>
               {delivery.codCollected && delivery.codMethod && (
                 <Typography variant="body2">
-                  <strong>Method:</strong> {delivery.codMethod}
+                  <strong>Payment Method:</strong> {delivery.codMethod}
                 </Typography>
               )}
             </Stack>
