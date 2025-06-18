@@ -288,7 +288,6 @@ const CarGallery = () => {
         </Typography>
       </Box>
 
-      {/* Enhanced Search and Filter Section */}
       <Paper
         elevation={2}
         sx={{
@@ -353,7 +352,6 @@ const CarGallery = () => {
             </TextField>
           </Box>
 
-          {/* Results Counter */}
           <Box
             sx={{
               display: 'flex',
@@ -451,11 +449,10 @@ const CarGallery = () => {
                     </Box>
                   )}
 
-                  {/* Image Count Badge */}
-                  {car.signedUrls && car.signedUrls.length > 1 && (
-                    <Box sx={{ position: 'absolute', bottom: 12, left: 12 }}>
+                  {car.signedUrls && car.signedUrls.length > 0 && (
+                    <Box sx={{ position: 'absolute', top: 12, right: 12 }}>
                       <Chip
-                        label={`${car.signedUrls.length} photos`}
+                        label={car.linkedDelivery.status}
                         size="small"
                         sx={{
                           backgroundColor: 'rgba(0,0,0,0.7)',
@@ -568,7 +565,6 @@ const CarGallery = () => {
         </Grid>
       )}
 
-      {/* Enhanced Pagination */}
       {totalPages > 1 && (
         <Box mt={6} display="flex" justifyContent="center">
           <Paper elevation={2} sx={{ p: 2, borderRadius: 3 }}>
@@ -591,7 +587,6 @@ const CarGallery = () => {
         </Box>
       )}
 
-      {/* Enhanced Dialog */}
       <Dialog
         open={!!selectedCar}
         onClose={() => setSelectedCar(null)}
@@ -618,7 +613,6 @@ const CarGallery = () => {
         <DialogContent dividers sx={{ p: 0 }}>
           {selectedCar && (
             <Box>
-              {/* Hero Section */}
               <Box sx={{ p: 4, bgcolor: 'grey.50' }}>
                 <Typography variant="h4" fontWeight="bold" gutterBottom>
                   {selectedCar.year} {selectedCar.make} {selectedCar.model}
@@ -629,7 +623,6 @@ const CarGallery = () => {
                   </Typography>
                 )}
 
-                {/* Status and Info Cards */}
                 <Grid container spacing={2} sx={{ mt: 2 }}>
                   <Grid item xs={12} md={4}>
                     <Paper sx={{ p: 2, textAlign: 'center' }}>
@@ -659,10 +652,8 @@ const CarGallery = () => {
 
               <Divider />
 
-              {/* Details Section */}
               <Box sx={{ p: 4 }}>
                 <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
-                  {/* Customer Information */}
                   <Box sx={{ flex: '1 1 300px', minWidth: '300px' }}>
                     <Box
                       sx={{
@@ -724,7 +715,6 @@ const CarGallery = () => {
                     </Paper>
                   </Box>
 
-                  {/* Driver Information */}
                   <Box sx={{ flex: '1 1 300px', minWidth: '300px' }}>
                     <Box
                       sx={{
@@ -778,7 +768,6 @@ const CarGallery = () => {
                     </Paper>
                   </Box>
 
-                  {/* Salesperson */}
                   <Box sx={{ flex: '1 1 300px', minWidth: '300px' }}>
                     <Box
                       sx={{
@@ -833,7 +822,6 @@ const CarGallery = () => {
                 </Box>
               </Box>
 
-              {/* PDF Document Section */}
               {selectedCar.carUploadDoc && (
                 <>
                   <Divider />
@@ -863,7 +851,6 @@ const CarGallery = () => {
                 </>
               )}
 
-              {/* Media Section */}
               {(selectedCar.signedUrls?.length > 0 || selectedCar.videoUrl) && (
                 <>
                   <Divider />
@@ -884,10 +871,8 @@ const CarGallery = () => {
                     </Typography>
 
                     {(() => {
-                      // Combine images and video into a single media array
                       const mediaItems = [];
 
-                      // Add images
                       if (selectedCar.signedUrls) {
                         selectedCar.signedUrls.forEach((url, index) => {
                           mediaItems.push({
@@ -898,7 +883,6 @@ const CarGallery = () => {
                         });
                       }
 
-                      // Add video
                       if (selectedCar.videoUrl) {
                         mediaItems.push({
                           type: 'video',
@@ -928,7 +912,6 @@ const CarGallery = () => {
                               justifyContent: 'center',
                             }}
                           >
-                            {/* Current Media Item */}
                             {mediaItems[currentMediaIndex]?.type === 'image' ? (
                               <img
                                 src={mediaItems[currentMediaIndex].url}
@@ -948,7 +931,7 @@ const CarGallery = () => {
                                   height: '100%',
                                   objectFit: 'contain',
                                 }}
-                                key={currentMediaIndex} // Force re-render when switching
+                                key={currentMediaIndex}
                               >
                                 <source
                                   src={mediaItems[currentMediaIndex]?.url}
@@ -957,7 +940,6 @@ const CarGallery = () => {
                               </video>
                             )}
 
-                            {/* Navigation Arrows */}
                             {mediaItems.length > 1 && (
                               <>
                                 <IconButton
@@ -1006,7 +988,6 @@ const CarGallery = () => {
                               </>
                             )}
 
-                            {/* Media Type Indicator */}
                             <Box
                               sx={{
                                 position: 'absolute',
@@ -1041,7 +1022,6 @@ const CarGallery = () => {
                               />
                             </Box>
 
-                            {/* Counter */}
                             <Box
                               sx={{
                                 position: 'absolute',
@@ -1063,7 +1043,6 @@ const CarGallery = () => {
                             </Box>
                           </Box>
 
-                          {/* Thumbnail Navigation */}
                           {mediaItems.length > 1 && (
                             <Box
                               sx={{
@@ -1170,7 +1149,7 @@ const CarGallery = () => {
           <Button
             onClick={() => {
               setSelectedCar(null);
-              setCurrentMediaIndex(0); // Reset carousel when closing
+              setCurrentMediaIndex(0);
             }}
             variant="contained"
             sx={{
@@ -1184,7 +1163,6 @@ const CarGallery = () => {
         </DialogActions>
       </Dialog>
 
-      {/* PDF Modal */}
       <Dialog
         open={pdfModalOpen}
         onClose={handleClosePDFModal}
