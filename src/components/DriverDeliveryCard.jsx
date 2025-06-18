@@ -72,7 +72,8 @@ const DriverDeliveryCard = ({ delivery, onStatusChange, userId }) => {
             alignItems="center"
             gap={1}
           >
-            <PhoneIcon fontSize="small" /> {delivery.phoneNumber}
+            <PhoneIcon fontSize="small" /> <strong>Phone:</strong>{' '}
+            {delivery.phoneNumber}
           </Typography>
           <Typography
             variant="body2"
@@ -81,7 +82,8 @@ const DriverDeliveryCard = ({ delivery, onStatusChange, userId }) => {
             alignItems="center"
             gap={1}
           >
-            <LocationOnIcon fontSize="small" /> {delivery.address}
+            <LocationOnIcon fontSize="small" /> <strong>Address:</strong>{' '}
+            {delivery.address}
           </Typography>
           <Typography
             variant="body2"
@@ -90,7 +92,7 @@ const DriverDeliveryCard = ({ delivery, onStatusChange, userId }) => {
             alignItems="center"
             gap={1}
           >
-            <AccessTimeIcon fontSize="small" />{' '}
+            <AccessTimeIcon fontSize="small" /> <strong>Delivery Date:</strong>{' '}
             {new Date(delivery.deliveryDate).toLocaleString()}
           </Typography>
           <Typography
@@ -98,7 +100,8 @@ const DriverDeliveryCard = ({ delivery, onStatusChange, userId }) => {
             fontWeight={600}
             color={delivery.codCollected ? 'success.main' : 'error.main'}
           >
-            COD: ${delivery.codAmount}{' '}
+            <LocalAtmIcon fontSize="small" sx={{ mr: 1 }} />
+            <strong>COD:</strong> ${delivery.codAmount}{' '}
             {delivery.codCollected
               ? `(via ${delivery.codMethod})`
               : '(Pending)'}
@@ -111,8 +114,8 @@ const DriverDeliveryCard = ({ delivery, onStatusChange, userId }) => {
             gap={1}
           >
             <DirectionsCarIcon fontSize="small" />
-            {delivery.year} {delivery.make} {delivery.model} {delivery.trim} -{' '}
-            {delivery.color}
+            <strong>Vehicle:</strong> {delivery.year} {delivery.make}{' '}
+            {delivery.model} {delivery.trim} - {delivery.color}
           </Typography>
           {delivery.notes && (
             <Typography
@@ -122,7 +125,8 @@ const DriverDeliveryCard = ({ delivery, onStatusChange, userId }) => {
               alignItems="center"
               gap={1}
             >
-              <NotesIcon fontSize="small" /> {delivery.notes}
+              <NotesIcon fontSize="small" /> <strong>Notes:</strong>{' '}
+              {delivery.notes}
             </Typography>
           )}
         </Box>
