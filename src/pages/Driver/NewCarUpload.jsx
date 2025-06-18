@@ -111,6 +111,7 @@ const NewCarForm = () => {
             const get = (label) =>
               data.Results.find((r) => r.Variable === label)?.Value?.trim() ||
               '';
+
             setForm((prev) => ({
               ...prev,
               make: get('Make'),
@@ -118,6 +119,38 @@ const NewCarForm = () => {
               trim: get('Trim'),
               year: get('Model Year'),
             }));
+          });
+        fetch(`${api}/api/delivery/vin?vin=${value}`, {
+          method: 'GET',
+          credentials: 'include',
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data) {
+              setForm((prev) => ({
+                ...prev,
+                salesPersonid: data.salesperson || '',
+                driver: data.driver || '',
+                customerAddress: data.address || '',
+                customerName: data.customerName || '',
+                customerPhone: data.phoneNumber || '',
+                extraDetails: data,
+              }));
+            } else {
+              setSnack({
+                open: true,
+                msg: data.message || 'Failed to fetch delivery details',
+                severity: 'error',
+              });
+            }
+          })
+          .catch((err) => {
+            console.error('Error fetching delivery details:', err);
+            setSnack({
+              open: true,
+              msg: 'Error fetching delivery details',
+              severity: 'error',
+            });
           });
       }
     }
@@ -345,8 +378,6 @@ const NewCarForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     let allowVin = await allowVIN(form.vin);
-
-    console.log('Allow VIN 2:', allowVin);
     if (!allowVin) {
       setSnack({
         open: true,
@@ -359,24 +390,28 @@ const NewCarForm = () => {
     setLoading(true);
 
     try {
-      // Prepare PDF form data
+      console.log({ form });
       const pdfFormData = {
         nameOfConsumer: form.customerName,
         addressOfConsumer: form.customerAddress,
-        leaseOrPurchase: 'purchase',
+        leaseOrPurchase: form.extraDetails?.transactionType,
         make: form.make,
         model: form.model,
         year: form.year,
         vin: form.vin,
         customOptions: '',
         modificationFacility: '',
-        automobilePurchasedFrom: '',
-        priceOfVehicle: '',
-        estimatedPrice: '',
-        estimatedDeliveryDate: new Date().toISOString().split('T')[0],
+        automobilePurchasedFrom: form.extraDetails?.dealershipName,
+        priceOfVehicle: form.extraDetails?.deliveryPrice,
+        estimatedPrice: form.extraDetails?.deliveryPrice,
+        estimatedDeliveryDate: new Date(form.extraDetails?.deliveryDate ?? '')
+          .toISOString()
+          .split('T')[0],
         placeOfDelivery: form.customerAddress,
         consumerSignature: '',
-        signatureDate: new Date().toISOString().split('T')[0],
+        signatureDate: new Date(form.extraDetails?.deliveryDate ?? '')
+          .toISOString()
+          .split('T')[0],
       };
 
       setSubmissionData(pdfFormData);
