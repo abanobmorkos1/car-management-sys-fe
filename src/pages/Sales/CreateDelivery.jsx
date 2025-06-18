@@ -89,6 +89,12 @@ const NewDeliveryForm = ({ onSuccess }) => {
             model: get('Model'),
             trim: get('Trim'),
             year: get('Model Year'),
+            leaseReturn: {
+              ...prev.leaseReturn,
+              carYear: get('Model Year'),
+              carMake: get('Make'),
+              carModel: get('Model'),
+            },
           }));
         })
         .catch((err) => console.error('❌ VIN decode error:', err.message));
@@ -406,73 +412,6 @@ const NewDeliveryForm = ({ onSuccess }) => {
           spellCheck="false"
         />
 
-        <Typography variant="h6" sx={{ mt: 3 }}>
-          Lease Return
-        </Typography>
-
-        <TextField
-          select
-          fullWidth
-          name="leaseReturn.willReturn"
-          label="Will there be a lease return?"
-          value={form.leaseReturn?.willReturn ? 'true' : 'false'}
-          onChange={(e) =>
-            handleChange({
-              target: {
-                name: 'leaseReturn.willReturn',
-                value: e.target.value === 'true',
-              },
-            })
-          }
-          autoComplete="new-password"
-          autoCorrect="off"
-          autoCapitalize="off"
-          spellCheck="false"
-        >
-          <MenuItem value="false">No</MenuItem>
-          <MenuItem value="true">Yes</MenuItem>
-        </TextField>
-        {form.leaseReturn?.willReturn && (
-          <Box sx={{ mt: 2 }}>
-            <TextField
-              fullWidth
-              name="leaseReturn.carYear"
-              label="Lease Return Year"
-              value={form.leaseReturn.carYear}
-              onChange={handleChange}
-              margin="dense"
-              autoComplete="new-password"
-              autoCorrect="off"
-              autoCapitalize="off"
-              spellCheck="false"
-            />
-            <TextField
-              fullWidth
-              name="leaseReturn.carMake"
-              label="Lease Return Make"
-              value={form.leaseReturn.carMake}
-              onChange={handleChange}
-              margin="dense"
-              autoComplete="new-password"
-              autoCorrect="off"
-              autoCapitalize="off"
-              spellCheck="false"
-            />
-            <TextField
-              fullWidth
-              name="leaseReturn.carModel"
-              label="Lease Return Model"
-              value={form.leaseReturn.carModel}
-              onChange={handleChange}
-              margin="dense"
-              autoComplete="new-password"
-              autoCorrect="off"
-              autoCapitalize="off"
-              spellCheck="false"
-            />
-          </Box>
-        )}
-
         <TextField
           fullWidth
           name="vin"
@@ -484,6 +423,7 @@ const NewDeliveryForm = ({ onSuccess }) => {
           autoCorrect="off"
           autoCapitalize="off"
           spellCheck="false"
+          required
         />
         <TextField
           fullWidth
@@ -559,7 +499,71 @@ const NewDeliveryForm = ({ onSuccess }) => {
           autoCapitalize="off"
           spellCheck="false"
         />
-
+        <Typography variant="h6" sx={{ mt: 3 }}>
+          Lease Return
+        </Typography>
+        <TextField
+          select
+          fullWidth
+          name="leaseReturn.willReturn"
+          label="Will there be a lease return?"
+          value={form.leaseReturn?.willReturn ? 'true' : 'false'}
+          onChange={(e) =>
+            handleChange({
+              target: {
+                name: 'leaseReturn.willReturn',
+                value: e.target.value === 'true',
+              },
+            })
+          }
+          autoComplete="new-password"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck="false"
+        >
+          <MenuItem value="false">No</MenuItem>
+          <MenuItem value="true">Yes</MenuItem>
+        </TextField>
+        {form.leaseReturn?.willReturn && (
+          <Box sx={{ mt: 2 }}>
+            <TextField
+              fullWidth
+              name="leaseReturn.carYear"
+              label="Lease Return Year"
+              value={form.leaseReturn.carYear}
+              onChange={handleChange}
+              margin="dense"
+              autoComplete="new-password"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck="false"
+            />
+            <TextField
+              fullWidth
+              name="leaseReturn.carMake"
+              label="Lease Return Make"
+              value={form.leaseReturn.carMake}
+              onChange={handleChange}
+              margin="dense"
+              autoComplete="new-password"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck="false"
+            />
+            <TextField
+              fullWidth
+              name="leaseReturn.carModel"
+              label="Lease Return Model"
+              value={form.leaseReturn.carModel}
+              onChange={handleChange}
+              margin="dense"
+              autoComplete="new-password"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck="false"
+            />
+          </Box>
+        )}
         <Button
           type="submit"
           variant="contained"
